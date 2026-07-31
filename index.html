@@ -2252,10 +2252,6 @@ async function renderCard(item, card, revealAfter){
       favs[favMatch] = {...favs[favMatch], renderImg:imgRef, renderMs:item.renderMs};
       LS_set("podder_favs",favs);
     }
-    if(item.sd){
-      const p = document.createElement("div"); p.className = "render-status"; p.style.color = "#8a78ab";
-      p.textContent = "Render prompt: " + item.sd; wrap.appendChild(p);
-    }
   }catch(e){
     if(revealAfter) await revealAfter.catch(()=>{});   // even failures report in top-down order
     const msg = String(e.message||e);
