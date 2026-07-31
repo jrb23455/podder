@@ -1,0 +1,10 @@
+{
+  "name": "podder-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Podder — trippy, always-3D-printable design generator. Cloud renders via Replicate Flux.",
+  "scripts": {
+    "dev": "node dev-server.mjs"
+  }
+}

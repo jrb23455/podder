@@ -1,0 +1,2433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Podder — trippy 3D-print prompt generator</title>
+<link rel="icon" type="image/x-icon" href="Podder.ico" sizes="16x16 24x24 32x32 48x48 64x64 128x128 256x256" />
+<link rel="icon" type="image/png" sizes="192x192" href="Podder-192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="Podder-512.png" />
+<link rel="apple-touch-icon" href="Podder-192.png" />
+<link rel="manifest" href="manifest.json" />
+<style>
+  :root{
+    --bg:#0a0710;
+    --bg2:#120a1f;
+    --panel:rgba(255,255,255,.04);
+    --panel-brd:rgba(255,255,255,.09);
+    --ink:#f3ecff;
+    --muted:#a794c9;
+    --accent:#c04bff;
+    --accent2:#39e6c8;
+    --accent3:#ff5d9e;
+    --gold:#ffce54;
+    --radius:16px;
+    --shadow:0 10px 40px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    background:
+      radial-gradient(1200px 700px at 80% -10%, rgba(192,75,255,.18), transparent 60%),
+      radial-gradient(1000px 700px at -10% 110%, rgba(57,230,200,.14), transparent 55%),
+      radial-gradient(900px 600px at 50% 50%, rgba(255,93,158,.08), transparent 60%),
+      linear-gradient(160deg,var(--bg),var(--bg2));
+    background-attachment:fixed;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 80px}
+  header{display:flex;align-items:center;gap:16px;margin-bottom:6px;flex-wrap:wrap}
+  .logo{
+    width:52px;height:52px;border-radius:15px;flex:none;
+    background:conic-gradient(from 210deg,var(--accent),var(--accent3),var(--gold),var(--accent2),var(--accent));
+    box-shadow:0 0 30px rgba(192,75,255,.5), inset 0 0 20px rgba(0,0,0,.35);
+    display:grid;place-items:center;font-size:26px;
+    animation:spin 18s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  h1{font-size:30px;margin:0;letter-spacing:.5px;
+    background:linear-gradient(90deg,#fff,var(--accent2),var(--accent3),#fff);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    background-size:200% auto; animation:sheen 6s linear infinite;}
+  @keyframes sheen{to{background-position:200% center}}
+  .tag{color:var(--muted);font-size:13.5px;margin:2px 0 22px;max-width:640px;line-height:1.5}
+
+  .tabs{display:flex;gap:6px;margin-bottom:18px}
+  .tab{padding:9px 16px;border-radius:11px;border:1px solid transparent;background:var(--panel);
+    color:var(--muted);cursor:pointer;font-size:14px;font-weight:600;transition:.15s}
+  .tab:hover{color:var(--ink)}
+  .tab.active{color:#fff;border-color:var(--accent);background:rgba(192,75,255,.16);box-shadow:0 0 18px rgba(192,75,255,.25)}
+  .count-badge{display:inline-block;min-width:18px;text-align:center;font-size:11px;background:rgba(255,255,255,.12);
+    border-radius:9px;padding:1px 6px;margin-left:6px}
+
+  .panel{background:var(--panel);border:1px solid var(--panel-brd);border-radius:var(--radius);
+    padding:20px;box-shadow:var(--shadow);backdrop-filter:blur(6px)}
+  .row{margin-bottom:20px}
+  .row:last-child{margin-bottom:0}
+  .label{font-size:12px;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);
+    margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .lock{cursor:pointer;font-size:12px;color:var(--muted);border:1px solid var(--panel-brd);
+    border-radius:8px;padding:2px 8px;user-select:none;transition:.15s;text-transform:none;letter-spacing:0}
+  .lock.on{color:var(--gold);border-color:var(--gold);background:rgba(255,206,84,.1)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:9px}
+  .chip{padding:9px 14px;border-radius:11px;border:1px solid var(--panel-brd);background:rgba(255,255,255,.03);
+    color:var(--ink);cursor:pointer;font-size:14px;font-weight:600;transition:.15s;user-select:none;display:flex;gap:7px;align-items:center}
+  .chip .em{font-size:15px}
+  .chip:hover{border-color:var(--accent)}
+  .chip.on{border-color:var(--accent);background:rgba(192,75,255,.18);box-shadow:0 0 14px rgba(192,75,255,.22);color:#fff}
+  .chip.style.on{border-color:var(--accent2);background:rgba(57,230,200,.14);box-shadow:0 0 14px rgba(57,230,200,.18)}
+  .sd-group{margin-bottom:12px}
+  .sd-title{font-size:12px;color:var(--muted);margin-bottom:7px;display:flex;align-items:center;gap:6px}
+  .chip.sd{font-size:12.5px;padding:6px 11px;font-weight:500}
+  .chip.sd.on{border-color:var(--gold);background:rgba(255,206,84,.14);color:#fff;box-shadow:0 0 12px rgba(255,206,84,.16)}
+
+  .controls-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:620px){.controls-grid{grid-template-columns:1fr}}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .rangeval{color:var(--accent2);font-weight:700}
+  select{width:100%;padding:10px;border-radius:10px;background:#1a1130;color:var(--ink);
+    border:1px solid var(--panel-brd);font-size:14px}
+
+  .actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+  .btn{border:none;cursor:pointer;font-weight:700;font-size:15px;padding:14px 22px;border-radius:13px;transition:.15s;color:#fff}
+  .btn.primary{background:linear-gradient(100deg,var(--accent),var(--accent3));box-shadow:0 8px 26px rgba(192,75,255,.4)}
+  .btn.primary:hover{transform:translateY(-1px);box-shadow:0 12px 32px rgba(192,75,255,.55)}
+  .btn.ghost{background:var(--panel);border:1px solid var(--panel-brd);color:var(--ink)}
+  .btn.ghost:hover{border-color:var(--accent2);color:#fff}
+
+  .out{margin-top:26px;display:flex;flex-direction:column;gap:16px}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+    border:1px solid var(--panel-brd);border-radius:var(--radius);padding:18px 18px 14px;position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;
+    background:linear-gradient(var(--accent),var(--accent2))}
+  .card .meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .pill{font-size:11px;font-weight:700;letter-spacing:.4px;padding:3px 9px;border-radius:20px;
+    background:rgba(255,255,255,.08);color:var(--muted);text-transform:uppercase}
+  .pill.obj{color:#fff;background:rgba(192,75,255,.28)}
+  .card .tools{display:flex;gap:8px;margin-top:14px}
+  .tbtn{font-size:13px;font-weight:600;padding:7px 13px;border-radius:9px;cursor:pointer;
+    background:rgba(255,255,255,.06);border:1px solid var(--panel-brd);color:var(--ink);transition:.15s;display:flex;gap:6px;align-items:center}
+  .tbtn:hover{border-color:var(--accent2);color:#fff}
+  .tbtn.fav.on{color:var(--gold);border-color:var(--gold);background:rgba(255,206,84,.12)}
+  .tbtn#overdriveBtn.on{color:#fff;border-color:var(--accent3);background:rgba(255,93,158,.22);box-shadow:0 0 12px rgba(255,93,158,.35)}
+  .render-meta{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:8px}
+  .render-meta a{font-size:13px}
+  .render-meta .render-time{font-size:12px;color:var(--muted)}
+
+  /* --- Favorites/History: large thumbnail grid + click-to-expand modal --- */
+  .thumbGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-top:26px}
+  .thumbTile{position:relative;aspect-ratio:1;border-radius:16px;overflow:hidden;cursor:pointer;
+    border:1px solid var(--panel-brd);background:var(--panel);transition:transform .15s,border-color .15s}
+  .thumbTile:hover{transform:translateY(-2px);border-color:var(--accent2)}
+  .thumbImg{width:100%;height:100%;object-fit:cover;display:block}
+  .thumbTile.noImg{display:flex;align-items:center;justify-content:center;border-style:dashed}
+  .thumbPlaceholder{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--muted);font-size:36px}
+  .thumbPlaceholder span{font-size:12px;font-weight:600}
+  .thumbBadge{position:absolute;left:0;right:0;bottom:0;padding:10px 12px;font-size:12.5px;font-weight:700;color:#fff;
+    background:linear-gradient(0deg,rgba(0,0,0,.72),transparent);text-shadow:0 1px 3px rgba(0,0,0,.6)}
+
+  .cardModalWrap{position:fixed;inset:0;background:rgba(5,2,10,.72);backdrop-filter:blur(3px);
+    display:none;align-items:flex-start;justify-content:center;padding:40px 20px;z-index:60;overflow-y:auto}
+  .cardModalWrap.show{display:flex}
+  .cardModal{width:min(560px,100%);position:relative}
+  .cardModalClose{position:absolute;top:-14px;right:-14px;width:34px;height:34px;border-radius:50%;
+    background:var(--bg2);border:1px solid var(--panel-brd);color:var(--ink);font-size:16px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;z-index:2}
+  .cardModalClose:hover{border-color:var(--accent2)}
+
+  /* --- PIN gate: full-screen lock until /api/auth approves --- */
+  .pinGate{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+  .pinGate.hidden{display:none}
+  .pinBox{text-align:center;max-width:340px;width:100%}
+  .pinBox h2{margin:14px 0 4px;font-size:28px}
+  .pinBox p{color:var(--muted);font-size:14px;margin:0 0 18px}
+  .pinBox form{display:flex;gap:10px}
+  .pinBox input{flex:1;padding:12px 14px;border-radius:12px;border:1px solid var(--panel-brd);background:#1a1130;color:var(--ink);
+    font-size:20px;letter-spacing:6px;text-align:center;min-width:0}
+  .pinErr{color:#e07a7a;font-size:13px;margin-top:12px}
+
+  .rerollGroup{margin-bottom:32px}
+  .rerollHead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--panel-brd)}
+  .rerollLabel{font-size:15px;font-weight:700}
+  .rerollDate{font-size:12px;color:var(--muted);flex:1}
+  .rerollGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+
+  .empty{color:var(--muted);text-align:center;padding:50px 20px;font-size:15px;line-height:1.6}
+  .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:linear-gradient(100deg,var(--accent),var(--accent3));color:#fff;font-weight:700;
+    padding:12px 22px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:.25s;z-index:50}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .hidden{display:none}
+  /* --- Local AI pipeline panel --- */
+  .lai{margin-bottom:18px;border:1px solid var(--panel-brd);border-radius:var(--radius);background:var(--panel);overflow:hidden}
+  .lai-head{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;user-select:none}
+  .lai-head h3{margin:0;font-size:14px;font-weight:700;letter-spacing:.3px;color:var(--ink)}
+  .lai-head .caret{margin-left:auto;color:var(--muted);transition:.2s}
+  .lai.open .caret{transform:rotate(180deg)}
+  .dot{width:9px;height:9px;border-radius:50%;background:#6b5b7e;flex:none;box-shadow:0 0 0 0 rgba(0,0,0,0)}
+  .dot.ok{background:var(--accent2);box-shadow:0 0 10px var(--accent2)}
+  .dot.bad{background:var(--accent3)}
+  .stat{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .lai-body{display:none;padding:4px 16px 18px;border-top:1px solid var(--panel-brd)}
+  .lai.open .lai-body{display:block}
+  .lai-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  @media(max-width:620px){.lai-grid{grid-template-columns:1fr}}
+  .fld{display:flex;flex-direction:column;gap:6px}
+  .fld label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+  .fld input[type=number]{padding:9px;border-radius:9px;background:#1a1130;color:var(--ink);border:1px solid var(--panel-brd);font-size:14px}
+  .lai-note{margin-top:14px;font-size:12.5px;line-height:1.55;color:var(--muted)}
+  .lai-warn{margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(255,93,158,.1);border:1px solid rgba(255,93,158,.3);
+    font-size:12.5px;line-height:1.5;color:#ffc4dc}
+  .card .render-wrap{margin-top:12px}
+  .card img.render{max-width:100%;border-radius:10px;border:1px solid var(--panel-brd);display:block}
+  .card .render-status{font-size:12.5px;color:var(--accent2);margin-top:10px}
+  .card .render-status.err{color:var(--accent3)}
+  .tbtn.render{border-color:rgba(57,230,200,.5)}
+  .tbtn.render:disabled{opacity:.5;cursor:default}
+  .edit-box{margin-top:14px;padding:12px;border-radius:12px;border:1px dashed rgba(255,206,84,.35);background:rgba(255,206,84,.05)}
+  .edit-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .edit-row:last-of-type{margin-bottom:0}
+  .edit-instruction{flex:1;padding:9px 11px;border-radius:9px;background:#1a1130;color:var(--ink);border:1px solid var(--panel-brd);font-size:13.5px}
+  .tbtn.edit-apply{border-color:var(--gold);color:#fff;white-space:nowrap;flex:none}
+  .edit-presets{flex-wrap:wrap;gap:6px}
+  .tbtn.edit-preset{font-size:12px;padding:6px 10px}
+  .tbtn.edit-preset.on{border-color:var(--gold);color:#fff;background:rgba(255,206,84,.16)}
+  .edit-strength-label{font-size:12px;color:var(--muted);white-space:nowrap}
+  .edit-strength-val{color:var(--gold);font-weight:700}
+  input.edit-strength{flex:1;accent-color:var(--gold)}
+  .edit-result{margin-top:4px}
+  .edit-result .edit-box{margin-top:10px}
+  footer{margin-top:40px;text-align:center;color:var(--muted);font-size:12px;line-height:1.7}
+  a{color:var(--accent2)}
+  /* --- Pricing tab --- */
+  .pq-layout{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+  @media(max-width:900px){.pq-layout{grid-template-columns:1fr}}
+  .pq-field{margin-bottom:12px}
+  .pq-field label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
+  .pq-field input{width:100%;padding:9px 10px;border-radius:9px;background:#1a1130;color:var(--ink);border:1px solid var(--panel-brd);font-size:14px}
+  .pq-field input:focus{outline:none;border-color:var(--accent2)}
+  .pq-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pq-divider{height:1px;background:var(--panel-brd);margin:16px 0}
+  .pq-price-card{background:linear-gradient(135deg,rgba(192,75,255,.16),rgba(57,230,200,.08));border:1px solid var(--panel-brd);border-radius:var(--radius);padding:20px;margin-bottom:16px;text-align:center}
+  .pq-price-card .big{font-size:40px;font-weight:800;color:var(--accent2)}
+  .pq-price-card .small{color:var(--muted);font-size:13px;margin-top:4px}
+  .pq-breakdown{display:grid;grid-template-columns:1fr auto;row-gap:8px;font-size:14px}
+  .pq-breakdown .label{color:var(--muted)}
+  .pq-breakdown .val{text-align:right;font-variant-numeric:tabular-nums}
+  .pq-breakdown .total-row .label,.pq-breakdown .total-row .val{font-size:20px;font-weight:700;color:var(--accent2)}
+  .pq-breakdown .div-row{grid-column:1/-1;height:1px;background:var(--panel-brd);margin:4px 0}
+  .pq-table{width:100%;border-collapse:collapse;font-size:13.5px}
+  .pq-table th,.pq-table td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--panel-brd)}
+  .pq-table th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  .pq-table td.num,.pq-table th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .pq-job-actions{display:flex;gap:6px;justify-content:flex-end}
+  .pq-job-actions button{padding:4px 8px;font-size:12px}
+  .pq-empty{color:var(--muted);text-align:center;padding:24px;font-size:13.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🌀</div>
+    <div>
+      <h1>Podder</h1>
+    </div>
+  </header>
+  <p class="tag">Far-out, <b>always-3D-printable</b> design generator. Renders trippy sacred-geometry / drippy / swirly styling straight to an image in the cloud — single isolated object, one solid printable form, no fragile parts, clean studio background — ready for image-to-3D and printing.</p>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="gen">✦ Generate</div>
+    <div class="tab" data-tab="fav">★ Favorites <span class="count-badge" id="favCount">0</span></div>
+    <div class="tab" data-tab="hist">↺ History <span class="count-badge" id="histCount">0</span></div>
+    <div class="tab" data-tab="rerolls">🎲 Rerolls <span class="count-badge" id="rerollCount">0</span></div>
+    <div class="tab" data-tab="price">💲 Pricing</div>
+  </div>
+
+  <!-- GENERATE TAB -->
+  <div id="tab-gen">
+    <div class="panel">
+      <div class="row">
+        <div class="label">Object <span class="lock" data-lock="obj" title="Keep this fixed when you regenerate">🔓 lock</span></div>
+        <div class="chips" id="objChips"></div>
+      </div>
+
+      <div class="row">
+        <div class="label">Shape <span style="text-transform:none;letter-spacing:0;color:#6f5f8f">— fine-tune the silhouette</span> <span class="lock" data-lock="shape" title="Keep this shape when you regenerate">🔓 lock</span></div>
+        <div class="chips" id="shapeChips"></div>
+      </div>
+
+      <div class="row">
+        <div class="label">Style DNA <span style="text-transform:none;letter-spacing:0;color:#6f5f8f">— pick any mix, or leave empty for surprise</span> <span class="lock" data-lock="style" title="Keep the same styles when you regenerate">🔓 lock</span></div>
+        <div class="chips" id="styleChips"></div>
+      </div>
+
+      <div class="row" id="styleDetailRow" style="display:none">
+        <div class="label">Style detail <span style="text-transform:none;letter-spacing:0;color:#6f5f8f">— pick exact motifs, or leave all on for variety</span></div>
+        <div id="styleDetail"></div>
+      </div>
+
+      <div class="controls-grid">
+        <div class="row" style="margin-bottom:0">
+          <div class="label">Weirdness <span class="rangeval" id="wildVal">balanced</span></div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="range" id="wild" min="1" max="3" step="1" value="2" style="flex:1" />
+            <button type="button" class="tbtn" id="overdriveBtn" title="Appends &quot;MAKE IT ULTRA WEIRD&quot; to the end of the prompt, on top of whatever wildness is set to">⚡ Overdrive</button>
+          </div>
+        </div>
+        <div class="row" style="margin-bottom:0">
+          <div class="label">Palette <span class="lock" data-lock="pal" title="Keep the same palette when you regenerate">🔓 lock</span></div>
+          <select id="palette">
+            <option value="random">🎲 Random palette</option>
+            <option value="obsidian">Obsidian</option>
+            <option value="terracotta">Terracotta</option>
+            <option value="magenta">Magenta</option>
+            <option value="bone">Bone</option>
+            <option value="jade">Jade</option>
+            <option value="pastel" selected>Pastel</option>
+            <option value="bronze">Bronze</option>
+            <option value="biolum">Biolum</option>
+            <option value="sunset">Sunset</option>
+            <option value="marble">Marble</option>
+          </select>
+        </div>
+        <div class="row" style="margin-bottom:0">
+          <div class="label">How many prompts <span class="rangeval" id="countVal">3</span></div>
+          <input type="range" id="count" min="1" max="6" step="1" value="3" />
+        </div>
+        <div class="row" style="margin-bottom:0">
+          <div class="label">Orientation</div>
+          <select id="view">
+            <option value="three-quarter">Three quarter</option>
+            <option value="front">Front</option>
+            <option value="slightly-above" selected>Slightly above</option>
+            <option value="eye-level">Eye level</option>
+          </select>
+        </div>
+        <div class="row" style="margin-bottom:0">
+          <div class="label">Image shape</div>
+          <select id="aspect">
+            <option value="1:1" selected>Square (1:1)</option>
+            <option value="2:3">Portrait (2:3)</option>
+            <option value="3:2">Landscape (3:2)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="genBtn">✦ Generate</button>
+        <button class="btn ghost" id="surpriseBtn">🎲 Surprise me</button>
+        <button class="btn ghost" id="stopAllBtn" title="Stop every render currently in progress">⏹ Stop all</button>
+      </div>
+    </div>
+
+    <div class="out" id="output"></div>
+  </div>
+
+  <!-- FAVORITES TAB -->
+  <div id="tab-fav" class="hidden">
+    <div class="out" id="favList"></div>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div id="tab-hist" class="hidden">
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
+      <button class="btn ghost" id="clearHist">Clear history</button>
+    </div>
+    <div class="out" id="histList"></div>
+  </div>
+
+  <!-- REROLLS TAB -->
+  <div id="tab-rerolls" class="hidden">
+    <p class="tag">Each set below is 6 random objects rendered in the same style DNA as the favorite you rerolled from. Reroll again for a fresh set of 6 — old sets stay put until you delete them.</p>
+    <div id="rerollsList"></div>
+  </div>
+
+  <!-- PRICING TAB -->
+  <div id="tab-price" class="hidden">
+    <p class="tag">Base what to charge for a print on machine time, material, and margin — same math as the standalone <a href="https://printquote-one.vercel.app" target="_blank" rel="noopener">PrintQuote</a> app, built into Podder.</p>
+    <div class="pq-layout">
+      <div class="panel">
+        <div class="label">Shop Rates</div>
+        <div class="pq-row2">
+          <div class="pq-field"><label>Filament ($/kg)</label><input type="number" id="pq-filamentPrice" step="0.01" min="0"></div>
+          <div class="pq-field"><label>Machine ($/hr)</label><input type="number" id="pq-machineRate" step="0.01" min="0"></div>
+        </div>
+        <div class="pq-row2">
+          <div class="pq-field"><label>Labor ($/hr)</label><input type="number" id="pq-laborRate" step="0.01" min="0"></div>
+          <div class="pq-field"><label>Failure buffer (%)</label><input type="number" id="pq-failureRate" step="1" min="0"></div>
+        </div>
+        <div class="pq-field"><label>Target margin (%)</label><input type="number" id="pq-marginPct" step="1" min="0" max="95"></div>
+
+        <div class="pq-divider"></div>
+        <div class="label">This Print</div>
+        <div class="pq-field"><label>Job name</label><input type="text" id="pq-jobName" placeholder="e.g. Skull planter"></div>
+        <div class="pq-row2">
+          <div class="pq-field"><label>Filament (grams)</label><input type="number" id="pq-grams" step="0.1" min="0"></div>
+          <div class="pq-field"><label>Print time (hours)</label><input type="number" id="pq-hours" step="0.1" min="0"></div>
+        </div>
+        <div class="pq-row2">
+          <div class="pq-field"><label>Post-processing (min)</label><input type="number" id="pq-postMinutes" step="1" min="0"></div>
+          <div class="pq-field"><label>Quantity</label><input type="number" id="pq-quantity" step="1" min="1" value="1"></div>
+        </div>
+        <div class="actions">
+          <button class="btn primary" id="pq-saveJobBtn" style="flex:1">Save Job to List</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="pq-price-card">
+          <div class="big" id="pq-suggestedPrice">$0.00</div>
+          <div class="small">Suggested price per item <span id="pq-perItemNote"></span></div>
+        </div>
+        <div class="panel" style="margin-bottom:20px">
+          <div class="label">Cost Breakdown (per item)</div>
+          <div class="pq-breakdown">
+            <div class="label">Material cost</div><div class="val" id="pq-bdMaterial">$0.00</div>
+            <div class="label">Machine time cost</div><div class="val" id="pq-bdMachine">$0.00</div>
+            <div class="label">Labor / post-processing</div><div class="val" id="pq-bdLabor">$0.00</div>
+            <div class="label">Failure buffer</div><div class="val" id="pq-bdFailure">$0.00</div>
+            <div class="div-row"></div>
+            <div class="label">Break-even cost</div><div class="val" id="pq-bdSubtotal">$0.00</div>
+            <div class="label">Margin added</div><div class="val" id="pq-bdMarginAdd">$0.00</div>
+            <div class="div-row"></div>
+            <div class="label total-row">Price per item</div><div class="val total-row" id="pq-bdTotal">$0.00</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="label">Saved Jobs <span class="count-badge" id="pq-jobCount">0</span></div>
+          <div id="pq-jobsWrap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Images render in the cloud; your favorites &amp; history stay in this browser.<br>
+    Tip: render, use ✎ Edit to touch up a result, then save it and upload to <b>meshy.ai</b> for image-to-3D.
+  </footer>
+</div>
+
+<!-- PIN GATE -->
+<div class="pinGate" id="pinGate">
+  <div class="pinBox">
+    <img src="Podder-192.png" alt="" width="72" height="72" style="border-radius:18px" />
+    <h2>Podder</h2>
+    <p>Enter your access PIN to start creating.</p>
+    <form id="pinForm">
+      <input type="password" id="pinInput" inputmode="numeric" autocomplete="off" placeholder="PIN" />
+      <button class="btn primary" type="submit">Unlock</button>
+    </form>
+    <div class="pinErr hidden" id="pinErr">Wrong PIN — try again.</div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied!</div>
+
+<div class="cardModalWrap" id="cardModalWrap">
+  <div class="cardModal">
+    <button class="cardModalClose" id="cardModalClose" aria-label="Close" title="Close">✕</button>
+    <div id="cardModalBody"></div>
+  </div>
+</div>
+
+<script>
+/* ---------- DATA BANKS ---------- */
+// Each object: fn = function/feature + empty rules (silhouette is handled by shapes).
+// shapes[0] is always the style-driven "Auto". Anti-house protection for birdhouse
+// shapes lives in SD_OBJ.birdhouse.neg (gated by shapeObj.houseLike), not here.
+const OBJECTS = {
+  vase:      {emoji:"🏺", label:"Vase",
+    fn:"The vessel is hollow with a wide open mouth at the top and a solid, stable flat base. The interior is completely bare — nothing inside.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Classic urn",prompt:"a classic urn silhouette with a rounded belly and a flared rim"},
+      {label:"Amphora",prompt:"a tall amphora shape with a narrow neck tapering to the base"},
+      {label:"Bulbous orb",prompt:"a fat, near-spherical bulbous body with a small round mouth"},
+      {label:"Tall column",prompt:"a tall, slender, gently tapering column"},
+      {label:"Twisted",prompt:"a column that corkscrews and twists from base to rim"},
+      {label:"Teardrop",prompt:"a smooth teardrop form, round and wide at the base, tapering upward"},
+      {label:"Faceted gem",prompt:"an angular faceted crystalline body of flat planes"},
+      {label:"Cube",prompt:"a bold rounded-cube block form"},
+      {label:"Fluted",prompt:"a fluted, vertically reeded column form with evenly spaced ridges running top to bottom"},
+      {label:"Torus",prompt:"a donut-shaped torus ring form standing upright with the open mouth set into the top of the ring"}
+    ]},
+  planter:   {emoji:"🪴", label:"Planter",
+    fn:"It has an open cavity at the top with a defined rim, a hollow interior, and a flat stable bottom with a subtle drainage detail. The interior is completely bare — nothing inside.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Rounded pot",prompt:"a rounded, gently tapered plant-pot form"},
+      {label:"Cube",prompt:"a chamfered cube block form"},
+      {label:"Sphere",prompt:"a spherical orb sitting on a small foot"},
+      {label:"Hexagonal",prompt:"a hexagonal-prism form with flat faceted sides"},
+      {label:"Faceted",prompt:"an angular low-poly geometric form"},
+      {label:"Organic pod",prompt:"a soft organic pod-like blob form"},
+      {label:"Face / head",prompt:"a stylized face or head with the opening at the crown"},
+      {label:"Barrel",prompt:"a rounded barrel or keg form with a slightly bulging profile"},
+      {label:"Scalloped",prompt:"a scalloped, petal-edged rim pot form"}
+    ]},
+  birdhouse: {emoji:"🐦", label:"Birdhouse", promptName:"birdhouse",
+    fn:"It works as a nest box: a single clean round entrance hole on the front leads into a hollow nesting chamber inside (shown bare and empty), and there is exactly ONE opening — every other surface, including the entire top, is completely solid and smoothly closed with no other holes, slots, gaps or windows. Directly below that entrance hole, a short, prominently projecting dowel-rod perch — a simple round wooden peg sticking straight out from the front face — is a small but clearly visible physical detail. A single thick, sturdy loop sits at the very top, fully fused and merged into the body as one continuous piece of the same solid material, both ends seamlessly connected with no gap — an integral, load-bearing part of the model, never a separate, detached or floating ring — and the loop is left empty. It stands on a stable flat base.",
+    shapes:[
+      {label:"Auto",prompt:"an abstract sculptural hollow form driven entirely by the chosen style — a wild urn-, gourd-, orb- or pod-like silhouette"},
+      {label:"Gourd",prompt:"a plump rounded gourd or calabash form with a bulbous body and a narrower neck"},
+      {label:"Orb",prompt:"a smooth rounded orb, almost a sphere"},
+      {label:"Teardrop",prompt:"a smooth teardrop form tapering to a point at the top"},
+      {label:"Egg / acorn",prompt:"a smooth egg or acorn form"},
+      {label:"Mushroom",prompt:"a mushroom form with a domed cap over a rounded body"},
+      {label:"Tall silo",prompt:"a tall rounded silo or barrel form with a domed top, read clearly as one continuous hollow body"},
+      {label:"Tall steeple",prompt:"a very tall slim church steeple or needle-spire form, much taller than wide"},
+      {label:"Beehive",prompt:"a rounded beehive-dome form with a gently tapering ringed profile, one continuous hollow body"},
+      {label:"Classic house",prompt:"a classic little birdhouse with four walls and a single peaked pitched roof, tidy and traditional",houseLike:true},
+      {label:"Barrel",prompt:"a tall rounded barrel or keg form with a domed top, read clearly as one continuous hollow body"},
+      {label:"Cocoon",prompt:"a smooth tapered cocoon-like pod form, rounded and fully enclosed but for the one entrance hole"}
+    ]},
+  birdfeeder:{emoji:"🌰", label:"Bird feeder",
+    fn:"It includes an open feeding tray, and several short perch rods prominently project outward around the tray's rim — small but clearly visible physical details, not just a plain flat edge. Dispensing ports are set into the body; the tray is completely bare. A single thick, sturdy loop sits at the very top, fully fused and merged into the body as one continuous piece of the same solid material, with both ends seamlessly connected to the form and no gap — it is an integral, load-bearing part of the model, absolutely NOT a separate, detached or floating ring — and the loop is left empty, with nothing threaded through or hanging from it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Hanging orb",prompt:"a rounded hanging orb form"},
+      {label:"Lantern",prompt:"a lantern-like tiered form"},
+      {label:"Flying saucer",prompt:"a compact dome body with a wide flat overhanging brim flaring out from the equator like a flying-saucer rim — the dome sits above the brim, the open tray and perch rods sit below it"},
+      {label:"Tube",prompt:"a tall vertical tube-column form"},
+      {label:"Blossom",prompt:"an open flower or blossom form"},
+      {label:"Mushroom",prompt:"a mushroom form with a broad cap"},
+      {label:"Teardrop",prompt:"a hanging teardrop form"},
+      {label:"Pagoda",prompt:"a tiered pagoda form with stacked overhanging roof-like layers"},
+      {label:"Basket",prompt:"a woven-basket-like hanging form"}
+    ]},
+  votive:    {emoji:"🕯️", label:"Votive holder", promptName:"small decorative cup",
+    fn:"It is a small decorative cup — just the bare printable object on its own. It has a small round recessed cavity in the top, clearly hollow but bare, and a stable flat base. The interior is completely bare — nothing inside.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Cup",prompt:"a simple cup or tumbler form"},
+      {label:"Sphere",prompt:"a rounded sphere pierced with cut-outs"},
+      {label:"Polyhedron",prompt:"a faceted geometric polyhedron"},
+      {label:"Lantern",prompt:"a lantern form"},
+      {label:"Lotus",prompt:"an open lotus-flower form"},
+      {label:"Skull",prompt:"a stylized skull form"},
+      {label:"Organic pod",prompt:"a soft organic pod form"},
+      {label:"Honeycomb",prompt:"a hexagonal honeycomb-cell cluster form"},
+      {label:"Fluted",prompt:"a fluted, vertically reeded cup form"}
+    ]},
+  incense:   {emoji:"🪔", label:"Incense holder", promptName:"compact sculptural dish",
+    fn:"It is a small decorative dish — just the bare printable object on its own. It has a single small narrow vertical hole in the top, set within a shallow concave catch basin. Apart from that one hole it is fully closed and solid, with a hollow interior and a stable flat base.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Dish",prompt:"a shallow round dish form"},
+      {label:"Boat",prompt:"a long boat or canoe tray form"},
+      {label:"Mountain",prompt:"a rugged mountain or ridge form with the hole at a peak"},
+      {label:"Lotus",prompt:"an open lotus-flower form"},
+      {label:"Slab",prompt:"a flat geometric slab or plinth"},
+      {label:"Tower",prompt:"a slender vertical tower form"},
+      {label:"Crescent",prompt:"a curved crescent-moon tray form"},
+      {label:"Geometric",prompt:"a faceted low-poly geometric block with the hole at the peak"}
+    ]},
+  bowl:      {emoji:"🥣", label:"Catch-all bowl",
+    fn:"It is an open decorative catch-all bowl with a wide hollow interior, a defined rim, and good depth, resting on a stable flat base. The interior is completely bare — nothing inside. The wild surface treatment wraps the outer walls while the inside stays smooth and clearly hollow with visible depth.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Round bowl",prompt:"a classic round bowl form"},
+      {label:"Leaf",prompt:"a curved leaf-shaped dish"},
+      {label:"Shell",prompt:"a scalloped seashell form"},
+      {label:"Faceted",prompt:"a low-poly faceted bowl"},
+      {label:"Hexagon",prompt:"a hexagonal bowl"},
+      {label:"Freeform",prompt:"a freeform organic blob bowl"},
+      {label:"Scalloped",prompt:"a scalloped, petal-edged rim bowl"},
+      {label:"Fluted",prompt:"a fluted, vertically reeded bowl form"}
+    ]},
+  wallplanter:{emoji:"🌿", label:"Hanging planter", promptName:"round planter pot",
+    fn:"It is a round pot with an open cavity at the top, a defined rim, a hollow interior and a small drainage detail at the bottom; the interior is completely bare. A single thick, sturdy loop is built into the very top, fully fused and merged into the body as one continuous piece of the same solid material, both ends seamlessly connected with no gap — an integral, load-bearing part of the model, never a separate, detached or floating ring. The loop is completely empty — just the bare solid pot and its empty loop, sitting upright, nothing threaded through the loop or hanging from it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Orb",prompt:"a rounded hanging orb"},
+      {label:"Teardrop",prompt:"a hanging teardrop"},
+      {label:"Cone",prompt:"an inverted cone form"},
+      {label:"Basket",prompt:"a woven-basket-like form"},
+      {label:"Geometric",prompt:"a faceted geometric form"},
+      {label:"Cocoon",prompt:"a smooth tapered cocoon-like hanging pod form"},
+      {label:"Face / head",prompt:"a stylized face or head with the opening at the crown, hanging upright by its loop"}
+    ]},
+  lantern:   {emoji:"🏮", label:"Lantern", promptName:"ornamental hollow vessel",
+    fn:"It is an ornamental hollow vessel — a patterned outer wall, a vented or open top and a stable flat base. Every wall stays solid, connected and reasonably thick — no paper-thin sections or loose fragments. The interior is completely bare — nothing inside.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Cylinder",prompt:"a cylindrical form"},
+      {label:"Sphere",prompt:"a spherical form"},
+      {label:"Polyhedron",prompt:"a faceted polyhedron"},
+      {label:"Pagoda",prompt:"a tiered pagoda form"},
+      {label:"Dome",prompt:"a domed form"},
+      {label:"Tower",prompt:"a tall geometric tower"},
+      {label:"Beehive",prompt:"a rounded beehive-dome form with a gently tapering ringed profile"},
+      {label:"Lotus",prompt:"an open lotus-flower form with pierced petal cut-outs"}
+    ]},
+  pencup:    {emoji:"✏️", label:"Pen cup", promptName:"pencil holder cup",
+    fn:"It is a small cylindrical desk tidy cup, open at the top with a hollow interior, on a solid flat base. The interior is completely bare — nothing inside. It is a small handheld-sized cup, NOT a desk or any furniture. The wild treatment wraps the outer wall.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Cylinder",prompt:"a straight cylinder"},
+      {label:"Faceted",prompt:"a faceted prism"},
+      {label:"Hexagon",prompt:"a hexagonal column"},
+      {label:"Organic pod",prompt:"an organic pod form"},
+      {label:"Cube",prompt:"a chamfered cube"},
+      {label:"Barrel",prompt:"a rounded barrel form"},
+      {label:"Fluted",prompt:"a fluted, vertically reeded cylinder"}
+    ]},
+  jewelry:   {emoji:"💍", label:"Ring holder",
+    fn:"It is a small sculptural display stand with slim upright prongs or a central spire, plus a shallow catch dish at the base, on a stable flat bottom. It is shown completely bare — nothing on or in it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette, but still built from a few separate open prongs with clear empty space between them, never a solid fused mass or connected web"},
+      {label:"Hand",prompt:"an open upright hand with slim separate fingers — each finger a distinct bare open prong with clear empty space between it and its neighbors, never webbed, fused, or joined together"},
+      {label:"Tree",prompt:"a central upright stem branching into only 4 to 6 short, thick pegs that jut outward from the stem one at a time at staggered heights and angles — exactly like the separate peg arms of a wooden coat rack or hat stand, NOT converging into a canopy or cluster at the top. Each peg is a simple straight or gently curving rod ending in a plain rounded bare tip — never a cup, socket, flower, candle-holder, leaf, or any other terminal shape. The pegs are clearly separate from one another with open air on all sides, staggered at different heights up the stem rather than radiating from one point, and the plain background must be clearly visible through the wide gaps between them. This is explicitly NOT a tree with a leafy canopy, NOT a candelabra or menorah with candle cups, and NOT a round or fan-shaped silhouette or coral-like cluster"},
+      {label:"Cone",prompt:"a central tapering cone spire"},
+      {label:"Spiral",prompt:"a spiraling tower spire"},
+      {label:"Cactus",prompt:"a cactus form with a few separate upright arms — each arm a distinct bare open prong with clear empty space between it and its neighbors, never fused into a solid mass"},
+      {label:"Branch",prompt:"a branching twig-like form with a few separate slim arms — each arm a distinct bare open prong with clear empty space between it and its neighbors, never fused or webbed together"},
+      {label:"Antler",prompt:"an antler-like form with a few separate branching tines — each tine a distinct bare open prong with clear empty space between it and its neighbors, never fused into a solid mass"}
+    ]},
+  ornament:  {emoji:"🔮", label:"Hanging ornament",
+    fn:"It is a decorative hanging ornament — a single solid sculptural bauble sitting on a plain studio surface, nothing beside it. This is a home-decor ornament, explicitly NOT a piece of jewelry — no necklace chain, no pendant bail, no gemstone setting, and it is never shown worn, held, or displayed like jewelry. A single thick, sturdy loop sits at the very top, fully fused and merged into the body as one continuous piece of the same solid material with no gap — an integral, load-bearing part of the model, never a separate, detached or floating ring — and the loop is left completely empty and bare, with absolutely no string, cord, ribbon or chain threaded through it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Teardrop",prompt:"a hanging teardrop bauble"},
+      {label:"Sphere",prompt:"a round bauble sphere"},
+      {label:"Spiral",prompt:"a coiled spiral form"},
+      {label:"Star",prompt:"a geometric multi-point star"},
+      {label:"Snowflake",prompt:"a flat snowflake medallion"},
+      {label:"Gem",prompt:"a faceted gemstone form"},
+      {label:"Torus",prompt:"a donut-shaped torus ring bauble"},
+      {label:"Geode",prompt:"a faceted geode-like crystal cluster bauble with jagged crystalline points"}
+    ]},
+  mushroomdeco:{emoji:"🍄", label:"Garden mushroom", promptName:"decorative mushroom ornament",
+    fn:"It is a single decorative mushroom ornament — one solid sculptural mushroom with a domed cap over a stem, on a stable flat base. Just the one mushroom object alone, nothing beside it, and no garden, grass, soil or scenery around it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Toadstool",prompt:"a classic toadstool with a domed cap and stout stem"},
+      {label:"Cluster",prompt:"a cluster of several mushroom caps of varying heights fused together"},
+      {label:"Alien fungus",prompt:"a bizarre alien fungus form"},
+      {label:"Tall",prompt:"a tall, slender mushroom"},
+      {label:"Geometric",prompt:"a faceted geometric mushroom"},
+      {label:"Bulbous",prompt:"a fat, bulbous rounded mushroom with an oversized cap"},
+      {label:"Fluted cap",prompt:"a mushroom with a deeply fluted, ribbed underside to the cap"}
+    ]},
+  trinketdish:{emoji:"🍥", label:"Trinket dish",
+    fn:"It is a small flat decorative trinket dish — a shallow open catch-all tray with a wide flat interior and a low rim, resting on a stable flat base. The interior is completely bare — nothing inside.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Dish",prompt:"a simple shallow round dish form"},
+      {label:"Shell",prompt:"a scalloped seashell dish form"},
+      {label:"Leaf",prompt:"a curved single-leaf dish form"},
+      {label:"Freeform",prompt:"a freeform organic blob dish"},
+      {label:"Geometric",prompt:"a faceted low-poly geometric dish"},
+      {label:"Hexagon",prompt:"a hexagonal faceted dish form"},
+      {label:"Petal",prompt:"a flower-petal shaped shallow dish"},
+      {label:"Scalloped",prompt:"a scalloped, wavy-edged shallow dish form"},
+      {label:"Fan",prompt:"a fan-shaped shallow dish form"}
+    ]},
+  coindish:{emoji:"🪙", label:"Coin dish",
+    fn:"It is a small shallow dish — a compact catch-all tray with a wide flat interior and a low rim, resting on a stable flat base. The interior is completely bare — nothing inside.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Round bowl",prompt:"a simple round shallow bowl form"},
+      {label:"Hexagon",prompt:"a hexagonal faceted dish form"},
+      {label:"Freeform",prompt:"a freeform organic blob dish"},
+      {label:"Faceted gem",prompt:"an angular faceted gem-cut dish form"},
+      {label:"Leaf",prompt:"a curved single-leaf dish form"},
+      {label:"Shell",prompt:"a scalloped seashell dish form"},
+      {label:"Petal",prompt:"a flower-petal shaped shallow dish"},
+      {label:"Scalloped",prompt:"a scalloped, wavy-edged shallow dish form"}
+    ]},
+  coaster:{emoji:"🟤", label:"Coaster",
+    fn:"It is a single flat decorative drink coaster — a thin, flat, round or geometric disc sized to sit under a cup or glass, with a smooth flat top and a stable flat base. It is a single flat piece, NOT a stacked set, NOT a holder or caddy — just the one coaster, shown alone with nothing on top of it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Round disc",prompt:"a simple flat round disc form"},
+      {label:"Hexagon",prompt:"a flat hexagonal disc form"},
+      {label:"Faceted gem",prompt:"a flat faceted gem-cut disc form"},
+      {label:"Geometric",prompt:"a flat faceted low-poly geometric disc"},
+      {label:"Freeform",prompt:"a flat freeform organic blob disc"},
+      {label:"Square",prompt:"a flat chamfered square disc form"},
+      {label:"Scalloped",prompt:"a flat scalloped-edge disc form"},
+      {label:"Petal",prompt:"a flat flower-petal shaped disc"},
+      {label:"Fan",prompt:"a flat fan-shaped disc"}
+    ]},
+  pictureframe:{emoji:"🖼️", label:"Picture frame",
+    fn:"It is a single decorative picture frame — a flat frame with an open rectangular or shaped window in the center, standing upright on a small integrated flat foot or easel-back on the reverse, or designed to hang flat against a wall. The window is completely open and bare — nothing inside it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Slab",prompt:"a flat rectangular slab frame"},
+      {label:"Faceted gem",prompt:"an angular faceted gem-cut frame border"},
+      {label:"Geometric",prompt:"a faceted low-poly geometric frame border"},
+      {label:"Round disc",prompt:"a circular frame with a round window"},
+      {label:"Hexagon",prompt:"a hexagonal frame with a hexagonal window"},
+      {label:"Arched",prompt:"an arched frame with a rounded-top window"},
+      {label:"Oval",prompt:"an oval frame with an oval window"},
+      {label:"Scalloped",prompt:"a scalloped, wavy-edged frame border"},
+      {label:"Diamond",prompt:"a diamond-oriented square frame with a diamond window"}
+    ]},
+  cactusplanter:{emoji:"🌵", label:"Cactus planter", promptName:"small decorative pot",
+    fn:"It is a small compact pot with an open cavity at the top, a defined rim, a hollow interior and a small drainage detail at the base. The interior is completely bare — nothing inside.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Rounded pot",prompt:"a rounded, gently tapered small pot form"},
+      {label:"Hexagon",prompt:"a hexagonal-prism small pot form"},
+      {label:"Faceted gem",prompt:"an angular faceted gem-cut pot form"},
+      {label:"Cube",prompt:"a chamfered cube block pot form"},
+      {label:"Faceted",prompt:"an angular low-poly geometric pot form"},
+      {label:"Organic pod",prompt:"a soft organic pod-like pot form"},
+      {label:"Barrel",prompt:"a rounded barrel or keg form"},
+      {label:"Scalloped",prompt:"a scalloped, petal-edged rim pot form"}
+    ]},
+  herbpot:{emoji:"🌿", label:"Herb pot",
+    fn:"It is a small pot with an open cavity at the top, a defined rim, a hollow interior and a small drainage detail at the base. The interior is completely bare — nothing inside.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Rounded pot",prompt:"a rounded, gently tapered small pot form"},
+      {label:"Cube",prompt:"a chamfered cube block pot form"},
+      {label:"Hexagon",prompt:"a hexagonal-prism small pot form"},
+      {label:"Faceted gem",prompt:"an angular faceted gem-cut pot form"},
+      {label:"Faceted",prompt:"an angular low-poly geometric pot form"},
+      {label:"Organic pod",prompt:"a soft organic pod-like pot form"},
+      {label:"Barrel",prompt:"a rounded barrel or keg form"},
+      {label:"Fluted",prompt:"a fluted, vertically reeded small pot form"}
+    ]},
+  necklacestand:{emoji:"📿", label:"Necklace stand", promptName:"slender sculptural post",
+    fn:"It is a small sculptural upright post or hook form for draping over, plus a shallow catch dish at the base, on a stable flat bottom. It is shown completely bare — nothing on or hanging from it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Tall column",prompt:"a tall, slender, gently tapering upright column"},
+      {label:"Cone",prompt:"a central tapering cone spire"},
+      {label:"Faceted gem",prompt:"an angular faceted gem-cut spire"},
+      {label:"Hand",prompt:"an open upright hand form to drape necklaces over"},
+      {label:"Branch",prompt:"a branching twig-like form with slim arms to drape necklaces over"},
+      {label:"Hook",prompt:"a curved hook-like upright form to drape necklaces over"},
+      {label:"Wave",prompt:"a smooth curved wave-like upright form to drape necklaces over"}
+    ]},
+  earringstand:{emoji:"👂", label:"Earring stand", promptName:"small display panel",
+    fn:"It is a small flat or upright display piece studded with slim pegs or small punched holes, plus a shallow catch dish at the base, on a stable flat bottom. It is shown completely bare — nothing on it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette, but still built from a few separate open prongs with clear empty space between them, never a solid fused mass or connected web"},
+      {label:"Hand",prompt:"an open upright hand with slim separate fingers — each finger a distinct bare open prong with clear empty space between it and its neighbors, never webbed, fused, or joined together"},
+      {label:"Tall column",prompt:"a tall, slender upright column"},
+      {label:"Faceted gem",prompt:"an angular faceted gem-cut display panel"},
+      {label:"Geometric",prompt:"a faceted low-poly geometric display panel"},
+      {label:"Slab",prompt:"a flat rectangular display slab with peg holes"},
+      {label:"Tree",prompt:"a small branching twig tree with slim peg-like arms"},
+      {label:"Wave",prompt:"a smooth curved wave-like display panel studded with peg holes"},
+      {label:"Cloud",prompt:"a flat cloud-shaped display panel studded with peg holes"}
+    ]},
+  watchstand:{emoji:"⌚", label:"Watch stand", promptName:"sculptural wrist cradle",
+    fn:"It is a wristwatch stand. Rising from a stable flat base, it terminates at the top in a distinct, clearly visible curved arm or finger that projects outward and curves — like a curved horn or a bent finger. This curved cradle arm is a small but unmistakable physical feature that must always be visible at the top; the piece is never just a straight, featureless post or pillar with no arm. It is shown completely bare — nothing resting on it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette, but always topped with a distinct curved cradle arm to drape a watch over, never just a plain straight post"},
+      {label:"Tall column",prompt:"a tall, slender, gently tapering upright column, its top curving outward into a distinct cradle arm to drape a watch over"},
+      {label:"Cone",prompt:"a central tapering cone spire, its top curving outward into a distinct cradle arm to drape a watch over"},
+      {label:"Faceted gem",prompt:"an angular faceted gem-cut post, its top curving outward into a distinct cradle arm to drape a watch over"},
+      {label:"Organic pod",prompt:"a soft organic pod-like cradle form"},
+      {label:"Cuff",prompt:"a curved open C-shaped cuff cradle"},
+      {label:"Wave",prompt:"a smooth curved wave-like cradle form"},
+      {label:"Hook",prompt:"a curved hook-like post, its top curving outward into a distinct cradle arm to drape a watch over"},
+      {label:"Branch",prompt:"a branching twig-like post, its top curving outward into a distinct cradle arm to drape a watch over"}
+    ]},
+  budvase:{emoji:"🌱", label:"Bud vase",
+    fn:"It is a small single-stem bud vase — a slender miniature vessel with a narrow open mouth, a hollow interior and a solid stable flat base. The interior is completely bare — nothing inside.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Tall column",prompt:"a tall, slender, gently tapering miniature column"},
+      {label:"Twisted",prompt:"a miniature column that corkscrews and twists from base to rim"},
+      {label:"Teardrop",prompt:"a small smooth teardrop form tapering to a narrow neck"},
+      {label:"Bulbous orb",prompt:"a small fat, near-spherical bulbous body with a narrow mouth"},
+      {label:"Faceted gem",prompt:"a small angular faceted crystalline body"},
+      {label:"Fluted",prompt:"a small fluted, vertically reeded miniature column"},
+      {label:"Bulbous",prompt:"a small fat bulbous body tapering to a narrow neck"}
+    ]},
+  chalice:{emoji:"🍷", label:"Chalice / goblet",
+    fn:"It is a decorative chalice or goblet — a stemmed vessel with a wide open cup at the top on a slender stem and a stable flared foot base. The cup is completely bare — nothing inside.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Classic urn",prompt:"a classic goblet silhouette with a rounded cup and a flared stem"},
+      {label:"Faceted gem",prompt:"an angular faceted crystalline cup and stem"},
+      {label:"Tall column",prompt:"a tall, slender stem with a shallow cup"},
+      {label:"Twisted",prompt:"a stem that corkscrews and twists from foot to cup"},
+      {label:"Fluted",prompt:"a fluted, reeded stem and cup"},
+      {label:"Hexagon",prompt:"a hexagonal faceted cup and stem"},
+      {label:"Scalloped",prompt:"a scalloped, petal-edged cup on a slender stem"},
+      {label:"Bulbous",prompt:"a fat bulbous rounded cup on a short stem"}
+    ]},
+  wallpocket:{emoji:"🪴", label:"Wall pocket planter",
+    fn:"It is a wall-pocket vessel — a flat-backed half-open form with an open cavity at the top, a defined rim, a hollow interior and a flat mounting back designed to sit flush against a wall. The interior is completely bare — nothing inside, mounted against a plain wall.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Teardrop",prompt:"a flat-backed teardrop form"},
+      {label:"Shell",prompt:"a flat-backed scalloped seashell form"},
+      {label:"Faceted gem",prompt:"a flat-backed angular faceted crystalline form"},
+      {label:"Organic pod",prompt:"a flat-backed soft organic pod form"},
+      {label:"Cone",prompt:"a flat-backed inverted cone form"},
+      {label:"Fan",prompt:"a flat-backed fan-shaped form"},
+      {label:"Cocoon",prompt:"a flat-backed smooth tapered cocoon-like pod form"},
+      {label:"Scalloped",prompt:"a flat-backed scalloped, petal-edged form"}
+    ]},
+  phonestand:{emoji:"📱", label:"Phone stand", promptName:"compact angled cradle",
+    fn:"It is a small sculptural stand — a compact cradle or angled slot, on a stable flat base. It is shown completely bare — nothing propped in it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Slab",prompt:"a flat angled slab with a phone slot"},
+      {label:"Cube",prompt:"a chamfered cube block with a phone slot"},
+      {label:"Faceted gem",prompt:"an angular faceted gem-cut cradle"},
+      {label:"Organic pod",prompt:"a soft organic pod-like cradle form"},
+      {label:"Wedge",prompt:"shaped exactly like a doorstop or cheese-wedge: a sharp triangular profile when viewed from the side, thick and tall at the back, tapering along a diagonal sloped TOP SURFACE down to a thin sharp edge at the front — the top is a ramp, not flat, and the front-to-back profile is a triangle, not a rectangle. Explicitly NOT a cube, NOT a rectangular block, NOT a box with a flat top"},
+      {label:"Easel",prompt:"an easel-back cradle form"},
+      {label:"Arch",prompt:"an arched cradle form with a curved slot for the phone"},
+      {label:"Bar",prompt:"a simple horizontal bar cradle on an angled base"}
+    ]},
+  tabletstand:{emoji:"💻", label:"Tablet stand", promptName:"compact angled easel",
+    fn:"It is a small sculptural stand — a compact angled cradle or slotted easel, on a stable flat base. It is shown completely bare — nothing propped in it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Slab",prompt:"a flat angled slab with a tablet slot"},
+      {label:"Cube",prompt:"a chamfered cube block with a tablet slot"},
+      {label:"Faceted gem",prompt:"an angular faceted gem-cut cradle"},
+      {label:"Geometric",prompt:"a faceted low-poly geometric cradle"},
+      {label:"Wedge",prompt:"shaped exactly like a doorstop or cheese-wedge: a sharp triangular profile when viewed from the side, thick and tall at the back, tapering along a diagonal sloped TOP SURFACE down to a thin sharp edge at the front — the top is a ramp, not flat, and the front-to-back profile is a triangle, not a rectangle. Explicitly NOT a cube, NOT a rectangular block, NOT a box with a flat top"},
+      {label:"Easel",prompt:"an easel-back cradle form"},
+      {label:"Arch",prompt:"an arched cradle form with a curved slot for the tablet"},
+      {label:"Bar",prompt:"a simple horizontal bar cradle on an angled base"}
+    ]},
+  headphonestand:{emoji:"🎧", label:"Headphone stand", promptName:"sculptural mushroom post",
+    fn:"It is a small tabletop stand, no bigger than a coffee mug — explicitly NOT furniture, NOT a table, NOT an architectural column or pedestal, and photographed alone with no other furniture in frame. It is shaped like a small mushroom: a narrow post rises from a stable flat base and ends abruptly at the top in a wide rounded cap that clearly overhangs the post on both sides. The wide mushroom-cap top is a mandatory, unmistakable feature in every single render regardless of style, but the whole object stays small, simple and desk-sized. It is explicitly NOT a plain cylinder, tube, pillar, or column of uniform width with no distinct wider top — a render with no cap at the top is wrong. It is shown completely bare — nothing on it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette, but always shaped like a small mushroom: a narrow post ending in a wide overhanging rounded cap at the top, never a plain uniform-width column"},
+      {label:"Tall column",prompt:"a tall, slender, uniform-width column for the lower post ONLY, which then ends abruptly at the top in a wide rounded mushroom-cap head that clearly overhangs the column on both sides — not a plain cylinder"},
+      {label:"Faceted gem",prompt:"an angular faceted gem-cut post and cradle"},
+      {label:"Organic pod",prompt:"a soft organic pod-like cradle form"},
+      {label:"Arch",prompt:"an arched cradle form"},
+      {label:"Hook",prompt:"a curved hook-like cradle form"},
+      {label:"Wave",prompt:"a smooth curved wave-like post ending abruptly at the top in a wide overhanging rounded cap, never a plain uniform-width column"},
+      {label:"Faceted cap",prompt:"an angular faceted post ending abruptly at the top in a wide overhanging faceted cap, never a plain uniform-width column"}
+    ]},
+  sunglassesstand:{emoji:"🕶️", label:"Sunglasses stand", promptName:"slender display post",
+    fn:"It is a small sculptural upright post or narrow bar, on a stable flat base. It is shown completely bare — nothing resting on it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Tall column",prompt:"a tall, slender, gently tapering upright column"},
+      {label:"Cube",prompt:"a chamfered cube block post form"},
+      {label:"Faceted gem",prompt:"an angular faceted gem-cut post"},
+      {label:"Organic pod",prompt:"a soft organic pod-like cradle form"},
+      {label:"Branch",prompt:"a branching twig-like post form"},
+      {label:"Bar",prompt:"a simple horizontal bar form on an upright post"},
+      {label:"Hook",prompt:"a curved hook-like upright post to rest folded sunglasses over"},
+      {label:"Cuff",prompt:"a curved open C-shaped cuff form to rest folded sunglasses over"}
+    ]},
+  bookend:{emoji:"📚", label:"Bookend", promptName:"solid decorative block",
+    fn:"It is a single decorative bookend — one solid sculptural block with a flat vertical face on one side and a flat stable base. It is shown completely alone — nothing leaning against it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Slab",prompt:"a flat rectangular slab block form"},
+      {label:"Cube",prompt:"a chamfered cube block form"},
+      {label:"Geometric",prompt:"a faceted low-poly geometric block"},
+      {label:"Organic pod",prompt:"a soft organic pod-like block form"},
+      {label:"Wedge",prompt:"shaped exactly like a doorstop or cheese-wedge: a sharp triangular profile when viewed from the side, thick and tall at the back, tapering along a diagonal sloped TOP SURFACE down to a thin sharp edge at the front — the top is a ramp, not flat, and the front-to-back profile is a triangle, not a rectangle. Explicitly NOT a cube, NOT a rectangular block, NOT a box with a flat top"},
+      {label:"Faceted gem",prompt:"an angular faceted gem-cut block form"},
+      {label:"Wave",prompt:"a smooth curved wave-shaped block form, flat on the book-facing side"},
+      {label:"Stacked",prompt:"a stacked-tier block form of graduated layers, flat on the book-facing side"}
+    ]},
+  winebottleholder:{emoji:"🍾", label:"Wine bottle holder", promptName:"sculptural cradle stand",
+    fn:"It is a sculptural cradle stand — a form designed so a cylindrical object can rest balanced within it at an angle or upright, with a stable flat base of its own. It is shown completely bare — nothing resting in it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Spiral",prompt:"a spiraling tower spire cradle"},
+      {label:"Twisted",prompt:"a column that corkscrews and twists from base to top"},
+      {label:"Cube",prompt:"a chamfered cube block cradle form"},
+      {label:"Faceted gem",prompt:"an angular faceted crystalline cradle form"},
+      {label:"Tall column",prompt:"a tall, slender tapering column cradle"},
+      {label:"Cradle",prompt:"a curved boat-like cradle form"},
+      {label:"Basket",prompt:"a woven-basket-like cradle form"},
+      {label:"Wave",prompt:"a smooth curved wave-like cradle form"},
+      {label:"Arch",prompt:"an arched cradle form"}
+    ]},
+  coinbank:{emoji:"🐷", label:"Coin bank", promptName:"sealed hollow vessel",
+    fn:"It is a decorative bank — a hollow sculptural body with a single narrow slot cut into the top, and a stable flat base. Apart from the one slot it is fully closed and solid, hollow inside. It is shown completely bare — nothing visible inside or around it, and with no removable plug, stopper or access panel.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Bulbous orb",prompt:"a fat, near-spherical bulbous body"},
+
+      {label:"Cube",prompt:"a chamfered rounded-cube block form"},
+      {label:"Faceted gem",prompt:"an angular faceted crystalline body"},
+      {label:"Tin canister",prompt:"a sealed cylindrical tin canister form"},
+      {label:"Dome",prompt:"a domed rounded form"},
+      {label:"Beehive",prompt:"a rounded beehive-dome form with a gently tapering ringed profile"},
+      {label:"Fluted",prompt:"a fluted, vertically reeded rounded form"}
+    ]},
+  cardholder:{emoji:"📇", label:"Business card holder", promptName:"small slotted stand",
+    fn:"It is a small compact display stand with a narrow slot or shallow angled ledge, on a stable flat base. It is shown completely bare — nothing in it.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Slab",prompt:"a flat angled slab with a card slot"},
+      {label:"Cube",prompt:"a chamfered cube block with a card slot"},
+      {label:"Faceted gem",prompt:"an angular faceted gem-cut stand"},
+      {label:"Geometric",prompt:"a faceted low-poly geometric stand"},
+      {label:"Wedge",prompt:"shaped exactly like a doorstop or cheese-wedge: a sharp triangular profile when viewed from the side, thick and tall at the back, tapering along a diagonal sloped TOP SURFACE down to a thin sharp edge at the front — the top is a ramp, not flat, and the front-to-back profile is a triangle, not a rectangle. Explicitly NOT a cube, NOT a rectangular block, NOT a box with a flat top"},
+      {label:"Fan",prompt:"a fan-shaped display stand"},
+      {label:"Arch",prompt:"an arched display stand with a card slot"},
+      {label:"Curved",prompt:"a smooth curved wave-like display stand with a card slot"}
+    ]},
+  makeupbrush:{emoji:"💄", label:"Makeup brush holder", promptName:"small cylindrical cup",
+    fn:"It is a small cylindrical cup, open at the top with a hollow interior, on a solid flat base. The interior is completely bare — nothing inside. It is a small handheld-sized cup, NOT a desk or any furniture.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Cup",prompt:"a simple cup or tumbler form"},
+      {label:"Cylinder",prompt:"a straight cylinder"},
+      {label:"Hexagon",prompt:"a hexagonal column"},
+      {label:"Organic pod",prompt:"an organic pod form"},
+      {label:"Faceted",prompt:"a faceted prism cup form"},
+      {label:"Teardrop",prompt:"a bulbous teardrop cup form"},
+      {label:"Barrel",prompt:"a rounded barrel form cup"},
+      {label:"Fluted",prompt:"a fluted, vertically reeded cup form"}
+    ]},
+  toothbrush:{emoji:"🪥", label:"Toothbrush holder", promptName:"small open cup",
+    fn:"It is a small cup or stand with one or more narrow upright slots or an open hollow interior, on a solid flat base. The interior is completely bare — nothing inside. It is a small handheld-sized item, NOT a bathroom vanity or any furniture.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
+      {label:"Cup",prompt:"a simple cup or tumbler form"},
+      {label:"Cylinder",prompt:"a straight cylinder"},
+      {label:"Hexagon",prompt:"a hexagonal column"},
+      {label:"Faceted gem",prompt:"an angular faceted crystalline body"},
+      {label:"Organic pod",prompt:"an organic pod-shaped cup form"},
+      {label:"Lattice cup",prompt:"a straight cylindrical cup with geometric square lattice cutout holes through the cup walls"},
+      {label:"Barrel",prompt:"a rounded barrel form cup or stand"},
+      {label:"Fluted",prompt:"a fluted, vertically reeded cup or stand form"}
+    ]}
+};
+
+const STYLES = {
+  sacred:  {emoji:"🔯", label:"Sacred", variants:[
+    {label:"Flower of Life",clause:"its surface tessellated with interlocking Flower-of-Life sacred geometry carved in crisp relief"},
+    {label:"Metatron's Cube",clause:"wrapped in precise Metatron's-cube lattices and crisp Platonic-solid facets raised from the surface"},
+    {label:"Sri Yantra",clause:"etched with a three-dimensional Sri Yantra of nested triangles radiating from its core"},
+    {label:"Golden Spiral",clause:"proportioned along the golden ratio with a Fibonacci spiral coiling up its body in relief"},
+    {label:"Mandala",clause:"built from a mandala unfolded and extruded into a symmetrical three-dimensional form"},
+    {label:"Geometric bands",clause:"ringed with hexagonal and dodecahedral geometric bands stacked with perfect symmetry"}
+  ]},
+  drippy:  {emoji:"💧", label:"Drippy", variants:[
+    {label:"Molten wax",clause:"melting and dripping with molten, wax-like tendrils that ooze slowly down its sides"},
+    {label:"Lava drips",clause:"covered in thick viscous lava-drips frozen mid-fall"},
+    {label:"Stalactites",clause:"sprouting long stalactite drips that stretch and taper toward the base"},
+    {label:"Heat-sagged",clause:"sagging and warping as if softened by heat, edges pooling like candle wax"},
+    {label:"Resin pour",clause:"flooded with swirling colorful resin-pour art that pools and flows across the form"}
+  ]},
+  swirly:  {emoji:"🌀", label:"Swirly", variants:[
+    {label:"Helical ridges",clause:"twisted into raised helical ridges that spiral up the body like a frozen vortex, carved deep into the form itself"},
+    {label:"Fluid vortex",clause:"sculpted into a turbulent fluid swirl in bold three-dimensional relief, as if solidified liquid was caught mid-rotation"},
+    {label:"Coiled ridges",clause:"wound with thick sweeping swirled ridges that physically coil in and out around its whole form, deeply grooved between them"},
+    {label:"Wave ridges",clause:"rippling with undulating wave-ridges raised in real relief that flow and roll across the surface"},
+    {label:"Corkscrew",clause:"twisted into a smooth spiraling column whose whole silhouette physically corkscrews from base to rim"}
+  ]},
+  trippy:  {emoji:"👁️", label:"Trippy", variants:[
+    {label:"Impossible geometry",clause:"warping into impossible, Escher-like geometry that folds through itself"},
+    {label:"Fractal detail",clause:"fracturing into recursive kaleidoscopic fractal detail at every scale"},
+    {label:"Moiré",clause:"rippling with hypnotic optical-illusion moiré patterns in relief"},
+    {label:"Dreamlike warp",clause:"bending space with surreal, dreamlike distortions and melting perspective"},
+    {label:"Psychedelic ripples",clause:"pulsing with concentric psychedelic ripples that seem to breathe"}
+  ]},
+  organic: {emoji:"🪸", label:"Organic", variants:[
+    {label:"Coral / Voronoi",clause:"growing like living coral with clustered biomorphic Voronoi cells"},
+
+    {label:"Tendrils",clause:"branching into organic undulating tendrils and root-like forms"},
+    {label:"Reef & bone",clause:"textured like weathered bone and reef, full of natural hollows and pockets"},
+    {label:"Nodules",clause:"studded with bulbous nodules across a soft organic surface"}
+  ]},
+  crystal: {emoji:"💎", label:"Crystalline", variants:[
+    {label:"Geode facets",clause:"erupting into sharp crystalline facets like a grown geode"},
+    {label:"Low-poly",clause:"faceted into angular low-poly gemstone planes"},
+    {label:"Quartz clusters",clause:"encrusted with jagged quartz-like crystal clusters"},
+    {label:"Prismatic",clause:"sliced into clean prismatic facets that catch light at hard angles"}
+  ]},
+  alien:   {emoji:"🛸", label:"Alien", variants:[
+    {label:"Architecture",clause:"shaped like otherworldly alien architecture with strange ribbed contours"},
+    {label:"Bio-mechanical",clause:"sculpted into a bio-mechanical hybrid of machine parts and living tissue"},
+    {label:"ET curves",clause:"formed from smooth extraterrestrial curves and unfamiliar organic geometry"},
+    {label:"Glyph carvings",clause:"detailed with glyph-like alien carvings across a sleek foreign silhouette"}
+  ]},
+  botanical:{emoji:"🌿", label:"Botanical", variants:[
+    {label:"Vines & leaves",clause:"wound with climbing vines and leaves sculpted in lush raised relief"},
+    {label:"Blooming flowers",clause:"erupting with blooming flowers modelled in bold three-dimensional relief"},
+    {label:"Twisting roots",clause:"formed from twisting roots and branch-like ribs"},
+    {label:"Fern fronds",clause:"unfurling with curling fern fronds carved across the surface"},
+    {label:"Ivy lattice",clause:"wrapped in a woven ivy lattice standing proud of the surface"}
+  ]},
+  wave:    {emoji:"🌊", label:"Wave", variants:[
+    {label:"Rolling waves",clause:"sculpted with rolling ocean waves and curling crests in bold relief"},
+    {label:"Rippling water",clause:"rippling with concentric water ripples raised across the surface"},
+    {label:"Nautical",clause:"detailed with coiled nautical rope, shells and barnacle clusters"},
+    {label:"Whirlpool",clause:"swept into a spiraling whirlpool current carved into the form"}
+  ]},
+  baroque:{emoji:"🎭", label:"Baroque", variants:[
+    {label:"Ornate scrollwork",clause:"carved with ornate Baroque scrollwork curling and unfurling across the surface in deep relief"},
+    {label:"Gilded flourishes",clause:"wrapped in gilded Baroque flourishes and dramatic curling embellishment"},
+    {label:"Cherub relief",clause:"adorned with cherub and putti figures sculpted in classical Baroque relief"},
+    {label:"Acanthus leaf carving",clause:"carved with lush acanthus-leaf scrollwork in the classical Baroque tradition"}
+  ]},
+  egyptian:{emoji:"🏺", label:"Egyptian", variants:[
+    {label:"Hieroglyph relief",clause:"carved with rows of ancient Egyptian hieroglyphs in crisp raised relief"},
+    {label:"Scarab motif",clause:"adorned with sacred scarab-beetle motifs sculpted in bold Egyptian relief"},
+    {label:"Pyramid facets",clause:"faceted into stepped pyramid planes with pharaonic geometric precision"},
+    {label:"Ankh carving",clause:"carved with ankh and lotus motifs in the classical Egyptian style"}
+  ]},
+  zen:{emoji:"🎋", label:"Zen", variants:[
+    {label:"Raked sand ripples",clause:"raked into precise Zen sand-garden ripples flowing across the surface"},
+    {label:"Bamboo grain",clause:"textured with fine vertical bamboo-grain ridges running up the form"},
+    {label:"Bonsai curve",clause:"shaped with a single sweeping bonsai-branch curve across the silhouette"},
+    {label:"Ensō circle",clause:"marked with a single bold Ensō brushstroke circle in raised relief"}
+  ]},
+  cyberpunk:{emoji:"🤖", label:"Cyberpunk", variants:[
+    {label:"Neon circuit traces",clause:"etched with glowing neon circuit-board traces running across the surface in raised relief"},
+    {label:"Glitch fracture",clause:"fractured with jagged digital-glitch seams splitting across the form"},
+    {label:"Chrome panel seams",clause:"clad in sharp chrome panel seams with a sleek high-tech cyberpunk silhouette"},
+    {label:"Holographic edge",clause:"rimmed with a shimmering holographic edge glow along every raised line"}
+  ]},
+  vaporwave:{emoji:"🌴", label:"Vaporwave", variants:[
+    {label:"Retro grid",clause:"gridded with a retro-futurist perspective grid raised across the surface"},
+    {label:"Holographic ripple",clause:"shimmering with holographic iridescent ripple bands across the surface"},
+    {label:"Sunset stripe",clause:"banded with parallel sunset-stripe ridges in a retro-futurist arrangement"},
+    {label:"Glitch tile",clause:"tiled with fractured vaporwave glitch-block segments"}
+  ]},
+  cosmic:{emoji:"🌌", label:"Cosmic", variants:[
+    {label:"Nebula swirl",clause:"swirling with nebula-cloud patterns raised in soft rolling relief"},
+    {label:"Starfield speckle",clause:"speckled with a raised starfield of tiny embossed points across the surface"},
+    {label:"Galaxy spiral arm",clause:"wound with a sweeping galaxy spiral-arm relief curling around the form"},
+    {label:"Constellation map",clause:"engraved with a star constellation dot-and-line map pattern across the surface"}
+  ]},
+  volcanic:{emoji:"🌋", label:"Volcanic", variants:[
+    {label:"Obsidian shard",clause:"erupting into jagged obsidian-shard facets across the form"},
+    {label:"Ember crack glow",clause:"cracked with glowing ember-lit fissures running through the surface"},
+    {label:"Basalt column",clause:"ribbed with hexagonal basalt-column ridges like cooled lava rock"},
+    {label:"Ash-dust texture",clause:"textured with a rough volcanic ash-dust surface finish"}
+  ]},
+  glacial:{emoji:"❄️", label:"Glacial", variants:[
+    {label:"Frost crystal lace",clause:"laced with delicate frost-crystal branching patterns raised across the surface"},
+    {label:"Glacier crevasse",clause:"fissured with deep glacier-crevasse ridges cutting through the form"},
+    {label:"Icicle drip",clause:"hung with icicle-drip ridges tapering down the surface"},
+    {label:"Snowdrift ripple",clause:"rippled with soft snowdrift-like undulating ridges"}
+  ]},
+  mossy:{emoji:"🌲", label:"Mossy", variants:[
+    {label:"Bark ridge texture",clause:"textured with deep furrowed tree-bark ridges across the surface"},
+    {label:"Moss patch growth",clause:"patched with raised moss-growth clusters across the form"},
+    {label:"Lichen speckle",clause:"speckled with lichen-like raised texture patches"},
+    {label:"Root tangle",clause:"wound with tangled root-like ridges twisting across the surface"}
+  ]},
+  origami:{emoji:"📄", label:"Origami", variants:[
+    {label:"Angular paper-fold",clause:"folded into crisp angular origami-paper facets across the whole form"},
+    {label:"Crane-wing crease",clause:"creased with sharp crane-wing-like origami fold lines"},
+    {label:"Modular fold lattice",clause:"built from a modular lattice of repeating origami folds"},
+    {label:"Sharp pleat",clause:"pleated with sharp accordion-like origami folds"}
+  ]},
+  honeycomb:{emoji:"🐝", label:"Honeycomb", variants:[
+    {label:"Hexagonal cell wall",clause:"built from a dense hexagonal honeycomb cell-wall structure across the surface"},
+    {label:"Dripping honeycomb",clause:"dripping with honeycomb cells that sag and pool like warm wax"},
+    {label:"Layered comb tiers",clause:"stacked in layered honeycomb comb tiers rising up the form"},
+    {label:"Cellular cluster",clause:"clustered with organic hexagonal cellular growths"}
+  ]},
+  chainmail:{emoji:"⛓️", label:"Chainmail", variants:[
+    {label:"Woven ring mesh",clause:"clad in a woven chainmail ring-mesh texture across the surface"},
+    {label:"Interlocked scale",clause:"overlaid with interlocked armor-scale plates"},
+    {label:"Armored plate seam",clause:"seamed with riveted armored plate joints"},
+    {label:"Linked chain texture",clause:"textured with a raised linked-chain surface pattern"}
+  ]},
+  feathered:{emoji:"🪶", label:"Feathered", variants:[
+    {label:"Layered plumage",clause:"layered with overlapping feather plumage carved in soft relief"},
+    {label:"Wing-quill ridge",clause:"ridged with wing-quill lines radiating across the surface"},
+    {label:"Down-soft texture",clause:"textured with a soft downy feather-like surface finish"},
+    {label:"Peacock eye pattern",clause:"patterned with peacock-feather eye motifs in raised relief"}
+  ]},
+  scaled:{emoji:"🐍", label:"Scaled", variants:[
+    {label:"Reptilian scale texture",clause:"textured with fine reptilian scale relief across the surface"},
+    {label:"Overlapping plate scale",clause:"clad in overlapping armored scale plates"},
+    {label:"Dragon-hide ridge",clause:"ridged like tough dragon-hide with raised bony scutes"},
+    {label:"Serpent coil",clause:"coiled with serpent-like winding ridges around the form"}
+  ]},
+  wicker:{emoji:"🧺", label:"Wicker", variants:[
+    {label:"Woven wicker strands",clause:"woven from raised wicker strands crossing the surface like a basket"},
+    {label:"Basket cross-weave",clause:"cross-woven in a tight basket-weave pattern across the form"},
+    {label:"Rattan coil",clause:"coiled with rattan-like woven strand ridges"},
+    {label:"Braided rim",clause:"rimmed with a braided woven-strand border"}
+  ]},
+  marbled:{emoji:"🪨", label:"Marbled", variants:[
+    {label:"Veined stone marbling",clause:"veined with flowing marble stone patterns carved across the surface"},
+    {label:"Polished stone swirl",clause:"swirled like polished stone with sweeping veined bands"},
+    {label:"Agate banding",clause:"banded like sliced agate stone in concentric ridged layers"},
+    {label:"Granite speckle",clause:"speckled with a granite-like flecked stone surface texture"}
+  ]},
+  circuitboard:{emoji:"🖥️", label:"Circuitry", variants:[
+    {label:"PCB trace lines",clause:"etched with circuit-board trace lines running across the surface in raised relief"},
+    {label:"Microchip grid",clause:"gridded with microchip-like rectangular circuit patterns"},
+    {label:"Solder-node cluster",clause:"studded with raised solder-node clusters along circuit paths"},
+    {label:"Data-path etching",clause:"etched with branching data-path circuitry across the form"}
+  ]},
+  mosaic:{emoji:"🧩", label:"Mosaic", variants:[
+    {label:"Tessellated tile pattern",clause:"tiled with a tessellated mosaic pattern of interlocking shapes in relief"},
+    {label:"Stained tile cluster",clause:"clustered with stained-glass-style mosaic tile fragments"},
+    {label:"Geometric tile grid",clause:"gridded with a precise geometric mosaic tile layout"},
+    {label:"Fragmented shard mosaic",clause:"pieced together from fragmented shard-like mosaic tiles"}
+  ]},
+  filigree:{emoji:"🕸️", label:"Filigree", variants:[
+    {label:"Lace metalwork",clause:"wrapped in delicate lace-like metalwork filigree raised across the surface"},
+    {label:"Wire scroll filigree",clause:"scrolled with fine wire-like filigree curling across the form"},
+    {label:"Openwork lattice",clause:"pierced with an openwork filigree lattice pattern"},
+    {label:"Arabesque tracery",clause:"covered in bold arabesque interlocking floral tracery carved in relief"}
+  ]},
+  barnacle:{emoji:"🦪", label:"Barnacle", variants:[
+    {label:"Barnacle cluster crust",clause:"encrusted with clustered barnacle-shell growths across the surface"},
+    {label:"Tide-pool texture",clause:"textured like a weathered tide-pool surface with tiny pitted growths"},
+    {label:"Encrusted shell growth",clause:"crusted with small encrusted shell and coral growths"},
+    {label:"Rope lash wrap",clause:"lashed with thick knotted nautical rope coils wrapping the surface in bold relief"}
+  ]},
+  thornedvine:{emoji:"🌹", label:"Bramble", variants:[
+    {label:"Bramble thorn tangle",clause:"entangled in thorny bramble vines bristling with sharp raised thorns"},
+    {label:"Rose-vine wrap",clause:"wrapped in a thorned rose-vine climbing the form in relief"},
+    {label:"Barbed stem coil",clause:"coiled with barbed thorny stems winding around the surface"},
+    {label:"Thicket knot",clause:"knotted into a dense thicket of thorned tangled vines"}
+  ]},
+  pixelvoxel:{emoji:"🎮", label:"Pixel", variants:[
+    {label:"Blocky voxel form",clause:"built from chunky stacked voxel blocks across the whole form"},
+    {label:"8-bit relief",clause:"sculpted with a retro 8-bit pixel-art relief pattern"},
+    {label:"Stepped pixel edge",clause:"stepped with jagged low-resolution pixel edges along every contour"},
+    {label:"Low-res block texture",clause:"textured with a deliberately low-resolution blocky pixel surface"}
+  ]},
+  opart:{emoji:"🔀", label:"Optical", variants:[
+    {label:"Optical stripe warp",clause:"striped with warping optical-illusion bands that bend around the form"},
+    {label:"Illusory depth grid",clause:"gridded with an illusory op-art depth pattern that seems to recede"},
+    {label:"Vibrating line pattern",clause:"lined with tightly spaced vibrating op-art ridges"},
+    {label:"Escher-tile illusion",clause:"tiled with an Escher-style interlocking optical illusion pattern"}
+  ]},
+  lunar:{emoji:"🌙", label:"Lunar", variants:[
+    {label:"Moon phase relief",clause:"banded with a sequence of moon-phase discs carved in relief around the form"},
+    {label:"Crescent carving",clause:"carved with sweeping crescent-moon motifs across the surface"},
+    {label:"Crater texture",clause:"pitted with a cratered lunar-surface texture"},
+    {label:"Tidal glow pattern",clause:"patterned with soft tidal glow ripples echoing lunar light"}
+  ]},
+  storm:{emoji:"⚡", label:"Storm", variants:[
+    {label:"Lightning fractal crack",clause:"cracked with branching lightning-fractal fissures across the surface"},
+    {label:"Storm-cloud swirl",clause:"swirling with rolling storm-cloud patterns raised in relief"},
+    {label:"Thunderbolt relief",clause:"carved with bold jagged thunderbolt motifs"},
+    {label:"Electric arc texture",clause:"textured with crackling electric-arc ridge lines"}
+  ]},
+  coralreef:{emoji:"🪸", label:"Coral", variants:[
+    {label:"Branching coral growth",clause:"growing with branching coral formations across the surface in relief"},
+    {label:"Sea urchin spines",clause:"bristling with short dense sea-urchin spine protrusions covering the surface"},
+    {label:"Polyp cluster bumps",clause:"studded with clustered coral-polyp bumps across the form"},
+    {label:"Sea-fan lattice",clause:"webbed with a delicate sea-fan coral lattice pattern"}
+  ]},
+  fungal:{emoji:"🍄", label:"Fungal", variants:[
+    {label:"Mushroom cap cluster",clause:"clustered with small mushroom-cap growths across the surface"},
+    {label:"Spore-dot texture",clause:"speckled with a raised spore-dot fungal texture"},
+    {label:"Gill-ridge underside",clause:"ridged with mushroom-gill-like fine parallel lines"},
+    {label:"Mycelium thread network",clause:"webbed with a branching mycelium thread network across the form"}
+  ]},
+  voronoi:{emoji:"🔷", label:"Voronoi", variants:[
+    {label:"Voronoi cells",clause:"tessellated with an organic Voronoi-cell pattern of irregular polygonal cells fracturing across the surface in crisp raised relief"},
+    {label:"Delaunay mesh",clause:"wrapped in a triangulated Delaunay mesh of sharp angular facets flowing across the form"},
+    {label:"Truchet tiles",clause:"tiled with interlocking curved Truchet-tile arcs forming a continuous flowing maze pattern"},
+    {label:"Perlin noise",clause:"warped with organic Perlin-noise displacement, a smooth randomized bumpy terrain-like relief across the surface"},
+    {label:"Penrose tiling",clause:"tiled with a non-repeating Penrose pattern of interlocking rhombus facets"},
+    {label:"Cellular fracture",clause:"fractured into a dense network of irregular cellular cracks like dried mud or a shattered cell structure"}
+  ]}
+};
+
+const PALETTES = [
+  {v:"obsidian",  t:"finished in a matte deep-obsidian black with faint iridescent undertones in the crevices"},
+  {v:"terracotta",t:"rendered in matte terracotta clay with subtle earthy tonal variation"},
+  {v:"magenta",   t:"coated in a smooth matte gradient shifting from electric magenta to deep indigo"},
+  {v:"bone",      t:"a chalky matte bone-white with soft ambient shadows pooling in the recesses"},
+  {v:"jade",      t:"matte jade-green stone with delicate darker veining"},
+  {v:"pastel",    t:"a muted matte pastel gradient of lavender, mint and peach, dreamy and soft"},
+  {v:"bronze",    t:"matte antique bronze, non-reflective with richly textured patina"},
+  {v:"biolum",    t:"a matte charcoal body laced with softly glowing bioluminescent seams of teal and violet"},
+  {v:"sunset",    t:"a matte gradient burning from deep crimson through orange into gold"},
+  {v:"marble",    t:"matte veined marble in cool grey-white tones"}
+];
+
+const VIEWS = [
+  {v:"three-quarter", t:"from a three-quarter angle that reveals its full three-dimensional depth, hollow interior and negative space"},
+  {v:"front",         t:"from a straight-on front view that clearly shows its silhouette, opening and functional features"},
+  {v:"slightly-above",t:"from a slightly elevated angle looking down into it, emphasizing the hollow cavity and depth"},
+  {v:"eye-level",     t:"at eye level with strong side lighting that carves out its depth and surface relief"}
+];
+
+/* ---------- COMPACT SD PROMPTS (used for local ComfyUI renders) ----------
+   SD 1.5 reads ~75 tokens per chunk and draws every noun it sees — negations
+   ("no plants") put the noun IN the image, and long rule text dilutes the
+   object identity. So renders use these short, positive-only prompts.
+   (Flux gets its own richer prompt, built separately further down — see the
+   fam==="flux" branch in buildPrompt — since its T5 encoder reads far more.) */
+// RULE: never name the CONTENTS in the noun/bits ("pencil holder" draws pencils).
+// Critical bans use ComfyUI's native (term:1.4) emphasis and are placed FIRST in
+// the negative so they land in CLIP's strongest chunk.
+const SD_OBJ = {
+  vase:        {noun:"ceramic vase", bits:"(empty:1.3) vase with a wide open mouth, flat base",
+                neg:"(flowers:1.4), (bouquet:1.3), (branches:1.3)"},
+  planter:     {noun:"ceramic pot", bits:"(empty:1.3) planter pot with an open top and a defined rim",
+                neg:"(plant:1.4), (soil:1.3), (leaves:1.3)"},
+  birdhouse:   {noun:"birdhouse", bits:"(a hollow wooden birdhouse body with one single entry hole in its front face:1.4), (a short stubby wooden perch peg poking out just below the hole:1.3), (thick solid empty loop on top with nothing threaded through it:1.3)",
+                neg:"(second entrance hole:1.3), (extra holes:1.3), chimney, windows, door, porch, (chain:1.4), (necklace:1.3), (cord:1.3), (string:1.3), (rope:1.3), (flat disc:1.3), (ring:1.3), (wheel:1.3), (hoop:1.3), (flat panel:1.3)"},
+  birdfeeder:  {noun:"hanging garden dispenser", bits:"(a compact hanging garden dispenser with an open feeding tray and small horizontal perch pegs on the exterior:1.4), (thick solid empty hanging loop at the very top:1.3)",
+                neg:"(birds:1.4), (seed:1.4), (food:1.3), (chain:1.4), (necklace:1.3), (cord:1.3), (string:1.3), (rope:1.3), (tableware:1.5), (dishes:1.4), (plate:1.4), (cup:1.4), (bowl:1.3), (tray:1.4), (kitchen:1.3), (serving:1.3), (saucer:1.3)"},
+  votive:      {noun:"round pierced holder cup", bits:"(empty:1.3) thick-walled cup with pierced cutout patterns and a recessed top cavity, flat base",
+                neg:"(candle:1.5), (tealight:1.4), (flame:1.4), fire, wax, wick"},
+  incense:     {noun:"compact sculptural burner dish", bits:"solid body with one small round hole on top and a shallow catch basin, flat base",
+                neg:"(incense sticks:1.5), (smoke:1.5), (sticks:1.4), fire, ash, flames"},
+  bowl:        {noun:"decorative bowl", bits:"(empty:1.3) open bowl with a wide interior, flat base",
+                neg:"(fruit:1.4), (food:1.3), (contents:1.3)"},
+  wallplanter: {noun:"round planter pot", bits:"(empty:1.3) pot with an open top and a thick fused empty loop on top with nothing threaded through it",
+                neg:"(plant:1.4), (soil:1.3), macrame, plant hanger, (chain:1.4), (necklace:1.3), (cord:1.3), (string:1.3), (rope:1.3)"},
+  lantern:     {noun:"decorative lantern", bits:"hollow shell with pierced cutout patterns, flat base",
+                neg:"(candle:1.4), (flame:1.3), light bulb, fire, glowing light inside"},
+  pencup:      {noun:"tall cylindrical cup", bits:"(empty:1.3) open-top cup with straight walls, flat base",
+                neg:"(pens:1.5), (pencils:1.5), (wooden sticks:1.4), (chopsticks:1.4), brushes, mug handle, coffee, desk, office"},
+  jewelry:     {noun:"coat-rack-style display stand", bits:"small stand with a tapered center post and a catch dish base, only a handful of separate thick bare pegs at staggered heights with generous open gaps between them, background clearly visible through the gaps, each peg ending in a plain rounded bare tip",
+                neg:"(rings:1.5), (jewelry:1.4), (necklace:1.3), gems, (fused branches:1.4), (webbed lattice:1.4), (tree canopy:1.4), (foliage:1.3), leaves, connected mesh, solid canopy, (round fan shape:1.4), (disc shape:1.4), medallion, coral, filigree lace, dense cluster of twigs, semicircle panel, (candle:1.5), (candlestick:1.5), (candelabra:1.4), (menorah:1.4), flame, wick, wax, flower, cup, socket, (temple:1.3), (pavilion:1.3), (pagoda:1.3), (gazebo:1.3), (architecture:1.2), (building:1.3), (roof:1.3), (columns:1.3)"},
+  ornament:    {noun:"decorative sculptural bauble", bits:"one solid bauble resting alone on the studio surface, with a thick solid loop of the same material at the top, its round opening left completely bare and open, clearly visible straight through to the background",
+                neg:"christmas tree, decorations, (chain:1.5), (necklace:1.5), (pendant necklace:1.4), (ribbon:1.5), (bow:1.4), (cord:1.4), (string:1.4), (thread:1.3), (rope:1.3), (wire:1.3), (jewelry:1.3), (gemstone:1.3), (bail:1.3), (hanging:1.3), (suspended:1.3), worn, model, person, neck, hand"},
+  mushroomdeco:{noun:"decorative mushroom figurine", bits:"domed cap over a stem, flat base",
+                neg:"(garden:1.3), (grass:1.3), lawn, forest, moss, real mushrooms, (UFO:1.4), (flying saucer:1.4), (spaceship:1.4), (robot:1.3), (creature:1.3), (eyes:1.3), (insect legs:1.3), (alien monster:1.3)"},
+  trinketdish:     {noun:"trinket dish", bits:"(empty:1.3) shallow flat catch-all dish with a low rim, flat base",
+                neg:"(rings:1.4), (coins:1.4), (keys:1.4), jewelry, contents"},
+  coindish:        {noun:"shallow catch dish", bits:"(empty:1.3) shallow round catch-all dish with a low rim, flat base",
+                neg:"(coins:1.5), (cash:1.4), (money:1.3), contents"},
+  coaster:         {noun:"drink coaster", bits:"(exactly one single coaster, resting flat on a table surface, completely alone in the frame with nothing else nearby:1.5) flat round disc, thin, flat top and base",
+                neg:"(multiple coasters:1.5), (coaster set:1.5), (stack:1.4), (set of multiple:1.4), (pile:1.3), (scattered:1.3), (group:1.3), (cup:1.3), (glass:1.3), holder, caddy, (picture frame:1.4), (frame:1.3), (mirror:1.3), (wall art:1.3), (room interior:1.2)"},
+  pictureframe:    {noun:"decorative frame", bits:"(empty:1.3) flat frame with an open rectangular window, small back stand",
+                neg:"(photo:1.5), (picture:1.4), (image:1.3), glass, portrait"},
+  cactusplanter:   {noun:"mini planter pot", bits:"(completely empty:1.4) small pot with an open top, compact scale, nothing growing inside it",
+                neg:"(cactus:1.4), (succulent:1.4), (plant:1.4), (soil:1.3), (flower:1.3), (leaves:1.3), (spines:1.3), (greenery:1.3)"},
+  herbpot:         {noun:"small ceramic vessel", bits:"(completely empty hollow cavity with no vegetation of any kind:1.5) small round pot form with an open top, compact scale",
+                neg:"(herb:1.5), (plant:1.5), (succulent:1.4), (agave:1.3), (soil:1.3), (leaves:1.4), (foliage:1.4), (greenery:1.4), (flower:1.3), (bloom:1.3), (petals:1.3), (basil:1.3), (mint:1.3)"},
+  necklacestand:   {noun:"upright display stand", bits:"(a single slender upright post rising straight up from a small round catch dish at its base, no wider than a finger:1.3), small scale, tabletop item",
+                neg:"(necklace:1.5), (chain:1.4), (jewelry:1.4), gems, (furniture:1.4), (table:1.3), (chair:1.3), (stool:1.3), (bench:1.3), (legs:1.3), (seat:1.3)"},
+  earringstand:    {noun:"small display stand", bits:"(a small flat display panel studded with tiny peg holes for hanging earrings, no bigger than a hand, with a catch dish at its base:1.3), tabletop item",
+                neg:"(earrings:1.5), (jewelry:1.4), gems, (gazebo:1.3), (rotunda:1.3), (pavilion:1.3), (architecture:1.2), (garden structure:1.3), (canopy:1.3), (roof:1.3), (furniture:1.3), (table:1.3)"},
+  watchstand:      {noun:"upright display stand", bits:"(topped with a distinct curved cradle hook that projects outward and curves back on itself like a shepherd's crook or a coat hook, sized only to drape a thin watch strap over:1.4), small upright post, flat base",
+                neg:"(watch:1.4), (strap:1.3), (wristband:1.3), (plain straight post:1.3), (featureless pillar:1.3), (person:1.4), (human figure:1.4), (human arm:1.3), (finger:1.3), (hand:1.3), (body:1.3), (dress:1.3), (robe:1.3), (hood:1.3), (face:1.3), (doll:1.3), (figurine:1.3), (statue:1.3)"},
+  budvase:         {noun:"small narrow-necked vase", bits:"(empty:1.3) miniature narrow-necked vessel, small scale",
+                neg:"(flower:1.4), (stem:1.3), (water:1.3), (plant:1.3)"},
+  chalice:         {noun:"decorative chalice goblet", bits:"(empty:1.3) stemmed cup on a flared foot base",
+                neg:"(wine:1.4), (liquid:1.4), (drink:1.3), (water:1.3)"},
+  wallpocket:      {noun:"wall-mounted vessel", bits:"(completely empty hollow cavity with no vegetation of any kind:1.5) flat-backed half-open pocket shape mounted flush against a wall",
+                neg:"(succulent:1.5), (plant:1.5), (fern:1.3), (spider plant:1.3), (agave:1.3), (yucca:1.3), (leaves:1.4), (foliage:1.4), (greenery:1.4), (flower:1.3), (vine:1.3), (bloom:1.3), (petals:1.3), soil, dirt, nail, screw, mounting hardware"},
+  phonestand:      {noun:"small angled display stand", bits:"(a single small palm-sized solid block, with one thin flat groove-slit cut straight across its face, the groove sized to hold a flat rectangular card wedged upright at a slight angle:1.5), flat base",
+                neg:"(phone:1.4), (smartphone:1.4), (screen:1.3), (television:1.3), (monitor:1.3), (mug:1.3), (cup:1.3), (furniture:1.4), (easel:1.4), (table:1.4), (desk:1.4), (chair:1.3), (stool:1.3), (bench:1.3), (legs:1.3), (temple:1.3), (pyramid:1.3), (pavilion:1.3), (gazebo:1.3), (altar:1.3), (obelisk:1.3), (tower:1.3), (architecture:1.2), (monument:1.3), (vase:1.3), (urn:1.3), (portrait:1.3), (painting:1.3)"},
+  tabletstand:     {noun:"small angled display cradle", bits:"(a single hand-sized solid block, with one wide flat groove-slit cut straight across its face, the groove sized to hold a flat rectangular panel wedged upright at a slight angle:1.5), flat base",
+                neg:"(tablet:1.4), (ipad:1.4), (screen:1.3), (television:1.3), (monitor:1.3), (book:1.3), (notebook:1.3), (furniture:1.4), (easel:1.4), (table:1.4), (desk:1.4), (chair:1.3), (stool:1.3), (bench:1.3), (legs:1.3), (temple:1.3), (pyramid:1.3), (pavilion:1.3), (gazebo:1.3), (altar:1.3), (obelisk:1.3), (tower:1.3), (architecture:1.2), (monument:1.3), (vase:1.3), (urn:1.3)"},
+  headphonestand:  {noun:"small mushroom-shaped desk stand", bits:"(small handheld-sized: narrow post ending abruptly in a wide overhanging rounded cap at the top:1.5), flat base",
+                neg:"(headphones:1.5), (headset:1.3), (earphones:1.3), (plain straight post:1.4), (featureless pillar:1.4), (uniform cylinder:1.4), (tube:1.3), (column with no top:1.3), (furniture:1.4), (table:1.4), (column capital:1.3), (pedestal:1.3), (architectural:1.2)"},
+  sunglassesstand: {noun:"small upright display stand", bits:"(a single slender upright post or curved bar rising straight up from a small flat base, no wider than a finger:1.3), small scale, tabletop item",
+                neg:"(sunglasses:1.5), (glasses:1.4), (lenses:1.3), (furniture:1.4), (table:1.3), (chair:1.3), (stool:1.3), (bench:1.3), (legs:1.3), (seat:1.3)"},
+  bookend:         {noun:"single bookend", bits:"(single:1.3) solid block with one flat vertical face, flat base",
+                neg:"(books:1.4), (pair:1.3), (matching set:1.3), (second bookend:1.3)"},
+  winebottleholder:{noun:"sculptural cradle stand", bits:"(a compact hand-sized solid sculpture with a wide curved groove or trough shaped into its form, cradling one bottle lying on its side at an angle, the bottle appearing to float above the flat base with only one or two slim contact points:1.5), own flat base",
+                neg:"(bottle:1.4), (wine:1.4), (cork:1.3), (glass:1.3), (furniture:1.4), (chair:1.4), (table:1.3), (stool:1.3), (bench:1.3), (seat:1.3), (person:1.4), (human figure:1.4), (temple:1.3), (gazebo:1.3), (pavilion:1.3), (architecture:1.2), (pergola:1.3), (columns:1.3), (birdcage:1.3), (dome:1.3), (lamp:1.5), (lampshade:1.5), (light fixture:1.4), (cord:1.4), (gooseneck:1.4), (floor lamp:1.5), (table lamp:1.5), (desk lamp:1.5)"},
+  coinbank:        {noun:"decorative bank", bits:"(a single solid opaque ceramic coin bank body, a narrow horizontal coin-slot slit pressed into the top surface only, all exterior walls completely sealed closed:1.5), flat base",
+                neg:"(coins:1.5), (cash:1.4), (money:1.3), (plug:1.3), (stopper:1.3), (access panel:1.4), (door:1.5), (doorway:1.5), (entrance:1.4), (hinge:1.4), (arch:1.3), (hut:1.3), (house:1.3), (open mouth:1.4), (wide opening:1.4), (open top:1.4), (vase:1.3), (pot:1.3), (planter:1.3), (bowl:1.3), (visible interior cavity:1.3), (two separate objects:1.4), (scattered pieces:1.4), (multiple pieces:1.3), (open box:1.4), (lid removed:1.3), (separated lid:1.3), (gap between lid and base:1.3), (briefcase:1.3), (trophy:1.3), (pedestal:1.3), (cluster of spheres:1.3), (glass dome:1.5), (cloche:1.5), (bell jar:1.5), (display dome:1.4), (glass:1.4), (transparent:1.4), (translucent:1.4), (cracked:1.4), (egg halves:1.4), (split open:1.4), (broken shell:1.3), (two halves:1.4), (open lid:1.4), (flip lid:1.4), (hinged lid:1.3), (open top:1.4)"},
+  cardholder:      {noun:"small display stand", bits:"(a single small palm-sized solid block, with one shallow groove-slit cut across its face, sized to prop up a short stack of business cards leaning at a slight angle:1.5), flat base",
+                neg:"(business cards:1.4), (cards:1.3), (paper:1.3), (mug:1.3), (cup:1.3), (furniture:1.4), (table:1.4), (desk:1.3), (chair:1.3), (stool:1.3), (legs:1.3), (gazebo:1.3), (pavilion:1.3), (colonnade:1.3), (archway:1.3), (architecture:1.2), (wheel:1.3), (dial:1.3), (spokes:1.3), (wagon wheel:1.3)"},
+  makeupbrush:     {noun:"tall cylindrical cup", bits:"(a single unified open-top cup, one continuous vessel not two separate pieces:1.4), empty, straight walls, flat base",
+                neg:"(brushes:1.5), (makeup:1.4), (cosmetics:1.3), (two cups:1.3), (second vessel:1.3), (pair of cups:1.3)"},
+  toothbrush:      {noun:"small cylindrical cup", bits:"(empty:1.3) open-top cup, flat base",
+                neg:"(toothbrush:1.5), (toothpaste:1.4), (bathroom:1.3)"}
+};
+const SD_STYLE = {
+  sacred:  "sacred geometry carved relief, mandala pattern",
+  drippy:  "melting molten drip texture",
+  swirly:  "spiral ridges, swirling carved grooves",
+  trippy:  "psychedelic rippling carved pattern",
+  organic: "organic coral texture, voronoi cell relief",
+  crystal: "faceted crystalline surface",
+  alien:   "alien ribbed contours, otherworldly carved detail",
+  botanical:"carved vine and leaf relief",
+  wave:    "carved ocean wave relief",
+  baroque: "ornate baroque scrollwork relief",
+  egyptian:"egyptian hieroglyph carved relief",
+  zen:     "zen raked sand ripple relief",
+  cyberpunk:"cyberpunk neon circuit relief",
+  vaporwave:"vaporwave retro grid relief",
+  cosmic:  "cosmic nebula swirl relief",
+  volcanic:"volcanic obsidian crack relief",
+  glacial: "glacial frost crystal relief",
+  mossy:   "mossy bark ridge relief",
+  origami: "origami paper-fold facet relief",
+  honeycomb:"honeycomb hexagonal cell relief",
+  chainmail:"chainmail woven ring relief",
+  feathered:"feathered plumage relief",
+  scaled:  "reptilian scale texture relief",
+  wicker:  "wicker basket weave relief",
+  marbled: "marbled stone vein relief",
+  circuitboard:"circuit board trace relief",
+  mosaic:  "mosaic tessellated tile relief",
+  filigree:"filigree lace metalwork relief",
+  barnacle:"barnacle encrusted texture relief",
+  thornedvine:"thorned bramble vine relief",
+  pixelvoxel:"voxel blocky pixel relief",
+  opart:   "op-art optical illusion relief",
+  lunar:   "lunar moon phase relief",
+  storm:   "storm lightning fractal relief",
+  coralreef:"coral reef branching relief",
+  fungal:  "fungal mushroom growth relief",
+  voronoi: "voronoi cellular fracture relief, algorithmic tessellation pattern"
+};
+// Per-variant SD phrases — used INSTEAD of the generic style keywords when the
+// user fine-tunes specific motifs (raw UI labels are not prompt language).
+const VARIANT_SD = {
+  "sacred::Flower of Life":"flower of life pattern carved relief",
+  "sacred::Metatron's Cube":"metatron's cube geometric relief",
+  "sacred::Sri Yantra":"sri yantra nested triangle relief",
+  "sacred::Golden Spiral":"fibonacci golden spiral relief",
+  "sacred::Mandala":"mandala carving",
+  "sacred::Geometric bands":"carved stacked horizontal geometric band rings around body",
+  "drippy::Molten wax":"dark brown melting wax drips cascading down surface",
+  "drippy::Lava drips":"thick lava drip texture",
+  "drippy::Stalactites":"long stalactite drips",
+  "drippy::Heat-sagged":"melting deformed ceramic bent and drooping as if softened by heat",
+  "drippy::Resin pour":"swirling colorful epoxy resin pour art pooling and flowing across ceramic form surface",
+  "swirly::Helical ridges":"helical spiral ridges",
+  "swirly::Fluid vortex":"frozen fluid vortex swirl",
+  "swirly::Coiled ridges":"coiled swirling ridges",
+  "swirly::Wave ridges":"undulating wave ridge relief",
+  "swirly::Corkscrew":"helically twisted corkscrew spiral column form",
+  "trippy::Impossible geometry":"escher style impossible geometry",
+  "trippy::Fractal detail":"kaleidoscopic fractal relief",
+  "trippy::Moiré":"concentric black and white ring interference moiré pattern",
+  "trippy::Dreamlike warp":"surreal dreamlike warped form",
+  "trippy::Psychedelic ripples":"concentric psychedelic ripples",
+  "organic::Coral / Voronoi":"coral voronoi cell texture",
+  "organic::Tendrils":"organic tendril relief",
+  "organic::Reef & bone":"weathered bone and reef texture",
+  "organic::Nodules":"bulbous nodule studded surface",
+  "crystal::Geode facets":"geode crystal facets",
+  "crystal::Low-poly":"low poly faceted planes",
+  "crystal::Quartz clusters":"quartz crystal cluster texture",
+  "crystal::Prismatic":"clean prismatic facets",
+  "alien::Architecture":"alien architecture ribbed contours",
+  "alien::Bio-mechanical":"biomechanical carved detail",
+  "alien::ET curves":"smooth extraterrestrial curves",
+  "alien::Glyph carvings":"alien glyph carvings",
+  "botanical::Vines & leaves":"climbing vine and leaf relief",
+  "botanical::Blooming flowers":"blooming flower relief carving",
+  "botanical::Twisting roots":"twisting root ribs",
+  "botanical::Fern fronds":"curling fern frond carving",
+  "botanical::Ivy lattice":"woven ivy lattice relief",
+  "wave::Rolling waves":"ocean wave crest motif embossed carved relief on ceramic surface",
+  "wave::Rippling water":"concentric water ripple relief",
+  "wave::Nautical":"carved rope shell barnacle relief",
+  "wave::Whirlpool":"spiral whirlpool current carving",
+  "baroque::Ornate scrollwork":"ornate baroque scrollwork relief",
+  "baroque::Gilded flourishes":"gilded baroque flourish relief",
+  "baroque::Cherub relief":"cherub and putti relief carving",
+  "baroque::Acanthus leaf carving":"acanthus leaf scrollwork relief",
+  "egyptian::Hieroglyph relief":"egyptian hieroglyph carved relief",
+  "egyptian::Scarab motif":"sacred scarab beetle relief",
+  "egyptian::Pyramid facets":"stepped pyramid facet relief",
+  "egyptian::Ankh carving":"ankh and lotus carved relief",
+  "zen::Raked sand ripples":"raked zen sand ripple relief",
+  "zen::Bamboo grain":"vertical bamboo grain ridges",
+  "zen::Bonsai curve":"sweeping bonsai branch curve",
+  "zen::Ensō circle":"bold enso circle brushstroke relief",
+  "cyberpunk::Neon circuit traces":"neon circuit trace relief",
+  "cyberpunk::Glitch fracture":"digital glitch fracture seams",
+  "cyberpunk::Chrome panel seams":"chrome panel seam relief",
+  "cyberpunk::Holographic edge":"holographic edge glow relief",
+  "vaporwave::Retro grid":"retro perspective grid relief",
+  "vaporwave::Holographic ripple":"iridescent holographic rainbow ripple band pattern across ceramic surface, pearl shimmer",
+  "vaporwave::Sunset stripe":"sunset stripe band relief",
+  "vaporwave::Glitch tile":"vaporwave glitch tile relief",
+  "cosmic::Nebula swirl":"nebula cloud swirl relief",
+  "cosmic::Starfield speckle":"raised embossed star dots speckle covering the entire ceramic body in relief",
+  "cosmic::Galaxy spiral arm":"galaxy spiral arm relief",
+  "cosmic::Constellation map":"star constellation dot and line map pattern engraved across ceramic body surface",
+  "volcanic::Obsidian shard":"jagged obsidian shard facets",
+  "volcanic::Ember crack glow":"glowing ember crack fissures",
+  "volcanic::Basalt column":"hexagonal basalt column ridges",
+  "volcanic::Ash-dust texture":"rough dark matte volcanic ash crust surface texture",
+  "glacial::Frost crystal lace":"frost crystal lace relief",
+  "glacial::Glacier crevasse":"glacier crevasse ridge relief",
+  "glacial::Icicle drip":"blue icicle drip formations tapering down from rim",
+  "glacial::Snowdrift ripple":"pale blue snowdrift undulating surface ripple relief",
+  "mossy::Bark ridge texture":"furrowed tree bark ridge relief",
+  "mossy::Moss patch growth":"raised moss patch relief",
+  "mossy::Lichen speckle":"lichen speckle texture relief",
+  "mossy::Root tangle":"tangled root ridge relief",
+  "origami::Angular paper-fold":"angular origami paper-fold facets",
+  "origami::Crane-wing crease":"crane-wing origami fold lines",
+  "origami::Modular fold lattice":"modular origami fold lattice",
+  "origami::Sharp pleat":"sharp accordion origami pleats",
+  "honeycomb::Hexagonal cell wall":"hexagonal honeycomb cell relief",
+  "honeycomb::Dripping honeycomb":"dripping honeycomb wax cells",
+  "honeycomb::Layered comb tiers":"layered honeycomb comb tiers",
+  "honeycomb::Cellular cluster":"hexagonal cellular cluster relief",
+  "chainmail::Woven ring mesh":"woven chainmail ring mesh",
+  "chainmail::Interlocked scale":"interlocked armor scale plates",
+  "chainmail::Armored plate seam":"riveted armor plate seams",
+  "chainmail::Linked chain texture":"linked chain surface relief",
+  "feathered::Layered plumage":"layered feather plumage relief",
+  "feathered::Wing-quill ridge":"wing quill ridge lines",
+  "feathered::Down-soft texture":"fluffy white down feather texture embossed surface relief",
+  "feathered::Peacock eye pattern":"peacock feather eye relief",
+  "scaled::Reptilian scale texture":"reptilian scale texture relief",
+  "scaled::Overlapping plate scale":"overlapping armored scale plates",
+  "scaled::Dragon-hide ridge":"rough dark irregular bony dragon scale scute ridge texture",
+  "scaled::Serpent coil":"coiled serpent winding ridges",
+  "wicker::Woven wicker strands":"woven wicker strand relief",
+  "wicker::Basket cross-weave":"tight basket cross-weave pattern",
+  "wicker::Rattan coil":"coiled rattan strand ridges",
+  "wicker::Braided rim":"braided woven strand rim",
+  "marbled::Veined stone marbling":"veined marble stone relief",
+  "marbled::Polished stone swirl":"polished swirled stone bands",
+  "marbled::Agate banding":"banded agate stone layers",
+  "marbled::Granite speckle":"flecked granite speckle texture",
+  "circuitboard::PCB trace lines":"circuit board trace relief",
+  "circuitboard::Microchip grid":"dense rectangular grid pattern engraved into the ceramic surface",
+  "circuitboard::Solder-node cluster":"dense silver spherical bumps clustered across the ceramic surface",
+  "circuitboard::Data-path etching":"branching data-path circuitry",
+  "mosaic::Tessellated tile pattern":"tessellated mosaic tile relief",
+  "mosaic::Stained tile cluster":"stained glass mosaic fragments",
+  "mosaic::Geometric tile grid":"geometric mosaic tile grid",
+  "mosaic::Fragmented shard mosaic":"fragmented shard mosaic tiles",
+  "filigree::Lace metalwork":"delicate lace metalwork filigree",
+  "filigree::Wire scroll filigree":"fine curling silver wire scroll surface filigree embossed",
+  "filigree::Openwork lattice":"openwork filigree lattice pattern",
+  "filigree::Arabesque tracery":"bold arabesque interlocking floral geometric tracery carved in relief across surface",
+  "barnacle::Barnacle cluster crust":"clustered barnacle shell crust",
+  "barnacle::Tide-pool texture":"weathered tide-pool pitted texture",
+  "barnacle::Encrusted shell growth":"encrusted shell coral growths",
+  "barnacle::Rope lash wrap":"thick twisted nautical rope coils wrapped around the entire ceramic body in bold relief",
+  "thornedvine::Bramble thorn tangle":"thorny bramble vine tangle",
+  "thornedvine::Rose-vine wrap":"thorned rose-vine wrap relief",
+  "thornedvine::Barbed stem coil":"coiled barbed thorny stems",
+  "thornedvine::Thicket knot":"knotted thorned thicket tangle",
+  "pixelvoxel::Blocky voxel form":"chunky stacked voxel blocks",
+  "pixelvoxel::8-bit relief":"retro 8-bit pixel-art relief",
+  "pixelvoxel::Stepped pixel edge":"jagged low-res pixel edges",
+  "pixelvoxel::Low-res block texture":"low-resolution blocky pixel texture",
+  "opart::Optical stripe warp":"warping optical illusion stripes",
+  "opart::Illusory depth grid":"illusory op-art depth grid",
+  "opart::Vibrating line pattern":"tightly spaced black and white horizontal stripe optical illusion",
+  "opart::Escher-tile illusion":"escher-style optical tile illusion",
+  "lunar::Moon phase relief":"banded moon phase relief",
+  "lunar::Crescent carving":"sweeping crescent moon carving",
+  "lunar::Crater texture":"cratered lunar surface texture",
+  "lunar::Tidal glow pattern":"luminous silver concentric ripple glow pattern relief",
+  "storm::Lightning fractal crack":"branching lightning fractal cracks",
+  "storm::Storm-cloud swirl":"rolling storm-cloud swirl relief",
+  "storm::Thunderbolt relief":"deeply carved jagged lightning bolt zigzag relief carved into the surface",
+  "storm::Electric arc texture":"bright blue glowing electric arc fractal ridge lines texture",
+  "coralreef::Branching coral growth":"branching coral tree formation high relief embossed on surface",
+  "coralreef::Sea urchin spines":"dense short spike spine protrusions covering entire ceramic body surface like sea urchin",
+  "coralreef::Polyp cluster bumps":"clustered coral polyp bumps",
+  "coralreef::Sea-fan lattice":"delicate sea-fan coral lattice",
+  "fungal::Mushroom cap cluster":"clustered mushroom cap growths",
+  "fungal::Spore-dot texture":"raised spore-dot fungal texture",
+  "fungal::Gill-ridge underside":"fine mushroom gill ridge lines",
+  "fungal::Mycelium thread network":"branching mycelium thread network",
+  "voronoi::Voronoi cells":"voronoi cell tessellation relief",
+  "voronoi::Delaunay mesh":"triangulated delaunay mesh facets",
+  "voronoi::Truchet tiles":"interlocking truchet tile maze",
+  "voronoi::Perlin noise":"organic bumpy terrain displacement noise surface texture",
+  "voronoi::Penrose tiling":"non-repeating penrose rhombus tiling",
+  "voronoi::Cellular fracture":"irregular cellular fracture cracks"
+};
+const SD_PAL = {obsidian:"matte black", terracotta:"matte terracotta clay", magenta:"magenta to indigo gradient, matte",
+  bone:"matte bone white", jade:"matte jade green stone", pastel:"matte pastel lavender and mint",
+  bronze:"matte antique bronze", biolum:"dark charcoal with glowing teal seams", sunset:"crimson to gold gradient, matte", marble:"white marble, matte"};
+const SD_VIEW = {"three-quarter":"three-quarter view","front":"front view","slightly-above":"high angle view","eye-level":"eye level view"};
+const SD_NEG_BASE = "(multiple objects:1.4), (duplicate:1.4), (pair of objects:1.3), (group of objects:1.3), (two of the same object:1.3), (three of the same object:1.3), collage, grid, plant, flowers, leaves, soil, fruit, food, eggs, orbs, ball inside, candle, flame, smoke, pedestal, plinth, stand, table, furniture, room interior, outdoor scene, grass, sky, scenery, person, hands, animal, glossy, shiny, chrome, glass, transparent, reflections, flat painted pattern, decal, sticker, text, watermark, logo, blurry, lowres, deformed, cropped, cut off, abstract sculpture, statue, totem pole, monument, blob, floating disconnected pieces, detached ring, hanging, suspended, rope, string, cord, twine, wire, chain, hook, hanger, metal strap, ribbon";
+const SD_NEG_PRINT = "thin fragile parts, spindly filigree, fine lace lattice, wires, springs, moving parts, separate components";
+
+// PRINTABLE is folded into every render unconditionally — Podder only ever generates
+// genuinely 3D-printable designs now (no toggle; the copy-to-Gemini text path is gone).
+const PRINTABLE = "It must be a genuinely 3D-PRINTABLE object: ONE single solid, sturdy, chunky, watertight piece with thick walls and no thin, spindly, delicate or fragile parts, no free-floating or disconnected pieces, no separate gears, wires, chains, springs or moving parts, no fine openwork lace or lattice, and no deep hidden undercuts or enclosed cavities. Every motif is sculpted as bold, robust raised relief that is part of the same single solid body in ONE uniform matte material — never separate add-on components, inset panels, glass dials, screens, gauges or a second material.";
+
+/* ---------- STATE ---------- */
+let state = {
+  obj: "vase",
+  shape: "Auto",
+  styles: new Set(),
+  styleDetail: new Set(),   // entries like "sacred::Mandala"
+  overdrive: false,         // ⚡ appends "MAKE IT ULTRA WEIRD" to the end of every prompt
+  locks: {obj:false, style:false, pal:false, shape:false}
+};
+
+/* ---------- HELPERS ---------- */
+const $ = s => document.querySelector(s);
+const pick = a => a[Math.floor(Math.random()*a.length)];
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function LS_get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}}
+function LS_set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+// Unique per-item identity, assigned once when an item is built (buildPrompt()) and preserved
+// through every {...item} copy from then on (favoriting, history, rerolls all spread-copy).
+// MUST include a monotonic counter, not just Date.now()+Math.random() — a batch of 6 auto-
+// rendered cards can call this within the same millisecond, and two "random enough" strings
+// generated back-to-back are not guaranteed distinct.
+let __idCounter=0;
+function genId(){ return Date.now().toString(36)+"-"+(__idCounter++).toString(36)+"-"+Math.random().toString(36).slice(2,8); }
+// Identity check for favorites/history/rerolls. Prefers `.id` (exact, can't collide) — falls
+// back to the old prompt-TEXT comparison (full()) only for legacy items saved before `.id`
+// existed. Text comparison alone is NOT a safe identity: two independently-generated cards can
+// legitimately produce identical prompt text (same object+shape+style+palette, small variant
+// pools, fixed view) — when that happened, favoriting one card silently favorited every card
+// that happened to share its text, and unfavoriting any one of them unfavorited all of them.
+function sameItem(a,b){
+  if(a && b && a.id && b.id) return a.id===b.id;
+  return full(a)===full(b);
+}
+let favs = LS_get("podder_favs",[]);
+let hist = LS_get("podder_hist",[]);
+// Each reroll is its own "subfolder": {id, label, createdAt, items:[6 item objects]} — created
+// by rerollFromItem() below, one group per click of 🎲 Reroll on a favorite, never overwritten.
+let rerolls = LS_get("podder_rerolls",[]);
+// Backfill `.id` onto anything saved before this fix existed, once, so identity checks above
+// can use the safe `.id` path for every item from here on instead of falling back to text.
+let __idsBackfilled=false;
+favs.forEach(f=>{ if(!f.id){ f.id=genId(); __idsBackfilled=true; } });
+hist.forEach(h=>{ if(!h.id){ h.id=genId(); __idsBackfilled=true; } });
+rerolls.forEach(g=>g.items.forEach(it=>{ if(!it.id){ it.id=genId(); __idsBackfilled=true; } }));
+if(__idsBackfilled){ LS_set("podder_favs",favs); LS_set("podder_hist",hist); LS_set("podder_rerolls",rerolls); }
+
+/* ---------- BUILD UI ---------- */
+// Chips live in static HTML (visible even without JS); here we just sync the active state.
+// Object/Style chips are generated from the OBJECTS/STYLES data (not hand-listed in the HTML) so
+// the picker always reflects the full catalog — a static chip list silently stops growing the
+// moment a new object/style is added to the data, which is exactly what happened once already.
+function buildChips(){
+  const oc=$("#objChips"); oc.innerHTML="";
+  Object.entries(OBJECTS).forEach(([key,o])=>{
+    const c=document.createElement("div"); c.className="chip"+(state.obj===key?" on":"");
+    c.dataset.obj=key; c.innerHTML=`<span class="em">${o.emoji}</span>${o.label}`;
+    c.onclick=()=>{
+      state.obj=key;
+      state.shape=OBJECTS[key].shapes[0].label;   // reset to Auto for the new object
+      buildChips(); buildShapeChips();
+    };
+    oc.appendChild(c);
+  });
+  const sc=$("#styleChips"); sc.innerHTML="";
+  Object.entries(STYLES).forEach(([key,s])=>{
+    const c=document.createElement("div"); c.className="chip style"+(state.styles.has(key)?" on":"");
+    c.dataset.style=key; c.innerHTML=`<span class="em">${s.emoji}</span>${s.label}`;
+    c.onclick=()=>{
+      if(state.styles.has(key)){
+        state.styles.delete(key);
+        [...state.styleDetail].forEach(x=>{ if(x.startsWith(key+"::")) state.styleDetail.delete(x); });
+      } else state.styles.add(key);
+      buildChips(); buildStyleDetail();
+    };
+    sc.appendChild(c);
+  });
+}
+// Shape chips depend on the selected object, so they are generated on the fly.
+function buildShapeChips(){
+  const wrap=$("#shapeChips"); if(!wrap) return; wrap.innerHTML="";
+  OBJECTS[state.obj].shapes.forEach(s=>{
+    const c=document.createElement("div");
+    c.className="chip"+(state.shape===s.label?" on":"");
+    c.textContent=s.label;
+    c.onclick=()=>{ state.shape=s.label; buildShapeChips(); };
+    wrap.appendChild(c);
+  });
+}
+// Style-detail chips: one group of variant chips per selected style.
+function buildStyleDetail(){
+  const row=$("#styleDetailRow"), wrap=$("#styleDetail"); if(!wrap) return; wrap.innerHTML="";
+  const sel=[...state.styles];
+  if(!sel.length){ row.style.display="none"; return; }
+  row.style.display="";
+  sel.forEach(k=>{
+    const st=STYLES[k];
+    const g=document.createElement("div"); g.className="sd-group";
+    const title=document.createElement("div"); title.className="sd-title";
+    title.innerHTML=`<span class="em">${st.emoji}</span> ${st.label}`;
+    g.appendChild(title);
+    const chips=document.createElement("div"); chips.className="chips";
+    st.variants.forEach(v=>{
+      const key=k+"::"+v.label;
+      const c=document.createElement("div");
+      c.className="chip sd"+(state.styleDetail.has(key)?" on":"");
+      c.textContent=v.label;
+      c.onclick=()=>{ state.styleDetail.has(key)?state.styleDetail.delete(key):state.styleDetail.add(key); buildStyleDetail(); };
+      chips.appendChild(c);
+    });
+    g.appendChild(chips); wrap.appendChild(g);
+  });
+}
+
+/* ---------- GENERATOR ---------- */
+function buildPrompt(){
+  const o = OBJECTS[state.obj];
+  const wild = +$("#wild").value || 2;           // 1..3 — purely how detailed/ornate the styling reads (wildNote/reliefWord below), NOT which or how many styles get used
+  // Clause count is now completely decoupled from wildness and fixed regardless of the slider —
+  // the selected style(s) are "kept alone" (never diluted with more, never with fewer), and
+  // wildness only ever changes HOW densely/deeply that same fixed motif set gets described. This
+  // also fixes the earlier "kept alone" bug: wildness used to scale clause count (3/6/12), which
+  // for a no-selection surprise render meant cramming in up to 12 unrelated style categories.
+  const clauseTarget = 3;
+  // choose styles — empty selection = surprise mix, but capped to a SMALL coherent set (same
+  // 1-3 convention the Surprise-me button uses), not every category in the whole catalog. The
+  // clause-pulling loop below advances through styleKeys unconditionally each iteration, so
+  // handing it all 36 keys with a high wildness clause target (up to 12) would guarantee 12
+  // completely unrelated styles crammed onto one object — exactly the "kitchen sink" bug this
+  // avoids. Multiple clauses still get pulled from within these few styles to fill clauseTarget.
+  let styleKeys = [...state.styles];
+  if(styleKeys.length===0) styleKeys = shuffle(Object.keys(STYLES)).slice(0, 1+Math.floor(Math.random()*3));
+  styleKeys = shuffle(styleKeys);
+  // Wildness drives clause count directly. Pull DISTINCT clauses, round-robin across
+  // the chosen styles; with a single style this draws several clauses from its own bank.
+  // Each style's clause pool = its selected fine-tune variants, or all of them.
+  const pools={}; styleKeys.forEach(k=>{
+    const vs=STYLES[k].variants;
+    const chosen=vs.filter(v=>state.styleDetail.has(k+"::"+v.label));
+    pools[k]=shuffle((chosen.length?chosen:vs).map(v=>v.clause));
+  });
+  const usedStyles=[], clauses=[];
+  let i=0, guard=0;
+  while(clauses.length<clauseTarget && guard++<100){
+    const k=styleKeys[i%styleKeys.length]; i++;
+    if(pools[k].length){
+      clauses.push(pools[k].shift());
+      if(!usedStyles.includes(k)) usedStyles.push(k);
+    } else if(styleKeys.every(kk=>pools[kk].length===0)){
+      break; // every distinct clause used up
+    }
+  }
+  // shape (silhouette) for this object
+  const shapeObj = o.shapes.find(s=>s.label===state.shape) || o.shapes[0];
+  // palette
+  let palSel = $("#palette").value;
+  const pal = palSel==="random" ? pick(PALETTES) : PALETTES.find(p=>p.v===palSel);
+  // view
+  const view = VIEWS.find(v=>v.v===$("#view").value) || VIEWS[0];
+
+  const objNoun = (o.promptName || o.label).toLowerCase();
+  const isAuto = shapeObj.label==="Auto";
+  const formPhrase = isAuto
+    ? (state.obj==="birdhouse"
+        ? "a rounded gourd-, orb- or pod-like birdhouse with a clear round entrance hole — clean and recognizable"
+        : `a clean, classic, clearly recognizable ${objNoun} shape, ornamented but never distorted beyond recognition`)
+    : shapeObj.prompt;
+  // Every render is 3D-print-safe, unconditionally — no toggle, no exceptions.
+  const printable = true;
+
+  // Wildness escalates DENSITY/DEPTH of the same small motif set, not how many distinct styles
+  // get combined (see clauseTarget above) — every level reads as bold (old max is the new floor),
+  // and each step up makes the SAME motifs repeat, layer and carve deeper rather than introducing
+  // more unrelated decoration. Shared across the compact SD and Flux prompts.
+  const wildNote = wild>=3
+    ? "The styling is taken to a maximalist extreme: the same motifs repeat, overlap and layer densely across every inch of the surface, piled on top of themselves as many times as the form allows, carved as deep as the material permits, while the object still stays clearly recognizable as what it is."
+    : wild===2
+    ? "The styling is pushed further than a single clean pass: the same motifs repeat and layer over themselves across the surface, doubling up in density and carved noticeably deeper, so the decoration reads as richer and more elaborate without introducing anything new."
+    : "The styling is bold, richly detailed and confidently applied across the whole surface — every motif appears clearly and is carved with real depth, but each one appears once, cleanly, without repeating or layering over itself.";
+  const reliefWord = wild>=3 ? "maximalist, overlapping, self-repeating, carved to maximum depth" : wild===2 ? "doubled-up, repeating, deeply carved" : "bold, richly detailed";
+  // Ring holders need OPEN prongs to slide a ring onto — decorating the whole form (the default
+  // for every other object) fills the gaps between prongs with relief pattern and fuses them into
+  // a solid mesh/canopy, which is useless for actually hanging a ring. Confine the decoration to
+  // the trunk/base and keep every prong bare, regardless of wildness.
+  const jewelryNote = state.obj==="jewelry"
+    ? " The decorative pattern is confined to the trunk, spire core and base only. Every individual prong, branch, finger or arm that a ring would hang on stays smooth and bare — no relief pattern on the prongs themselves — and each one is a separate open shape with clear empty air on all sides, never touching, merging, webbing or fusing with its neighbors into a solid mass, fan, canopy or lattice. The silhouette must not read as a round or fan-shaped disc, medallion or coral-like cluster from any angle — the empty background must be clearly visible through generous gaps between every prong."
+    : "";
+
+  // --- Compact SD prompt for local ComfyUI renders (identity-first, zero negations) ---
+  const so = SD_OBJ[state.obj] || {noun:objNoun, bits:""};
+  const sdShape = isAuto ? "" : shapeObj.label.split("/")[0].trim().toLowerCase()+" shaped, ";
+  // Chosen fine-tune variants REPLACE the style's generic keywords (no doubling);
+  // total phrase count is capped by wildness so "minimal" really is minimal.
+  const sdPhrases=[];
+  for(const k of [...new Set(usedStyles)]){
+    const chosen=[...state.styleDetail].filter(x=>x.startsWith(k+"::")).map(x=>VARIANT_SD[x]).filter(Boolean);
+    if(chosen.length) sdPhrases.push(...chosen);
+    else if(SD_STYLE[k]) sdPhrases.push(SD_STYLE[k]);
+  }
+  const sdStyles = [...new Set(sdPhrases)].slice(0, Math.max(1,clauseTarget));
+  const sdRelief = reliefWord+" carved relief";
+  // The hosted app always renders Flux via the cloud API, so the rich Flux prompt path
+  // below is the only one that runs (the keyword branches are kept for the local version's
+  // prompt-display parity but are effectively dead here).
+  const fam = "flux";
+  const tail = fam==="sd15"
+    ? "centered on a plain light gray seamless studio background, soft even diffuse lighting, matte surface, sharp focus, high quality"
+    : "the ornamentation deeply sculpted into the surface with crisp self-shadowed relief, centered on a plain light gray seamless studio background, soft even diffuse studio lighting, matte non-reflective surface, professional product photography, ultra detailed textures, sharp focus, 4k";
+  // Order matters: CLIP weighs the first ~75 tokens hardest, so the
+  // object-critical bans go first and the generic quality list last.
+  const sdNegParts=[];
+  if(so.neg && !shapeObj.houseLike) sdNegParts.push(so.neg);
+  if(!/face|head|skull/i.test(shapeObj.label)) sdNegParts.push("carved face, human face");
+  sdNegParts.push(SD_NEG_BASE);
+  if(printable) sdNegParts.push(SD_NEG_PRINT);
+  const sdNeg = sdNegParts.join(", ");
+
+  let sd;
+  if(fam==="flux"){
+    // Flux's fast/distilled render path runs at cfg=1 with the negative conditioning zeroed
+    // out — the negative literally has zero effect there, so every constraint must live in
+    // the POSITIVE, phrased affirmatively. Flux's T5 encoder also reads far more than SD1.5's
+    // 75-token CLIP window, so reuse the same rich, already-hardened pieces built for `text`
+    // above (o.fn, formPhrase, the full style clauses) instead of the terse SD keyword system.
+    sd = [
+      `A single ${objNoun}, instantly and unmistakably recognizable as a real, functional ${objNoun} — exactly one object, alone and centered, nothing else in the scene.`,
+      o.fn,
+      `Its overall form is ${formPhrase}.`,
+      `It is richly decorated with ${clauses.join(", and ")}, applied as ${reliefWord} deep, physically sculpted three-dimensional relief — raised, carved and self-shadowed so the surface itself changes shape, never a flat painted or printed pattern.${jewelryNote}`,
+      printable ? PRINTABLE : "",
+      wildNote,
+      `The whole piece is ${pal.t}.`,
+      `Photographed ${view.t}, sitting directly on a plain seamless light-grey studio surface with no pedestal, stand or platform beneath it, and no other objects, furniture or scenery anywhere in frame.`,
+      "Soft even diffuse studio lighting, matte non-reflective surface, ultra-detailed, sharp focus, professional product photography, 4k."
+    ].filter(Boolean).join(" ").replace(/\s{2,}/g," ");
+  } else {
+    // Style decoration phrases previously had ZERO emphasis weight while object bits/negatives
+    // do (see SD_OBJ) — for less-common surface motifs (circuit board, barnacle crust, marbling,
+    // lunar craters...) this let the object's own weighted bits + the generic relief tail win the
+    // token budget entirely, rendering a plain undecorated object. Weighting each phrase like every
+    // other emphasis-bearing term in this file gives decoration real pull against the base object.
+    const sdStylesWeighted = sdStyles.map(p=>`(${p}:1.3)`).join(", ");
+    sd = (`product photograph of a single ${so.noun}, ${sdShape}${so.bits}, `
+      + `decorated with ${sdStylesWeighted}, ${sdRelief}, `
+      + `${SD_PAL[pal.v]||"matte finish"}, ${SD_VIEW[view.v]||""}, `+tail)
+      .replace(/\s{2,}/g," ").replace(/,\s*,/g,", ");
+  }
+  // ⚡ Overdrive — literal, unconditional, tacked onto the very end regardless of family/wildness.
+  if(state.overdrive) sd = sd + " MAKE IT ULTRA WEIRD";
+
+  return {
+    id: genId(),
+    sd,
+    sdNeg,
+    obj: state.obj,
+    shape: shapeObj.label,
+    styles: [...new Set(usedStyles)],
+    palette: pal.v
+  };
+}
+// full prompt text incl. the Avoid line (used for copy + dedup)
+// Dedup key for favorites/history. Prefers the actual render prompt (what matters now);
+// falls back to the old long text/neg fields for favorites saved before this simplification.
+function full(it){ return (it.sd || it.text || "") + "\n\n" + (it.sdNeg || it.neg || ""); }
+
+// Builds one full detail card for an item (image, meta pills, fav/render/remove tools).
+// Shared by the Generate tab's inline list AND the favorites/history modal (see renderThumbGrid).
+function buildCard(item, opts={}){
+  const card=document.createElement("div");card.className="card";
+  const styleLabels=item.styles.map(s=>STYLES[s]?.label||s).join(" · ")||"surprise mix";
+  const isFav = favs.some(f=>sameItem(f,item));
+  card.innerHTML=`
+    <div class="meta">
+      <span class="pill obj">${OBJECTS[item.obj]?.emoji||""} ${OBJECTS[item.obj]?.label||item.obj}</span>
+      ${item.shape && item.shape!=="Auto" ? `<span class="pill">◆ ${item.shape}</span>` : ""}
+      <span class="pill">${styleLabels}</span>
+      <span class="pill">${item.palette}</span>
+    </div>
+    <div class="tools">
+      <div class="tbtn fav ${isFav?'on':''}">${isFav?'★ Saved':'☆ Favorite'}</div>
+      <div class="tbtn render" title="Generate the image">${item.renderImg?'🔄 Re-render':'🖼 Render'}</div>
+      ${opts.showReroll?'<div class="tbtn reroll" title="Render 6 random objects in this same style">🎲 Reroll ×6</div>':''}
+      ${opts.showRemove?'<div class="tbtn remove">✕ Remove</div>':''}
+    </div>
+    <div class="render-wrap">${item.renderImg?'':'<div class="render-status">Click 🖼 Render to generate this design.</div>'}</div>`;
+  card.querySelector(".fav").onclick=()=>{
+    toggleFav(item);
+    const b=card.querySelector(".fav"); const on=favs.some(f=>sameItem(f,item));
+    b.classList.toggle("on",on); b.textContent=on?"★ Saved":"☆ Favorite";
+    if(opts.onFavToggle) opts.onFavToggle();
+  };
+  card.querySelector(".render").onclick=()=>renderCard(item, card);
+  if(opts.showReroll) card.querySelector(".reroll").onclick=()=>rerollFromItem(item);
+  if(opts.showRemove) card.querySelector(".remove").onclick=()=>{opts.onRemove(item);};
+  card._item=item;
+  // Restore a previously-saved picture immediately — no re-render click needed.
+  if(item.renderImg) renderImageInto(card.querySelector(".render-wrap"), item, item.renderImg);
+  return card;
+}
+function render(list, container, opts={}){
+  container.innerHTML="";
+  if(!list.length){
+    container.innerHTML=`<div class="empty">${opts.emptyMsg||"Nothing here yet."}</div>`;
+    return;
+  }
+  list.forEach(item=>container.appendChild(buildCard(item, opts)));
+}
+// Large-thumbnail grid for favorites/history — avoids the mile-long scroll of full cards.
+// Click a tile to open the full card (image, tools, edit box) in a modal.
+function renderThumbGrid(list, container, opts={}){
+  container.innerHTML="";
+  if(!list.length){
+    container.innerHTML=`<div class="empty">${opts.emptyMsg||"Nothing here yet."}</div>`;
+    return;
+  }
+  const grid=document.createElement("div"); grid.className="thumbGrid";
+  list.forEach(item=>{
+    const tile=document.createElement("div"); tile.className="thumbTile";
+    const objInfo=OBJECTS[item.obj];
+    if(item.renderImg){
+      tile.innerHTML=`<img class="thumbImg" loading="lazy" />
+        <div class="thumbBadge">${objInfo?.emoji||""} ${objInfo?.label||item.obj}</div>`;
+      imgSrc(item.renderImg).then(u=>{ if(u) tile.querySelector(".thumbImg").src=u; });
+    } else {
+      tile.classList.add("noImg");
+      tile.innerHTML=`<div class="thumbPlaceholder">${objInfo?.emoji||"🖼"}<span>No picture yet</span></div>
+        <div class="thumbBadge">${objInfo?.label||item.obj}</div>`;
+    }
+    tile.onclick=()=>openCardModal(item, opts);
+    grid.appendChild(tile);
+  });
+  container.appendChild(grid);
+}
+// Full-detail modal opened from a thumbnail — reuses buildCard so every tool (render, favorite,
+// remove, download, edit box) behaves identically to the old full-card list, just not inline.
+function openCardModal(item, opts){
+  const wrap=$("#cardModalWrap");
+  const body=$("#cardModalBody");
+  body.innerHTML="";
+  const card=buildCard(item, {...opts, onFavToggle:()=>{ if(opts.onFavToggle) opts.onFavToggle(); }});
+  body.appendChild(card);
+  wrap.classList.add("show");
+}
+function closeCardModal(){ $("#cardModalWrap").classList.remove("show"); $("#cardModalBody").innerHTML=""; }
+// Shared by a fresh ComfyUI render and by restoring a saved favorite/history picture.
+// Attaches ONE edit box below the image — used for the top-level render only. Edit RESULTS use
+// renderEditResultInto() instead, which deliberately does NOT nest another edit box: re-applying
+// the same top box always edits from this original image again, so you get independent variations
+// to compare rather than an ever-growing stack of edit boxes above and below each new picture.
+function renderImageInto(wrap, item, imgRef){
+  wrap.innerHTML = "";
+  const image = new Image(); image.className = "render";
+  image.onerror = ()=>{ wrap.innerHTML = `<div class="render-status err">This saved image is missing from this browser — click 🔄 Re-render for a fresh one.</div>`; };
+  wrap.appendChild(image);
+  const meta = document.createElement("div"); meta.className = "render-meta";
+  const dl = document.createElement("a");
+  dl.download = downloadName(item, "x.png"); dl.textContent = "⬇ Save image";
+  meta.appendChild(dl);
+  imgSrc(imgRef).then(u=>{ if(!u){ image.onerror(); return; } image.src=u; dl.href=u; });
+  if(item.renderMs){ const t=document.createElement("span"); t.className="render-time"; t.textContent=fmtDuration(item.renderMs); meta.appendChild(t); }
+  wrap.appendChild(meta);
+  wrap.appendChild(buildEditBox(item, wrap));
+  // Resurrect this picture's saved edits (favorites/history) below the edit box. Without this,
+  // an edit's panel — image, save links, ☆ — only existed in the live DOM and closing the card
+  // silently discarded it, even though the edit itself was safe in history.
+  const pastEdits = [], seenIds = new Set();
+  for (const list of [hist, favs]) for (const e of list) {
+    if (e.edited && e.parentId === item.id && e.renderImg && !seenIds.has(e.id)) { seenIds.add(e.id); pastEdits.push(e); }
+  }
+  pastEdits.forEach(e => {
+    const slot = document.createElement("div"); slot.className = "edit-result";
+    renderEditResultInto(slot, e, e.renderImg);
+    const lbl = document.createElement("div"); lbl.className = "render-status"; lbl.style.color = "#54d69b";
+    lbl.textContent = `✎ Edited: "${e.editInstruction || (e.sd||"").split("— edited:").pop().trim()}"`;
+    slot.insertBefore(lbl, slot.firstChild);
+    wrap.appendChild(slot);
+  });
+}
+// Fills an .edit-result slot with a finished edit — image, save link, save-to-desktop button,
+// its OWN favorite button (an edit is a distinct favoritable item from the card's original
+// picture), and how long the edit took. No nested edit box here — see the note on
+// renderImageInto above: re-applying the same top box always edits from the original image
+// again, so you get independent variations to compare rather than an ever-growing stack of
+// edit boxes above and below each new picture.
+function renderEditResultInto(wrap, item, imgRef){
+  wrap.innerHTML = "";
+  const image = new Image(); image.className = "render";
+  wrap.appendChild(image);
+  const meta = document.createElement("div"); meta.className = "render-meta";
+  const dl = document.createElement("a");
+  dl.download = downloadName(item, "x.png"); dl.textContent = "⬇ Save image";
+  meta.appendChild(dl);
+  imgSrc(imgRef).then(u=>{ if(u){ image.src=u; dl.href=u; } });
+  meta.appendChild(buildFavBtn(item));
+  if(item.renderMs){ const t=document.createElement("span"); t.className="render-time"; t.textContent=fmtDuration(item.renderMs); meta.appendChild(t); }
+  wrap.appendChild(meta);
+}
+// AI touch-up: describe a change, regenerate anchored to the current image (img2img).
+// Attached to every image wrap, so edits can be chained (edit an edit) via natural DOM nesting.
+// Strength presets — pick the intent, not a number. "Add something" defaults to a higher
+// denoise than you'd guess: img2img needs real freedom to hallucinate a brand-new physical
+// feature (a perch that isn't in the source image at all), whereas low denoise mostly just
+// nudges color/texture on what's already there. Calibrated against real renders earlier this
+// session: ~0.55 held structure but barely changed color; ~0.85 changed color convincingly but
+// let geometry drift. "Add something" sits just under that drift zone.
+const EDIT_PRESETS = [
+  {key:"tiny",  label:"✏️ Tiny tweak",     strength:0.35},
+  {key:"color", label:"🎨 Change color/style", strength:0.55},
+  {key:"add",   label:"➕ Add something",  strength:0.75},
+  {key:"big",   label:"🌪️ Big change",     strength:0.9}
+];
+function buildEditBox(item, wrap){
+  const box = document.createElement("div"); box.className = "edit-box";
+  box.innerHTML = `
+    <div class="edit-row">
+      <input type="text" class="edit-instruction" placeholder="Describe the change… e.g. add a perch below the entrance hole, deep blue glaze, wider opening" />
+      <div class="tbtn edit-apply">✎ Apply edit</div>
+    </div>
+    <div class="edit-row edit-presets">
+      ${EDIT_PRESETS.map(p=>`<div class="tbtn edit-preset" data-preset="${p.key}" data-strength="${p.strength}">${p.label}</div>`).join("")}
+    </div>
+    <div class="edit-row">
+      <label class="edit-strength-label">Strength <span class="edit-strength-val">0.5</span> <span style="text-transform:none;letter-spacing:0;color:#6f5f8f">(or fine-tune manually — low = subtle, high = bigger change)</span></label>
+      <input type="range" class="edit-strength" min="0.2" max="0.9" step="0.05" value="0.5" />
+    </div>
+    <div class="edit-result"></div>`;
+  const strengthEl = box.querySelector(".edit-strength"), strengthVal = box.querySelector(".edit-strength-val");
+  const presetBtns = box.querySelectorAll(".edit-preset");
+  const syncPresetHighlight = ()=>{
+    const v = +strengthEl.value;
+    presetBtns.forEach(b=>b.classList.toggle("on", Math.abs(+b.dataset.strength - v) < 0.001));
+  };
+  strengthEl.oninput = ()=>{ strengthVal.textContent = strengthEl.value; syncPresetHighlight(); };
+  presetBtns.forEach(b=>b.onclick=()=>{
+    strengthEl.value = b.dataset.strength;
+    strengthVal.textContent = b.dataset.strength;
+    syncPresetHighlight();
+    box.querySelector(".edit-instruction").focus();
+  });
+  const instrEl = box.querySelector(".edit-instruction");
+  const go = ()=>{
+    const instr = instrEl.value.trim();
+    if(!instr){ toast("Describe what to change first"); return; }
+    editImage(item, wrap, box, instr, +strengthEl.value);
+  };
+  box.querySelector(".edit-apply").onclick = go;
+  instrEl.onkeydown = (e)=>{ if(e.key==="Enter") go(); };
+  return box;
+}
+
+// img2img edit: sends the current image (as a data URL) plus the instruction to /api/generate.
+// strength maps to Flux's prompt_strength — how far the result may drift from the source.
+async function editImage(item, wrap, box, instruction, strength){
+  const img = wrap.querySelector(":scope > img.render");
+  if(!img || !img.src){ toast("No image to edit yet"); return; }
+  const btn = box.querySelector(".edit-apply"), resultEl = box.querySelector(".edit-result");
+  const oldTxt = btn.textContent; btn.textContent = "⏳ …";
+  resultEl.innerHTML = `<div class="render-status">Editing…</div>`;
+  const status = resultEl.querySelector(".render-status");
+  const t0 = Date.now();
+  const ctl = new AbortController(); inFlightCtls.add(ctl);
+  const tick = setInterval(()=>{ status.textContent = "Editing… "+Math.round((Date.now()-t0)/1000)+"s"; }, 1000);
+  try{
+    const srcData = await blobToDataURL(await (await fetch(img.src)).blob());
+    const positive = (item.sd || item.text) + ". " + instruction + ".";
+    const j = await apiFetch("/api/generate", {prompt: positive, aspect: $("#aspect").value, image: srcData, strength}, ctl.signal);
+    const key = genId();
+    await idbPut(key, await (await fetch(j.image)).blob());
+    const imgRef = {idb:key};
+    // An edit is its own favoritable item, distinct from the card's original. It MUST get its
+    // own id: identity checks (sameItem) go by id first, so spreading the source item without
+    // replacing the id made the edit's ☆ button toggle the ORIGINAL's favorite instead of its own.
+    const editItem = {...item, id: genId(), edited: true, parentId: item.id, editInstruction: instruction, sd: (item.sd || item.text || "") + " — edited: " + instruction, renderImg:imgRef, renderMs: Date.now()-t0};
+    // Edits join history exactly like top-level renders — history is the log of every picture
+    // made, and it's what keeps an image's bytes alive in this browser's local image store.
+    hist.unshift({...editItem});
+    hist = hist.slice(0,300);
+    LS_set("podder_hist",hist);
+    refreshCounts();
+    renderEditResultInto(resultEl, editItem, imgRef);
+    const label = document.createElement("div"); label.className = "render-status"; label.style.color = "#54d69b";
+    label.textContent = `✎ Edited: "${instruction}" (strength ${strength})`;
+    resultEl.insertBefore(label, resultEl.firstChild);
+  }catch(e){
+    const msg = String(e.message||e);
+    resultEl.innerHTML = (ctl.signal.aborted || /abort/i.test(msg)) ? `<div class="render-status">⏹ Cancelled</div>` : `<div class="render-status err">Edit failed: ${msg}</div>`;
+  }finally{
+    clearInterval(tick); inFlightCtls.delete(ctl);
+    btn.textContent = oldTxt;
+  }
+}
+
+/* ---------- ACTIONS ---------- */
+async function generate(){
+  // A fresh batch means the user has moved on — abort anything still rendering from the last one.
+  cancelInFlight();
+  const n=+$("#count").value;
+  const out=[];
+  for(let i=0;i<n;i++) out.push(buildPrompt());
+  render(out, $("#output"), {emptyMsg:"Hit Generate."});
+  document.querySelectorAll("#output .card").forEach(c=>renderCard(c._item, c));
+  // History is populated when a render actually finishes (see renderCard) — it's a log of
+  // the last 300 PICTURES, not a log of prompts that may never have been rendered.
+}
+function surprise(){
+  // randomize everything (respecting locks)
+  const keys=Object.keys(OBJECTS);
+  // a locked shape belongs to its object, so it pins the object too
+  if(!state.locks.obj && !state.locks.shape) state.obj=pick(keys);
+  if(!state.locks.shape) state.shape=pick(OBJECTS[state.obj].shapes).label;
+  else if(!OBJECTS[state.obj].shapes.some(s=>s.label===state.shape)) state.shape=OBJECTS[state.obj].shapes[0].label;
+  if(!state.locks.style){
+    state.styles=new Set(shuffle(Object.keys(STYLES)).slice(0, 1+Math.floor(Math.random()*3)));
+    // Surprise the motifs too: land on one specific random detail per style (sometimes two)
+    // instead of leaving them all on — the detail chips visibly roll with each Surprise.
+    state.styleDetail=new Set();
+    state.styles.forEach(k=>{
+      const vars=STYLES[k]?.variants||[];
+      if(!vars.length) return;
+      const n=Math.min(vars.length, Math.random()<0.3?2:1);
+      shuffle([...vars]).slice(0,n).forEach(v=>state.styleDetail.add(k+"::"+v.label));
+    });
+  }
+  if(!state.locks.pal){
+    const opts=["random",...PALETTES.map(p=>p.v)];
+    $("#palette").value=pick(opts);
+  }
+  $("#view").value = pick(VIEWS).v;
+  $("#wild").value = 1+Math.floor(Math.random()*3); onWild();
+  buildChips(); buildShapeChips(); buildStyleDetail();
+  generate();
+}
+// item.renderImg (and renderMs) are mutated onto the live item object by renderCard()/editImage()
+// once a render finishes, so favoriting just needs the item — no DOM lookup required. This also
+// lets edited images (which are their own distinct item, not the card's original) be favorited.
+function toggleFav(item){
+  const i=favs.findIndex(f=>sameItem(f,item));
+  if(i>=0){
+    if(item.renderImg && !favs[i].renderImg){
+      // was favorited before a render existed — attach the picture instead of un-favoriting
+      favs[i] = {...favs[i], renderImg:item.renderImg, renderMs:item.renderMs};
+      toast("★ Picture added to favorite");
+    } else {
+      favs.splice(i,1);
+      toast("Removed from favorites");
+    }
+  } else {
+    // Always store a COPY, never the live `item` reference — otherwise a later render on the
+    // same card silently mutates this favorite too (aliasing), bypassing the one-time guard
+    // in renderCard() that's supposed to protect an already-favorited picture from drifting.
+    favs.unshift({...item});
+    toast(item.renderImg ? "★ Picture saved to favorites" : "★ Saved to favorites (no picture yet — render it first for one)");
+  }
+  LS_set("podder_favs",favs); refreshCounts();
+  // re-render current visible tab
+  reRenderActive();
+}
+// Small reusable ☆/★ button bound to an item — used both on generate/fav/hist cards and on
+// edit results (which are their own favoritable item, distinct from the card's original).
+function buildFavBtn(item){
+  const b=document.createElement("div"); b.className="tbtn fav";
+  const sync=()=>{ const on=favs.some(f=>sameItem(f,item)); b.classList.toggle("on",on); b.textContent=on?"★ Saved":"☆ Favorite"; };
+  sync();
+  b.onclick=()=>{ toggleFav(item); sync(); };
+  return b;
+}
+// "3.1s" / "1m 05s" — shown next to a picture so you can see how long it took to generate.
+// Old saved favorites/history from before this field existed just show no badge.
+function fmtDuration(ms){
+  if(!ms || ms<0) return "";
+  const s = ms/1000;
+  return s<60 ? "⏱ "+s.toFixed(1)+"s" : "⏱ "+Math.floor(s/60)+"m "+String(Math.round(s%60)).padStart(2,"0")+"s";
+}
+/* ---------- TABS ---------- */
+function showTab(name){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===name));
+  ["gen","fav","hist","rerolls","price"].forEach(n=>$("#tab-"+n).classList.toggle("hidden",n!==name));
+  if(name==="fav") renderThumbGrid(favs,$("#favList"),{emptyMsg:"No favorites yet. Render a picture, then ☆ it to keep it here.",showRemove:true,showReroll:true,onRemove:(it)=>{toggleFav(it);closeCardModal();}});
+  if(name==="hist") renderThumbGrid(hist,$("#histList"),{emptyMsg:"No history yet.",showRemove:true,onRemove:(it)=>{hist=hist.filter(h=>!sameItem(h,it));LS_set("podder_hist",hist);refreshCounts();showTab("hist");closeCardModal();}});
+  if(name==="rerolls") renderRerollsTab();
+}
+function reRenderActive(){
+  const active=document.querySelector(".tab.active").dataset.tab;
+  if(active==="fav") showTab("fav");
+  else if(active==="hist") showTab("hist");
+  else { // just refresh fav stars on gen cards
+    document.querySelectorAll("#output .card").forEach((card)=>{
+      const b=card.querySelector(".fav");const on=favs.some(f=>sameItem(f,card._item));
+      b.classList.toggle("on",on);b.textContent=on?"★ Saved":"☆ Favorite";
+    });
+  }
+}
+function refreshCounts(){$("#favCount").textContent=favs.length;$("#histCount").textContent=hist.length;$("#rerollCount").textContent=rerolls.length;}
+// Renders 6 random objects in the SAME style DNA as sourceItem (same selected style categories —
+// each reroll still draws a fresh random clause/palette combo within them, same as any other
+// render). Creates one new persistent "subfolder" (a reroll group) — rerolling again adds another
+// group rather than replacing this one, so old sets stay browsable in the Rerolls tab.
+async function rerollFromItem(sourceItem){
+  // Temporarily drive buildPrompt() with the source item's style DNA + palette, then restore
+  // whatever the user currently has set on the Generate tab so this doesn't disrupt their work.
+  const savedObj=state.obj, savedShape=state.shape, savedStyles=new Set(state.styles), savedDetail=new Set(state.styleDetail), savedPalette=$("#palette").value;
+  state.styles=new Set(sourceItem.styles||[]);
+  state.styleDetail=new Set();
+
+  const objKeys=shuffle(Object.keys(OBJECTS)).slice(0,6);
+  const group={
+    id:Date.now()+"-"+Math.floor(Math.random()*1e6),
+    label:(sourceItem.styles||[]).map(s=>STYLES[s]?.label||s).join(" · ")||"surprise mix",
+    createdAt:Date.now(),
+    items:[]
+  };
+  objKeys.forEach(objKey=>{
+    state.obj=objKey;
+    state.shape=OBJECTS[objKey].shapes[0].label;   // Auto
+    if(sourceItem.palette) $("#palette").value=sourceItem.palette;
+    group.items.push(buildPrompt());
+  });
+
+  state.obj=savedObj; state.shape=savedShape; state.styles=savedStyles; state.styleDetail=savedDetail; $("#palette").value=savedPalette;
+
+  rerolls.unshift(group);
+  LS_set("podder_rerolls",rerolls);
+  refreshCounts();
+  closeCardModal();
+  toast(`🎲 Rerolling 6 objects in "${group.label}" style…`);
+  showTab("rerolls");
+}
+function renderRerollsTab(){
+  const container=$("#rerollsList");
+  container.innerHTML="";
+  if(!rerolls.length){ container.innerHTML=`<div class="empty">No rerolls yet. Open a favorite and click 🎲 Reroll ×6.</div>`; return; }
+  rerolls.forEach(group=>{
+    const section=document.createElement("div"); section.className="rerollGroup";
+    section.innerHTML=`
+      <div class="rerollHead">
+        <span class="rerollLabel">🎲 ${group.label}</span>
+        <span class="rerollDate">${new Date(group.createdAt).toLocaleString()}</span>
+        <div class="tbtn remove">✕ Delete set</div>
+      </div>
+      <div class="rerollGrid"></div>`;
+    section.querySelector(".remove").onclick=()=>{
+      if(confirm("Delete this set of 6 rerolls? The pictures are removed from disk too.")){
+        rerolls=rerolls.filter(g=>g.id!==group.id);
+        LS_set("podder_rerolls",rerolls);
+        refreshCounts();
+        renderRerollsTab();
+      }
+    };
+    const grid=section.querySelector(".rerollGrid");
+    group.items.forEach(item=>{
+      const card=buildCard(item,{});
+      grid.appendChild(card);
+      // Auto-render anything in this group that hasn't finished yet (e.g. group was just
+      // created, or a previous render attempt failed) — mirrors the Generate tab's auto-render.
+      if(!item.renderImg) renderCard(item,card).then(()=>LS_set("podder_rerolls",rerolls));
+    });
+    container.appendChild(section);
+  });
+}
+
+/* ---------- MISC ---------- */
+let toastTimer;
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),1600);}
+const WILD = {1:"minimal", 2:"balanced", 3:"maximal"};
+function onWild(){$("#wildVal").textContent=WILD[$("#wild").value];}
+function onCount(){$("#countVal").textContent=$("#count").value;}
+
+/* ---------- CLOUD RENDER (serverless API + browser image store) ---------- */
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+// --- PIN gate ---
+function getPin(){ return localStorage.getItem("podder_pin") || ""; }
+async function verifyPin(pin){
+  const r = await fetch("/api/auth",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({pin})});
+  return r.ok;
+}
+function showPinGate(){ $("#pinGate").classList.remove("hidden"); setTimeout(()=>$("#pinInput").focus(),50); }
+function hidePinGate(){ $("#pinGate").classList.add("hidden"); }
+
+// Every API call carries the verified PIN; a 401 anywhere re-locks the app.
+async function apiFetch(path, body, signal){
+  const r = await fetch(path,{method:"POST",signal,
+    headers:{"content-type":"application/json","x-podder-pin":getPin()},
+    body:JSON.stringify(body)});
+  if(r.status===401){ localStorage.removeItem("podder_pin"); showPinGate(); throw new Error("PIN required"); }
+  const j = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(j.detail || j.error || ("HTTP "+r.status));
+  return j;
+}
+const blobToDataURL = blob => new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(blob); });
+
+// --- Image store: rendered pictures live in IndexedDB (favorites/history/rerolls reference
+// them by key) so they survive reloads without touching localStorage's tiny quota. ---
+let __idb=null;
+function idb(){
+  if(__idb) return __idb;
+  __idb = new Promise((res,rej)=>{
+    const rq = indexedDB.open("podder-images",1);
+    rq.onupgradeneeded = ()=>rq.result.createObjectStore("img");
+    rq.onsuccess = ()=>res(rq.result);
+    rq.onerror = ()=>rej(rq.error);
+  });
+  return __idb;
+}
+async function idbPut(key, blob){ const db=await idb(); return new Promise((res,rej)=>{ const tx=db.transaction("img","readwrite"); tx.objectStore("img").put(blob,key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
+async function idbGet(key){ const db=await idb(); return new Promise((res,rej)=>{ const rq=db.transaction("img").objectStore("img").get(key); rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>rej(rq.error); }); }
+async function idbKeys(){ const db=await idb(); return new Promise((res,rej)=>{ const rq=db.transaction("img").objectStore("img").getAllKeys(); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); }); }
+async function idbDel(key){ const db=await idb(); return new Promise((res,rej)=>{ const tx=db.transaction("img","readwrite"); tx.objectStore("img").delete(key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
+
+// renderImg -> displayable URL. {idb:key} resolves from the store (object URLs are cached —
+// they stay valid for the life of the page); {url} passes straight through.
+const __urlCache = new Map();
+async function imgSrc(renderImg){
+  if(!renderImg) return null;
+  if(renderImg.url) return renderImg.url;
+  if(renderImg.idb){
+    if(__urlCache.has(renderImg.idb)) return __urlCache.get(renderImg.idb);
+    const blob = await idbGet(renderImg.idb).catch(()=>null);
+    if(!blob) return null;
+    const u = URL.createObjectURL(blob);
+    __urlCache.set(renderImg.idb, u);
+    return u;
+  }
+  return null;   // items imported from the local ComfyUI version can't resolve here
+}
+// Drop stored images nothing references anymore — runs at startup, the web version's
+// automatic equivalent of the old "Clean up unused renders" button.
+async function pruneImageStore(){
+  try{
+    const referenced = new Set([...favs,...hist,...rerolls.flatMap(g=>g.items)]
+      .map(it=>it.renderImg&&it.renderImg.idb).filter(Boolean));
+    for(const k of await idbKeys()) if(!referenced.has(k)) await idbDel(k);
+  }catch(e){}
+}
+
+// In-flight renders/edits, abortable by ⏹ Stop all or a fresh Generate.
+const inFlightCtls = new Set();
+function cancelInFlight(){
+  const n = inFlightCtls.size;
+  inFlightCtls.forEach(c=>c.abort());
+  inFlightCtls.clear();
+  return n;
+}
+
+
+// Descriptive download name, e.g. "BirdFeeder_swirly-sacred_obsidian.png"
+function slugWords(s){
+  return String(s).replace(/[^a-z0-9]+/gi," ").trim().split(/\s+/)
+    .map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join("");
+}
+function downloadName(item, comfyFilename){
+  const ext = ((comfyFilename||"").split(".").pop()||"png").toLowerCase();
+  const obj = slugWords(OBJECTS[item.obj]?.label || item.obj);          // Vase, BirdFeeder, CatchAllBowl
+  const shape = (item.shape && item.shape!=="Auto") ? "_"+slugWords(item.shape) : "";
+  const styles = (item.styles && item.styles.length) ? item.styles.join("-") : "surprise";
+  const pal = (item.palette || "art") + (item.edited ? "_edited" : "");
+  return `${obj}${shape}_${styles}_${pal}.${/^(png|jpg|jpeg|webp)$/.test(ext)?ext:"png"}`;
+}
+async function renderCard(item, card){
+  const btn = card.querySelector(".render"), wrap = card.querySelector(".render-wrap");
+  btn.disabled = true; btn.textContent = "⏳ …";
+  wrap.innerHTML = `<div class="render-status">Rendering in the cloud…</div>`;
+  const status = wrap.querySelector(".render-status");
+  const t0 = Date.now();
+  const ctl = new AbortController(); inFlightCtls.add(ctl);
+  const tick = setInterval(()=>{ status.textContent = "Rendering… "+Math.round((Date.now()-t0)/1000)+"s"; }, 1000);
+  try{
+    const positive = item.sd || item.text;                    // compact prompt; old saved items fall back
+    const j = await apiFetch("/api/generate", {prompt: positive, aspect: $("#aspect").value}, ctl.signal);
+    // Every render gets its own image-store key — a re-render must never overwrite the bytes an
+    // older history row points at (history is a log of pictures, not of prompts).
+    const key = genId();
+    await idbPut(key, await (await fetch(j.image)).blob());
+    const imgRef = {idb:key};
+    item.renderImg = imgRef;               // so a later ☆ click captures THIS picture, not just the prompt
+    item.renderMs = Date.now()-t0;
+    renderImageInto(wrap, item, imgRef);
+    if(j.mock){
+      const m = document.createElement("div"); m.className = "render-status"; m.style.color = "#e0b054";
+      m.textContent = "⚠ Mock image — set REPLICATE_API_TOKEN on the server for real renders.";
+      wrap.appendChild(m);
+    }
+
+    // History: a rolling log of the last 300 PICTURES. Snapshot (never alias `item`) so a later
+    // re-render on this same card can't retroactively change what an older history row shows.
+    {
+      hist.unshift({...item, renderImg:imgRef});
+      hist = hist.slice(0,300);
+      LS_set("podder_hist",hist);
+      refreshCounts();
+    }
+
+    // If this prompt is already a saved favorite without a picture yet, attach this one —
+    // but only ONCE (replacing the array entry breaks the aliasing), so a LATER re-render on
+    // this same card doesn't silently keep overwriting what you actually favorited.
+    const favMatch = favs.findIndex(f=>sameItem(f,item));
+    if(favMatch>=0 && !favs[favMatch].renderImg){
+      favs[favMatch] = {...favs[favMatch], renderImg:imgRef, renderMs:item.renderMs};
+      LS_set("podder_favs",favs);
+    }
+    if(item.sd){
+      const p = document.createElement("div"); p.className = "render-status"; p.style.color = "#8a78ab";
+      p.textContent = "Render prompt: " + item.sd; wrap.appendChild(p);
+    }
+  }catch(e){
+    const msg = String(e.message||e);
+    wrap.innerHTML = (ctl.signal.aborted || /abort/i.test(msg)) ? `<div class="render-status">⏹ Cancelled</div>` : `<div class="render-status err">Render failed: ${msg}</div>`;
+  }finally{
+    clearInterval(tick); inFlightCtls.delete(ctl);
+    btn.disabled = false; btn.textContent = item.renderImg ? "🔄 Re-render" : "🖼 Render";
+  }
+}
+
+/* ---------- INIT ---------- */
+buildChips();buildShapeChips();buildStyleDetail();refreshCounts();
+$("#genBtn").onclick=generate;
+$("#surpriseBtn").onclick=surprise;
+$("#stopAllBtn").onclick=async()=>{
+  const n=await cancelInFlight();
+  toast(n>0 ? `⏹ Stopped ${n} render${n===1?"":"s"}` : "Nothing is generating right now");
+};
+$("#count").oninput=onCount;
+$("#wild").oninput=onWild;
+$("#overdriveBtn").onclick=()=>{
+  state.overdrive=!state.overdrive;
+  $("#overdriveBtn").classList.toggle("on",state.overdrive);
+  // Overdrive means "as weird as it goes" — slam the weirdness slider to max along with it.
+  if(state.overdrive){ const w=$("#wild"); w.value=w.max; onWild(); }
+  toast(state.overdrive ? "⚡ Overdrive ON — every prompt now ends with MAKE IT ULTRA WEIRD" : "Overdrive off");
+};
+$("#clearHist").onclick=()=>{if(confirm("Clear all history?")){hist=[];LS_set("podder_hist",hist);refreshCounts();showTab("hist");}};
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>showTab(t.dataset.tab));
+$("#cardModalClose").onclick=closeCardModal;
+$("#cardModalWrap").onclick=(e)=>{ if(e.target.id==="cardModalWrap") closeCardModal(); };
+document.addEventListener("keydown",(e)=>{ if(e.key==="Escape" && $("#cardModalWrap").classList.contains("show")) closeCardModal(); });
+document.querySelectorAll(".lock").forEach(l=>l.onclick=()=>{
+  const k=l.dataset.lock;state.locks[k]=!state.locks[k];
+  l.classList.toggle("on",state.locks[k]);l.textContent=(state.locks[k]?"🔒":"🔓")+" lock";
+});
+// PIN bootstrap: a stored PIN is re-verified silently; otherwise the gate stays up until
+// /api/auth approves. The first batch only generates once the app is actually unlocked.
+$("#pinForm").onsubmit = async (e)=>{
+  e.preventDefault();
+  const pin = $("#pinInput").value.trim();
+  if(!pin) return;
+  const btn = e.target.querySelector("button"); btn.disabled = true;
+  const ok = await verifyPin(pin).catch(()=>false);
+  btn.disabled = false;
+  if(ok){
+    localStorage.setItem("podder_pin", pin);
+    $("#pinErr").classList.add("hidden"); $("#pinInput").value = "";
+    hidePinGate();
+    if(!document.querySelector("#output .card")) generate();
+  } else {
+    $("#pinErr").classList.remove("hidden"); $("#pinInput").select();
+  }
+};
+(async ()=>{
+  pruneImageStore();
+  if(getPin() && await verifyPin(getPin()).catch(()=>false)){
+    hidePinGate();
+    generate();
+  } else {
+    localStorage.removeItem("podder_pin");
+    showPinGate();
+  }
+})();
+</script>
+<script>
+/* ---------- PRICING TAB (ported from the standalone PrintQuote app) ---------- */
+(function(){
+  const DEFAULT_SETTINGS = { filamentPrice:20, machineRate:2, laborRate:20, failureRate:12, marginPct:45 };
+  const settingsFields = ['filamentPrice','machineRate','laborRate','failureRate','marginPct'];
+  const jobFields = ['jobName','grams','hours','postMinutes','quantity'];
+  const id = f => 'pq-'+f;
+  const el = f => document.getElementById(id(f));
+  const fmt = n => '$'+(isFinite(n)?n:0).toFixed(2);
+
+  function loadSettings(){ try{ return {...DEFAULT_SETTINGS, ...(JSON.parse(localStorage.getItem('podder_pricing_settings'))||{})}; }catch{ return {...DEFAULT_SETTINGS}; } }
+  function saveSettings(s){ localStorage.setItem('podder_pricing_settings', JSON.stringify(s)); }
+  function loadJobs(){ try{ return JSON.parse(localStorage.getItem('podder_pricing_jobs'))||[]; }catch{ return []; } }
+  function saveJobsLS(j){ localStorage.setItem('podder_pricing_jobs', JSON.stringify(j)); }
+
+  let settings = loadSettings();
+  let jobs = loadJobs();
+
+  function readSettingsFromForm(){
+    return {
+      filamentPrice: parseFloat(el('filamentPrice').value)||0,
+      machineRate: parseFloat(el('machineRate').value)||0,
+      laborRate: parseFloat(el('laborRate').value)||0,
+      failureRate: parseFloat(el('failureRate').value)||0,
+      marginPct: parseFloat(el('marginPct').value)||0,
+    };
+  }
+  function readJobInputs(){
+    return {
+      jobName: el('jobName').value.trim(),
+      grams: parseFloat(el('grams').value)||0,
+      hours: parseFloat(el('hours').value)||0,
+      postMinutes: parseFloat(el('postMinutes').value)||0,
+      quantity: Math.max(1, parseInt(el('quantity').value)||1),
+    };
+  }
+  function computeQuote(s, job){
+    const materialCost = (job.grams/1000)*s.filamentPrice;
+    const machineCost = job.hours*s.machineRate;
+    const laborCost = (job.postMinutes/60)*s.laborRate;
+    const preFailure = materialCost+machineCost+laborCost;
+    const failureCost = preFailure*(s.failureRate/100);
+    const breakEven = preFailure+failureCost;
+    const denom = 1-(s.marginPct/100);
+    const price = denom>0 ? breakEven/denom : breakEven;
+    return { materialCost, machineCost, laborCost, failureCost, breakEven, marginAdd:price-breakEven, price };
+  }
+  function renderSettingsToForm(s){ settingsFields.forEach(f=>el(f).value=s[f]); }
+  function escapeHtml(str){ const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
+
+  function updateCalculator(){
+    settings = readSettingsFromForm();
+    saveSettings(settings);
+    const job = readJobInputs();
+    const q = computeQuote(settings, job);
+    el('bdMaterial').textContent=fmt(q.materialCost);
+    el('bdMachine').textContent=fmt(q.machineCost);
+    el('bdLabor').textContent=fmt(q.laborCost);
+    el('bdFailure').textContent=fmt(q.failureCost);
+    el('bdSubtotal').textContent=fmt(q.breakEven);
+    el('bdMarginAdd').textContent=fmt(q.marginAdd);
+    el('bdTotal').textContent=fmt(q.price);
+    el('suggestedPrice').textContent=fmt(q.price);
+    el('perItemNote').textContent = job.quantity>1 ? `(batch of ${job.quantity}: ${fmt(q.price*job.quantity)} total)` : '';
+    return { job, q };
+  }
+  function renderJobs(){
+    document.getElementById('pq-jobCount').textContent = jobs.length;
+    const wrap = document.getElementById('pq-jobsWrap');
+    if(jobs.length===0){ wrap.innerHTML='<div class="pq-empty">No jobs saved yet. Fill out "This Print" and click Save Job to List.</div>'; return; }
+    let html = `<table class="pq-table"><thead><tr>
+      <th>Job</th><th class="num">Qty</th><th class="num">Grams</th><th class="num">Hours</th>
+      <th class="num">Cost/ea</th><th class="num">Price/ea</th><th class="num">Batch Total</th><th></th>
+    </tr></thead><tbody>`;
+    jobs.forEach((j,i)=>{
+      const q = computeQuote(settings, j);
+      html += `<tr>
+        <td>${escapeHtml(j.jobName||'Untitled')}</td>
+        <td class="num">${j.quantity}</td>
+        <td class="num">${j.grams}g</td>
+        <td class="num">${j.hours}h</td>
+        <td class="num">${fmt(q.breakEven)}</td>
+        <td class="num">${fmt(q.price)}</td>
+        <td class="num">${fmt(q.price*j.quantity)}</td>
+        <td><div class="pq-job-actions">
+          <button onclick="window.pqLoadJob(${i})">Load</button>
+          <button class="btn ghost" onclick="window.pqDeleteJob(${i})">✕</button>
+        </div></td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    wrap.innerHTML = html;
+  }
+  window.pqLoadJob = function(i){
+    const j = jobs[i];
+    jobFields.forEach(f=>el(f).value=j[f]);
+    updateCalculator();
+  };
+  window.pqDeleteJob = function(i){ jobs.splice(i,1); saveJobsLS(jobs); renderJobs(); };
+
+  document.getElementById('pq-saveJobBtn').onclick = () => {
+    const { job } = updateCalculator();
+    if(!job.grams && !job.hours) return;
+    if(!job.jobName) job.jobName = 'Untitled '+(jobs.length+1);
+    jobs.push(job);
+    saveJobsLS(jobs);
+    renderJobs();
+  };
+  [...settingsFields, ...jobFields].forEach(f => el(f).addEventListener('input', updateCalculator));
+
+  renderSettingsToForm(settings);
+  updateCalculator();
+  renderJobs();
+})();
+</script>
+</body>
+</html>
