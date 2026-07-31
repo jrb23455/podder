@@ -56,7 +56,10 @@ export default async function handler(req, res) {
   const { prompt, aspect = '1:1', image, strength } = req.body || {};
   if (!prompt || typeof prompt !== 'string') return res.status(400).json({ error: 'missing_prompt' });
 
-  const token = process.env.REPLICATE_API_TOKEN;
+  // Tolerate the classic env-var paste accidents: surrounding whitespace/newlines, wrapping
+  // quotes, or a copied "Bearer " prefix — all of which make Replicate reject the token.
+  const token = (process.env.REPLICATE_API_TOKEN || '')
+    .trim().replace(/^["']|["']$/g, '').replace(/^Bearer\s+/i, '').trim();
   if (!token) return res.status(200).json({ image: mockImage(prompt), mock: true });
 
   try {
