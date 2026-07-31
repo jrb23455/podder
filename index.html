@@ -1946,7 +1946,10 @@ async function generate(){
   const out=[];
   for(let i=0;i<n;i++) out.push(buildPrompt());
   render(out, $("#output"), {emptyMsg:"Hit Generate."});
-  document.querySelectorAll("#output .card").forEach(c=>renderCard(c._item, c));
+  // All cards render in PARALLEL for speed, but each one's reveal is gated on the card above
+  // it having revealed first — images always appear in order, top down, never bottom-up.
+  let prevReveal = Promise.resolve();
+  document.querySelectorAll("#output .card").forEach(c=>{ prevReveal = renderCard(c._item, c, prevReveal); });
   // History is populated when a render actually finishes (see renderCard) — it's a log of
   // the last 300 PICTURES, not a log of prompts that may never have been rendered.
 }
@@ -2204,7 +2207,7 @@ function downloadName(item, comfyFilename){
   const pal = (item.palette || "art") + (item.edited ? "_edited" : "");
   return `${obj}${shape}_${styles}_${pal}.${/^(png|jpg|jpeg|webp)$/.test(ext)?ext:"png"}`;
 }
-async function renderCard(item, card){
+async function renderCard(item, card, revealAfter){
   const btn = card.querySelector(".render"), wrap = card.querySelector(".render-wrap");
   btn.disabled = true; btn.textContent = "⏳ …";
   wrap.innerHTML = `<div class="render-status">Rendering in the cloud…</div>`;
@@ -2219,6 +2222,9 @@ async function renderCard(item, card){
     // older history row points at (history is a log of pictures, not of prompts).
     const key = genId();
     await idbPut(key, await (await fetch(j.image)).blob());
+    // Ordered reveal: the picture is fetched and safely stored, but it only appears once the
+    // card above has shown its result — batches fill strictly top-down, never bottom-up.
+    if(revealAfter) await revealAfter.catch(()=>{});
     const imgRef = {idb:key};
     item.renderImg = imgRef;               // so a later ☆ click captures THIS picture, not just the prompt
     item.renderMs = Date.now()-t0;
@@ -2251,6 +2257,7 @@ async function renderCard(item, card){
       p.textContent = "Render prompt: " + item.sd; wrap.appendChild(p);
     }
   }catch(e){
+    if(revealAfter) await revealAfter.catch(()=>{});   // even failures report in top-down order
     const msg = String(e.message||e);
     wrap.innerHTML = (ctl.signal.aborted || /abort/i.test(msg)) ? `<div class="render-status">⏹ Cancelled</div>` : `<div class="render-status err">Render failed: ${msg}</div>`;
   }finally{
