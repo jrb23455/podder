@@ -29,16 +29,26 @@ function mockImage(prompt) {
 }
 
 async function replicate(input, token) {
-  // Sync-preferred create; falls back to polling if the prediction outlives the wait window.
-  const create = await fetch(`https://api.replicate.com/v1/models/${MODEL()}/predictions`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Prefer: 'wait=55' },
-    body: JSON.stringify({ input }),
-  });
-  let pred = await create.json();
-  if (!create.ok) throw new Error(pred?.detail || pred?.title || `Replicate ${create.status}`);
+  const deadline = Date.now() + 50_000;   // stay inside the 60s function window
 
-  const deadline = Date.now() + 55_000;
+  // Accounts holding <$5 credit are throttled to 1 concurrent prediction (burst refills every
+  // ~10s) — a 3-card Podder batch trips that instantly. On a throttle response, wait out the
+  // refill and retry instead of failing the card; with credit on the account the first attempt
+  // just succeeds and none of this runs.
+  let pred;
+  for (;;) {
+    const create = await fetch(`https://api.replicate.com/v1/models/${MODEL()}/predictions`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Prefer: 'wait=30' },
+      body: JSON.stringify({ input }),
+    });
+    pred = await create.json();
+    if (create.ok) break;
+    const msg = pred?.detail || pred?.title || `Replicate ${create.status}`;
+    const throttled = create.status === 429 || /throttl|rate limit/i.test(String(msg));
+    if (!throttled || Date.now() + 12_000 > deadline) throw new Error(msg);
+    await new Promise(r => setTimeout(r, 12_000));
+  }
   while (pred.status === 'starting' || pred.status === 'processing') {
     if (Date.now() > deadline) throw new Error('Render timed out — try again');
     await new Promise(r => setTimeout(r, 1500));
