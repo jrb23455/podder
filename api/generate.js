@@ -12,7 +12,7 @@ import { pinOk } from './auth.js';
 
 export const maxDuration = 60;
 
-const MODEL = 'black-forest-labs/flux-schnell';
+const MODEL = 'black-forest-labs/flux-dev';
 
 function mockImage(prompt) {
   const label = (prompt || 'mock render').slice(0, 90).replace(/[<>&"]/g, ' ');
