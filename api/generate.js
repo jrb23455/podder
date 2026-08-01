@@ -37,10 +37,10 @@ async function replicate(input, token) {
   // just succeeds and none of this runs.
   let pred;
   for (;;) {
-    const create = await fetch(`https://api.replicate.com/v1/models/${MODEL}/predictions`, {
+    const create = await fetch(`https://api.replicate.com/v1/predictions`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Prefer: 'wait=30' },
-      body: JSON.stringify({ input }),
+      body: JSON.stringify({ model: MODEL, input }),
     });
     pred = await create.json();
     if (create.ok) break;
