@@ -148,6 +148,9 @@
   .pinBox input{flex:1;padding:12px 14px;border-radius:12px;border:1px solid var(--panel-brd);background:#1a1130;color:var(--ink);
     font-size:20px;letter-spacing:6px;text-align:center;min-width:0}
   .pinErr{color:#e07a7a;font-size:13px;margin-top:12px}
+  /* Spinning swirl shown inside a card while its image is rendering */
+  .render-spin{width:56px;height:56px;border-radius:14px;display:block;margin:26px auto 10px;animation:podSpin 2.6s linear infinite}
+  @keyframes podSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 
   .rerollGroup{margin-bottom:32px}
   .rerollHead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--panel-brd)}
@@ -1903,7 +1906,7 @@ async function editImage(item, wrap, box, instruction, strength){
   if(!img || !img.src){ toast("No image to edit yet"); return; }
   const btn = box.querySelector(".edit-apply"), resultEl = box.querySelector(".edit-result");
   const oldTxt = btn.textContent; btn.textContent = "⏳ …";
-  resultEl.innerHTML = `<div class="render-status">Editing…</div>`;
+  resultEl.innerHTML = `<div style="text-align:center"><img class="render-spin" src="Podder-192.png" alt="" /><div class="render-status">Editing…</div></div>`;
   const status = resultEl.querySelector(".render-status");
   const t0 = Date.now();
   const ctl = new AbortController(); inFlightCtls.add(ctl);
@@ -2121,9 +2124,15 @@ const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
 // --- PIN gate ---
 function getPin(){ return localStorage.getItem("podder_pin") || ""; }
+// "ok" = accepted, "bad" = server explicitly rejected the PIN, "error" = server unreachable.
+// The distinction matters: a stored PIN must only be forgotten on "bad" — dropping it on a
+// transient network blip forces a pointless re-login.
 async function verifyPin(pin){
-  const r = await fetch("/api/auth",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({pin})});
-  return r.ok;
+  try{
+    const r = await fetch("/api/auth",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({pin})});
+    if(r.ok) return "ok";
+    return r.status===401 ? "bad" : "error";
+  }catch(e){ return "error"; }
 }
 function showPinGate(){ $("#pinGate").classList.remove("hidden"); setTimeout(()=>$("#pinInput").focus(),50); }
 function hidePinGate(){ $("#pinGate").classList.add("hidden"); }
@@ -2210,7 +2219,7 @@ function downloadName(item, comfyFilename){
 async function renderCard(item, card, revealAfter){
   const btn = card.querySelector(".render"), wrap = card.querySelector(".render-wrap");
   btn.disabled = true; btn.textContent = "⏳ …";
-  wrap.innerHTML = `<div class="render-status">Rendering in the cloud…</div>`;
+  wrap.innerHTML = `<div style="text-align:center"><img class="render-spin" src="Podder-192.png" alt="" /><div class="render-status">Rendering in the cloud…</div></div>`;
   const status = wrap.querySelector(".render-status");
   const t0 = Date.now();
   const ctl = new AbortController(); inFlightCtls.add(ctl);
@@ -2295,7 +2304,7 @@ $("#pinForm").onsubmit = async (e)=>{
   const pin = $("#pinInput").value.trim();
   if(!pin) return;
   const btn = e.target.querySelector("button"); btn.disabled = true;
-  const ok = await verifyPin(pin).catch(()=>false);
+  const ok = (await verifyPin(pin)) === "ok";
   btn.disabled = false;
   if(ok){
     localStorage.setItem("podder_pin", pin);
@@ -2308,11 +2317,12 @@ $("#pinForm").onsubmit = async (e)=>{
 };
 (async ()=>{
   pruneImageStore();
-  if(getPin() && await verifyPin(getPin()).catch(()=>false)){
+  const v = getPin() ? await verifyPin(getPin()) : "bad";
+  if(v === "ok"){
     hidePinGate();
     generate();
   } else {
-    localStorage.removeItem("podder_pin");
+    if(v === "bad") localStorage.removeItem("podder_pin");   // keep the PIN on transient errors
     showPinGate();
   }
 })();
