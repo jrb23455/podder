@@ -128,6 +128,10 @@
   .thumbPlaceholder span{font-size:12px;font-weight:600}
   .thumbBadge{position:absolute;left:0;right:0;bottom:0;padding:10px 12px;font-size:12.5px;font-weight:700;color:#fff;
     background:linear-gradient(0deg,rgba(0,0,0,.72),transparent);text-shadow:0 1px 3px rgba(0,0,0,.6)}
+  .thumbSave{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:8px;
+    background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:14px;
+    display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;cursor:pointer;z-index:2}
+  .thumbTile:hover .thumbSave{opacity:1}
 
   .cardModalWrap{position:fixed;inset:0;background:rgba(5,2,10,.72);backdrop-filter:blur(3px);
     display:none;align-items:flex-start;justify-content:center;padding:40px 20px;z-index:60;overflow-y:auto}
@@ -1786,6 +1790,13 @@ function renderThumbGrid(list, container, opts={}){
       tile.innerHTML=`<img class="thumbImg" loading="lazy" />
         <div class="thumbBadge">${objInfo?.emoji||""} ${objInfo?.label||item.obj}</div>`;
       imgSrc(item.renderImg).then(u=>{ if(u) tile.querySelector(".thumbImg").src=u; });
+      const saveBtn=document.createElement("button"); saveBtn.className="thumbSave"; saveBtn.title="Download"; saveBtn.textContent="📁";
+      saveBtn.onclick=async(e)=>{
+        e.stopPropagation();
+        const u=await imgSrc(item.renderImg); if(!u) return;
+        const a=document.createElement("a"); a.href=u; a.download=renderFilename(item); a.click();
+      };
+      tile.appendChild(saveBtn);
     } else {
       tile.classList.add("noImg");
       tile.innerHTML=`<div class="thumbPlaceholder">${objInfo?.emoji||"🖼"}<span>No picture yet</span></div>
