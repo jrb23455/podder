@@ -1986,10 +1986,15 @@ async function generate(){
   const out=[];
   for(let i=0;i<n;i++) out.push(buildPrompt());
   render(out, $("#output"), {emptyMsg:"Hit Generate."});
-  // All cards render in PARALLEL for speed, but each one's reveal is gated on the card above
-  // it having revealed first — images always appear in order, top down, never bottom-up.
+  // Cards stagger their API calls 12s apart (Replicate burst=1 under low-credit accounts).
+  // Reveals are still ordered top-down — the first card appears as soon as it finishes.
   let prevReveal = Promise.resolve();
-  document.querySelectorAll("#output .card").forEach(c=>{ prevReveal = renderCard(c._item, c, prevReveal); });
+  let startGate = Promise.resolve();
+  document.querySelectorAll("#output .card").forEach(c=>{
+    const myStart = startGate;
+    startGate = myStart.then(()=>new Promise(r=>setTimeout(r,12000)));
+    prevReveal = renderCard(c._item, c, prevReveal, myStart);
+  });
   // History is populated when a render actually finishes (see renderCard) — it's a log of
   // the last 300 PICTURES, not a log of prompts that may never have been rendered.
 }
@@ -2253,7 +2258,7 @@ function downloadName(item, comfyFilename){
   const pal = (item.palette || "art") + (item.edited ? "_edited" : "");
   return `${obj}${shape}_${styles}_${pal}.${/^(png|jpg|jpeg|webp)$/.test(ext)?ext:"png"}`;
 }
-async function renderCard(item, card, revealAfter){
+async function renderCard(item, card, revealAfter, startAfter){
   const btn = card.querySelector(".render"), wrap = card.querySelector(".render-wrap");
   btn.disabled = true; btn.textContent = "⏳ …";
   wrap.innerHTML = `<div style="text-align:center"><img class="render-spin" src="Podder-192.png" alt="" /><div class="render-status">Rendering in the cloud…</div></div>`;
@@ -2262,6 +2267,7 @@ async function renderCard(item, card, revealAfter){
   const ctl = new AbortController(); inFlightCtls.add(ctl);
   const tick = setInterval(()=>{ status.textContent = "Rendering… "+Math.round((Date.now()-t0)/1000)+"s"; }, 1000);
   try{
+    if(startAfter) await startAfter.catch(()=>{});
     const positive = item.sd || item.text;                    // compact prompt; old saved items fall back
     const j = await apiFetch("/api/generate", {prompt: positive, aspect: $("#aspect").value}, ctl.signal);
     // Every render gets its own image-store key — a re-render must never overwrite the bytes an
