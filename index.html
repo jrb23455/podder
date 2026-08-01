@@ -1986,9 +1986,14 @@ async function generate(){
   const out=[];
   for(let i=0;i<n;i++) out.push(buildPrompt());
   render(out, $("#output"), {emptyMsg:"Hit Generate."});
-  // All cards render in parallel; reveals are ordered top-down.
-  let prevReveal = Promise.resolve();
-  document.querySelectorAll("#output .card").forEach(c=>{ prevReveal = renderCard(c._item, c, prevReveal); });
+  // Cards render sequentially, 3s apart — avoids rate-limit bursting and gives a clean top-down fill.
+  const cards = [...document.querySelectorAll("#output .card")];
+  (async()=>{
+    for(let i=0;i<cards.length;i++){
+      if(i>0) await new Promise(r=>setTimeout(r,3000));
+      await renderCard(cards[i]._item, cards[i]);
+    }
+  })();
   // History is populated when a render actually finishes (see renderCard) — it's a log of
   // the last 300 PICTURES, not a log of prompts that may never have been rendered.
 }
@@ -2343,12 +2348,19 @@ async function spawnVariants(item, wrap, targetObjKey){
   try{ srcData = await blobToDataURL(await (await fetch(img.src)).blob()); }
   catch(e){ toast("Couldn't read the image: "+String(e.message||e)); return; }
 
+  // Create all 6 spinner tiles immediately so the user sees the full strip, then render sequentially.
+  const tiles = [];
   for(let i=0;i<6;i++){
     const tile = document.createElement("div"); tile.className = "variantTile";
     tile.innerHTML = `<img class="render-spin vspin" src="Podder-192.png" alt="" />`;
     grid.appendChild(tile);
-    const ctl = new AbortController(); inFlightCtls.add(ctl);
-    (async ()=>{
+    tiles.push(tile);
+  }
+  (async()=>{
+    for(let i=0;i<6;i++){
+      const tile = tiles[i];
+      const ctl = new AbortController(); inFlightCtls.add(ctl);
+      if(i>0) await new Promise(r=>setTimeout(r,3000));
       try{
         const j = await apiFetch("/api/generate", {prompt: promptItem.sd, aspect: $("#aspect").value, image: srcData, strength}, ctl.signal);
         const key = genId();
@@ -2365,8 +2377,8 @@ async function spawnVariants(item, wrap, targetObjKey){
       }catch(e){
         tile.innerHTML = `<div class="vfail" title="${String(e.message||e).replace(/"/g,"&quot;")}">✕</div>`;
       }finally{ inFlightCtls.delete(ctl); }
-    })();
-  }
+    }
+  })();
 }
 
 /* ---------- INIT ---------- */
