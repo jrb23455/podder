@@ -151,6 +151,15 @@
   /* Spinning swirl shown inside a card while its image is rendering */
   .render-spin{width:56px;height:56px;border-radius:14px;display:block;margin:26px auto 10px;animation:podSpin 2.6s linear infinite}
   @keyframes podSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  /* --- Variant strip: 6 img2img takes on a picture, thumbnail-sized like the history grid --- */
+  .variantGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-top:12px}
+  .variantTile{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--panel-brd);
+    background:#161022;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .variantTile:hover{border-color:var(--accent2)}
+  .variantTile .thumbImg{width:100%;height:100%;object-fit:cover;display:block}
+  .variantTile .vspin{width:34px;height:34px;margin:0;border-radius:8px}
+  .vfail{color:#c77f7f;font-size:18px}
+  .variantSel{padding:6px 10px;border-radius:10px;background:#1a1130;color:var(--ink);border:1px solid var(--panel-brd);font-size:12.5px;max-width:230px}
 
   .rerollGroup{margin-bottom:32px}
   .rerollHead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--panel-brd)}
@@ -1729,7 +1738,7 @@ function buildCard(item, opts={}){
     </div>
     <div class="tools">
       <div class="tbtn fav ${isFav?'on':''}">${isFav?'★ Saved':'☆ Favorite'}</div>
-      <div class="tbtn render" title="Generate the image">${item.renderImg?'🔄 Re-render':'🖼 Render'}</div>
+      <div class="tbtn render" title="${item.renderImg?'Render 6 similar designs under this picture':'Generate the image'}">${item.renderImg?'🔄 Similar ×6':'🖼 Render'}</div>
       ${opts.showReroll?'<div class="tbtn reroll" title="Render 6 random objects in this same style">🎲 Reroll ×6</div>':''}
       ${opts.showRemove?'<div class="tbtn remove">✕ Remove</div>':''}
     </div>
@@ -1740,7 +1749,12 @@ function buildCard(item, opts={}){
     b.classList.toggle("on",on); b.textContent=on?"★ Saved":"☆ Favorite";
     if(opts.onFavToggle) opts.onFavToggle();
   };
-  card.querySelector(".render").onclick=()=>renderCard(item, card);
+  card.querySelector(".render").onclick=()=>{
+    // Once a picture exists, the button becomes "similar ×6" — img2img variations anchored to
+    // the actual pixels. Before that, it's a plain first render.
+    if(item.renderImg) spawnVariants(item, card.querySelector(".render-wrap"));
+    else renderCard(item, card);
+  };
   if(opts.showReroll) card.querySelector(".reroll").onclick=()=>rerollFromItem(item);
   if(opts.showRemove) card.querySelector(".remove").onclick=()=>{opts.onRemove(item);};
   card._item=item;
@@ -1808,15 +1822,38 @@ function renderImageInto(wrap, item, imgRef){
   dl.download = downloadName(item, "x.png"); dl.textContent = "⬇ Save image";
   meta.appendChild(dl);
   imgSrc(imgRef).then(u=>{ if(!u){ image.onerror(); return; } image.src=u; dl.href=u; });
+  // "Apply design to other objects" — img2img this picture into a different object's form.
+  const sel = document.createElement("select"); sel.className = "variantSel";
+  sel.innerHTML = `<option value="">✨ Apply design to other objects…</option>`
+    + Object.keys(OBJECTS).filter(k=>k!==item.obj).map(k=>`<option value="${k}">${OBJECTS[k].emoji} ${OBJECTS[k].label}</option>`).join("");
+  sel.onchange = ()=>{ const k = sel.value; sel.value = ""; if(k) spawnVariants(item, wrap, k); };
+  meta.appendChild(sel);
   if(item.renderMs){ const t=document.createElement("span"); t.className="render-time"; t.textContent=fmtDuration(item.renderMs); meta.appendChild(t); }
   wrap.appendChild(meta);
   wrap.appendChild(buildEditBox(item, wrap));
   // Resurrect this picture's saved edits (favorites/history) below the edit box. Without this,
   // an edit's panel — image, save links, ☆ — only existed in the live DOM and closing the card
   // silently discarded it, even though the edit itself was safe in history.
-  const pastEdits = [], seenIds = new Set();
+  const pastEdits = [], pastVariants = [], seenIds = new Set();
   for (const list of [hist, favs]) for (const e of list) {
-    if (e.edited && e.parentId === item.id && e.renderImg && !seenIds.has(e.id)) { seenIds.add(e.id); pastEdits.push(e); }
+    if (!e.parentId || e.parentId !== item.id || !e.renderImg || seenIds.has(e.id)) continue;
+    seenIds.add(e.id);
+    if (e.edited) pastEdits.push(e);
+    else if (e.variant) pastVariants.push(e);
+  }
+  // Saved variants come back as the same thumbnail strip they were born in (oldest first,
+  // matching the order they originally filled in).
+  if (pastVariants.length) {
+    const grid = document.createElement("div"); grid.className = "variantGrid";
+    pastVariants.reverse().forEach(v => {
+      const tile = document.createElement("div"); tile.className = "variantTile";
+      tile.innerHTML = `<img class="thumbImg" loading="lazy" />`;
+      imgSrc(v.renderImg).then(u=>{ if(u) tile.querySelector("img").src = u; });
+      tile.title = "Open full size";
+      tile.onclick = ()=>openCardModal(v, {});
+      grid.appendChild(tile);
+    });
+    wrap.insertBefore(grid, wrap.querySelector(":scope > .edit-box"));
   }
   pastEdits.forEach(e => {
     const slot = document.createElement("div"); slot.className = "edit-result";
@@ -2267,7 +2304,68 @@ async function renderCard(item, card, revealAfter){
     wrap.innerHTML = (ctl.signal.aborted || /abort/i.test(msg)) ? `<div class="render-status">⏹ Cancelled</div>` : `<div class="render-status err">Render failed: ${msg}</div>`;
   }finally{
     clearInterval(tick); inFlightCtls.delete(ctl);
-    btn.disabled = false; btn.textContent = item.renderImg ? "🔄 Re-render" : "🖼 Render";
+    btn.disabled = false; btn.textContent = item.renderImg ? "🔄 Similar ×6" : "🖼 Render";
+  }
+}
+
+// Build a fresh prompt for a DIFFERENT object wearing this item's style DNA + palette —
+// the text half of "apply design to other objects" (the image half is img2img below).
+function buildPromptAs(sourceItem, targetObjKey){
+  const savedObj=state.obj, savedShape=state.shape, savedStyles=new Set(state.styles), savedDetail=new Set(state.styleDetail), savedPalette=$("#palette").value;
+  state.obj=targetObjKey;
+  state.shape=OBJECTS[targetObjKey].shapes[0].label;   // Auto
+  state.styles=new Set(sourceItem.styles||[]);
+  state.styleDetail=new Set();
+  if(sourceItem.palette) $("#palette").value=sourceItem.palette;
+  const it=buildPrompt();
+  state.obj=savedObj; state.shape=savedShape; state.styles=savedStyles; state.styleDetail=savedDetail; $("#palette").value=savedPalette;
+  return it;
+}
+// 🔄 Similar ×6 / ✨ apply-design-to: six img2img renders anchored to THIS picture's pixels.
+// No vision model — conditioning on the image itself beats describing it in words. Same object
+// keeps strength low (design + structure held); a different object pushes strength higher so
+// the new form can take over while the surface DNA carries across.
+async function spawnVariants(item, wrap, targetObjKey){
+  const img = wrap.querySelector(":scope > img.render");
+  if(!img || !img.src){ toast("Render the picture first"); return; }
+  const cross = !!(targetObjKey && targetObjKey!==item.obj);
+  const promptItem = cross ? buildPromptAs(item, targetObjKey) : item;
+  const strength = cross ? 0.78 : 0.62;
+
+  let grid = wrap.querySelector(":scope > .variantGrid");
+  if(!grid){
+    grid = document.createElement("div"); grid.className = "variantGrid";
+    wrap.insertBefore(grid, wrap.querySelector(":scope > .edit-box"));
+  }
+  toast(cross ? `✨ Applying this design to 6 ${OBJECTS[targetObjKey].label} takes…` : "🔄 Rendering 6 similar designs…");
+
+  let srcData;
+  try{ srcData = await blobToDataURL(await (await fetch(img.src)).blob()); }
+  catch(e){ toast("Couldn't read the image: "+String(e.message||e)); return; }
+
+  for(let i=0;i<6;i++){
+    const tile = document.createElement("div"); tile.className = "variantTile";
+    tile.innerHTML = `<img class="render-spin vspin" src="Podder-192.png" alt="" />`;
+    grid.appendChild(tile);
+    const ctl = new AbortController(); inFlightCtls.add(ctl);
+    (async ()=>{
+      try{
+        const j = await apiFetch("/api/generate", {prompt: promptItem.sd, aspect: $("#aspect").value, image: srcData, strength}, ctl.signal);
+        const key = genId();
+        await idbPut(key, await (await fetch(j.image)).blob());
+        const vItem = {...(cross?promptItem:item), id:genId(), parentId:item.id, variant:true,
+          editInstruction: cross ? ("design applied to "+OBJECTS[targetObjKey].label) : "similar variation",
+          renderImg:{idb:key}, renderMs:null};
+        hist.unshift({...vItem}); hist = hist.slice(0,300); LS_set("podder_hist",hist); refreshCounts();
+        tile.innerHTML = `<img class="thumbImg" loading="lazy" />`;
+        const u = await imgSrc(vItem.renderImg);
+        if(u) tile.querySelector("img").src = u;
+        tile.title = "Open full size";
+        tile.onclick = ()=>openCardModal(vItem, {});
+      }catch(e){
+        tile.innerHTML = `<div class="vfail" title="${String(e.message||e).replace(/"/g,"&quot;")}">✕</div>`;
+      }finally{ inFlightCtls.delete(ctl); }
+    })();
   }
 }
 
