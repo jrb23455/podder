@@ -10,9 +10,9 @@
 
 import { pinOk } from './auth.js';
 
-export const maxDuration = 60; // Flux dev takes ~15-25s; default hobby timeout is too short
+export const maxDuration = 60;
 
-const MODEL = () => process.env.REPLICATE_MODEL || 'black-forest-labs/flux-dev';
+const MODEL = 'black-forest-labs/flux-schnell';
 
 function mockImage(prompt) {
   const label = (prompt || 'mock render').slice(0, 90).replace(/[<>&"]/g, ' ');
@@ -37,7 +37,7 @@ async function replicate(input, token) {
   // just succeeds and none of this runs.
   let pred;
   for (;;) {
-    const create = await fetch(`https://api.replicate.com/v1/models/${MODEL()}/predictions`, {
+    const create = await fetch(`https://api.replicate.com/v1/models/${MODEL}/predictions`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Prefer: 'wait=30' },
       body: JSON.stringify({ input }),
@@ -73,15 +73,18 @@ export default async function handler(req, res) {
   if (!token) return res.status(200).json({ image: mockImage(prompt), mock: true });
 
   try {
+    const isSchnell = MODEL.includes('schnell');
     const input = {
       prompt,
       aspect_ratio: ['1:1', '2:3', '3:2'].includes(aspect) ? aspect : '1:1',
       output_format: 'png',
-      disable_safety_checker: false,
+      ...(isSchnell ? {} : { disable_safety_checker: false }),
     };
     if (image) {                       // img2img edit, anchored to the source picture
       input.image = image;             // data URL — Replicate accepts these directly
-      input.prompt_strength = Math.min(0.95, Math.max(0.15, +strength || 0.5));
+      const s = Math.min(0.95, Math.max(0.15, +strength || 0.5));
+      if (isSchnell) input.image_prompt_strength = s;
+      else input.prompt_strength = s;
     }
     const url = await replicate(input, token);
 
