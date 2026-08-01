@@ -1986,15 +1986,9 @@ async function generate(){
   const out=[];
   for(let i=0;i<n;i++) out.push(buildPrompt());
   render(out, $("#output"), {emptyMsg:"Hit Generate."});
-  // Cards stagger their API calls 12s apart (Replicate burst=1 under low-credit accounts).
-  // Reveals are still ordered top-down — the first card appears as soon as it finishes.
+  // All cards render in parallel; reveals are ordered top-down.
   let prevReveal = Promise.resolve();
-  let startGate = Promise.resolve();
-  document.querySelectorAll("#output .card").forEach(c=>{
-    const myStart = startGate;
-    startGate = myStart.then(()=>new Promise(r=>setTimeout(r,12000)));
-    prevReveal = renderCard(c._item, c, prevReveal, myStart);
-  });
+  document.querySelectorAll("#output .card").forEach(c=>{ prevReveal = renderCard(c._item, c, prevReveal); });
   // History is populated when a render actually finishes (see renderCard) — it's a log of
   // the last 300 PICTURES, not a log of prompts that may never have been rendered.
 }
