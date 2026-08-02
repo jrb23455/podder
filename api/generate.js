@@ -12,7 +12,7 @@ import { pinOk } from './auth.js';
 
 export const maxDuration = 60;
 
-const MODEL = 'black-forest-labs/flux-2-klein-4b';
+const MODEL = 'black-forest-labs/flux-2-pro';
 
 function mockImage(prompt) {
   const label = (prompt || 'mock render').slice(0, 90).replace(/[<>&"]/g, ' ');
@@ -37,10 +37,10 @@ async function replicate(input, token) {
   // just succeeds and none of this runs.
   let pred;
   for (;;) {
-    const create = await fetch('https://api.replicate.com/v1/predictions', {
+    const create = await fetch(`https://api.replicate.com/v1/models/${MODEL}/predictions`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Prefer: 'wait=30' },
-      body: JSON.stringify({ version: MODEL, input }),
+      body: JSON.stringify({ input }),
     });
     pred = await create.json();
     if (create.ok) break;
@@ -79,10 +79,10 @@ export default async function handler(req, res) {
       prompt,
       aspect_ratio: ['1:1', '2:3', '3:2'].includes(aspect) ? aspect : '1:1',
       output_format: 'png',
-      go_fast: true,
+      go_fast: false,
     };
     if (image) {
-      input.images = [image];
+      input.image = image;
     }
     const url = await replicate(input, token);
 

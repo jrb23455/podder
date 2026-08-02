@@ -863,19 +863,18 @@ const OBJECTS = {
       {label:"Wave",prompt:"a smooth curved wave-shaped block form, flat on the book-facing side"},
       {label:"Stacked",prompt:"a stacked-tier block form of graduated layers, flat on the book-facing side"}
     ]},
-  winebottleholder:{emoji:"🍾", label:"Wine bottle holder", promptName:"sculptural cradle stand",
-    fn:"It is a sculptural cradle stand — a form designed so a cylindrical object can rest balanced within it at an angle or upright, with a stable flat base of its own. It is shown completely bare — nothing resting in it.",
+  winebottleholder:{emoji:"🍾", label:"Wine bottle holder", promptName:"wine bottle holder",
+    fn:"It is a wine bottle holder — a solid, wide, squat block of material with a large round hole punched clean through the body at a steep diagonal angle. The body is wider than it is tall, sits flat on a broad base, and the angled hole is the defining visual feature — a smooth tunnel running through the block where a bottle would slide in and lean at a tilt. It is NOT a vase, NOT a cylinder, NOT a tube, NOT a cup — the silhouette is a chunky block or wedge, not a tall round vessel. Shown completely empty — no bottle, no glass, nothing inside.",
     shapes:[
-      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
-      {label:"Spiral",prompt:"a spiraling tower spire cradle"},
-      {label:"Twisted",prompt:"a column that corkscrews and twists from base to top"},
-      {label:"Cube",prompt:"a chamfered cube block cradle form"},
-      {label:"Faceted gem",prompt:"an angular faceted crystalline cradle form"},
-      {label:"Tall column",prompt:"a tall, slender tapering column cradle"},
-      {label:"Cradle",prompt:"a curved boat-like cradle form"},
-      {label:"Basket",prompt:"a woven-basket-like cradle form"},
-      {label:"Wave",prompt:"a smooth curved wave-like cradle form"},
-      {label:"Arch",prompt:"an arched cradle form"}
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wide squat block or wedge with the diagonal bottle hole through it"},
+      {label:"Spiral",prompt:"the block's outer surface twists like a wrung-out towel or barber pole, spiraling from base to top, while the diagonal bottle hole runs straight through the center of the twist"},
+      {label:"Twisted",prompt:"the entire block torques and corkscrews from base to top like twisted taffy, with the diagonal hole visible through the middle"},
+      {label:"Cube",prompt:"a clean chamfered cube with the diagonal bottle hole punched through from one corner to the opposite corner"},
+      {label:"Faceted gem",prompt:"an angular, sharp-edged gemstone or crystal shape with flat faceted faces, the diagonal bottle hole cut through the center"},
+      {label:"Wedge",prompt:"a thick triangular wedge lying on its longest face, with the diagonal bottle hole running through from the tall end to the short end"},
+      {label:"Sphere",prompt:"a squat sphere or oblate pebble shape sitting flat, with the diagonal bottle hole bored through the middle"},
+      {label:"Wave",prompt:"a smooth flowing wave-shaped block with one sweeping curve, the diagonal bottle hole running through the thickest part"},
+      {label:"Arch",prompt:"a thick solid arch or horseshoe shape sitting on two wide feet, with the diagonal bottle hole running through the top of the arch"}
     ]},
   coinbank:{emoji:"🐷", label:"Coin bank", promptName:"sealed hollow vessel",
     fn:"It is a decorative bank — a hollow sculptural body with a single narrow slot cut into the top, and a stable flat base. Apart from the one slot it is fully closed and solid, hollow inside. It is shown completely bare — nothing visible inside or around it, and with no removable plug, stopper or access panel.",
@@ -2460,6 +2459,8 @@ function buildPrompt(){
   const formPhrase = isAuto
     ? (state.obj==="birdhouse"
         ? "a rounded gourd-, orb- or pod-like birdhouse with a clear round entrance hole — clean and recognizable"
+        : state.obj==="winebottleholder"
+        ? "a wide, squat wedge or block — wider than it is tall — with a large round hole angled through the body at roughly 45 degrees, clearly a wine bottle holder and NOT a vase, cylinder or cup"
         : `a clean, classic, clearly recognizable ${objNoun} shape, ornamented but never distorted beyond recognition`)
     : shapeObj.prompt;
   // Every render is 3D-print-safe, unconditionally — no toggle, no exceptions.
@@ -3283,7 +3284,7 @@ $("#pinForm").onsubmit = async (e)=>{
     localStorage.setItem("podder_pin", pin);
     $("#pinErr").classList.add("hidden"); $("#pinInput").value = "";
     hidePinGate();
-    if(!document.querySelector("#output .card")) generate();
+    // user clicks Generate manually
   } else {
     $("#pinErr").classList.remove("hidden"); $("#pinInput").select();
   }
@@ -3293,7 +3294,6 @@ $("#pinForm").onsubmit = async (e)=>{
   const v = getPin() ? await verifyPin(getPin()) : "bad";
   if(v === "ok"){
     hidePinGate();
-    generate();
   } else {
     if(v === "bad") localStorage.removeItem("podder_pin");   // keep the PIN on transient errors
     showPinGate();
