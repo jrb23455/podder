@@ -3421,7 +3421,7 @@ function buildPrompt(){
   // completely unrelated styles crammed onto one object — exactly the "kitchen sink" bug this
   // avoids. Multiple clauses still get pulled from within these few styles to fill clauseTarget.
   let styleKeys = [...state.styles];
-  if(styleKeys.length===0) styleKeys = shuffle(Object.keys(STYLES)).slice(0, 1+Math.floor(Math.random()*3));
+  // No styles selected = no style clauses — let Flux decide completely on its own.
   styleKeys = shuffle(styleKeys);
   // Wildness drives clause count directly. Pull DISTINCT clauses, round-robin across
   // the chosen styles; with a single style this draws several clauses from its own bank.
