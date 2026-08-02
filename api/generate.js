@@ -12,7 +12,7 @@ import { pinOk } from './auth.js';
 
 export const maxDuration = 60;
 
-const MODEL = 'black-forest-labs/flux-schnell';
+const MODEL = 'black-forest-labs/flux-2-klein-4b';
 
 function mockImage(prompt) {
   const label = (prompt || 'mock render').slice(0, 90).replace(/[<>&"]/g, ' ');
@@ -56,7 +56,9 @@ async function replicate(input, token) {
     pred = await poll.json();
   }
   if (pred.status !== 'succeeded') throw new Error(pred.error || `Render ${pred.status}`);
-  return Array.isArray(pred.output) ? pred.output[0] : pred.output;
+  const out = pred.output;
+  if (Array.isArray(out)) return typeof out[0] === 'string' ? out[0] : out[0]?.url?.() || out[0];
+  return out;
 }
 
 export default async function handler(req, res) {
@@ -73,18 +75,14 @@ export default async function handler(req, res) {
   if (!token) return res.status(200).json({ image: mockImage(prompt), mock: true });
 
   try {
-    const isSchnell = MODEL.includes('schnell');
     const input = {
       prompt,
       aspect_ratio: ['1:1', '2:3', '3:2'].includes(aspect) ? aspect : '1:1',
       output_format: 'png',
-      ...(isSchnell ? {} : { disable_safety_checker: false }),
+      go_fast: true,
     };
-    if (image) {                       // img2img edit, anchored to the source picture
-      input.image = image;             // data URL — Replicate accepts these directly
-      const s = Math.min(0.95, Math.max(0.15, +strength || 0.5));
-      if (isSchnell) input.image_prompt_strength = s;
-      else input.prompt_strength = s;
+    if (image) {
+      input.images = [image];
     }
     const url = await replicate(input, token);
 
