@@ -4352,8 +4352,6 @@ async function spawnVariants(item, wrap, targetObjKey){
   const img = wrap.querySelector(":scope > img.render");
   if(!img || !img.src){ toast("Render the picture first"); return; }
   const cross = !!(targetObjKey && targetObjKey!==item.obj);
-  const promptItem = cross ? buildPromptAs(item, targetObjKey) : item;
-  const strength = cross ? 0.78 : 0.62;
 
   let grid = wrap.querySelector(":scope > .variantGrid");
   if(!grid){
@@ -4362,11 +4360,27 @@ async function spawnVariants(item, wrap, targetObjKey){
   }
   toast(cross ? `✨ Applying this design to 6 ${OBJECTS[targetObjKey].label} takes…` : "🔄 Rendering 6 similar designs…");
 
-  let srcData;
-  try{ srcData = await blobToDataURL(await (await fetch(img.src)).blob()); }
-  catch(e){ toast("Couldn't read the image: "+String(e.message||e)); return; }
+  // Cross-object applies use img2img so the source design transfers visually.
+  // Similar renders use fresh txt2img prompts built from the same recipe — same
+  // object/shape/styles but clause order reshuffled each time — so each result
+  // is genuinely different instead of a near-copy of the source.
+  let srcData = null;
+  if(cross){
+    try{ srcData = await blobToDataURL(await (await fetch(img.src)).blob()); }
+    catch(e){ toast("Couldn't read the image: "+String(e.message||e)); return; }
+  }
 
-  // Create all 6 spinner tiles immediately so the user sees the full strip, then render sequentially.
+  function buildVariantPrompt(){
+    if(cross) return buildPromptAs(item, targetObjKey);
+    // Temporarily set state to item's recipe; fresh styleDetail = different clause shuffle each call.
+    const sObj=state.obj,sShape=state.shape,sStyles=state.styles,sDetail=state.styleDetail;
+    state.obj=item.obj; state.shape=item.shape;
+    state.styles=new Set(item.styles||[]); state.styleDetail=new Set();
+    const p=buildPrompt();
+    state.obj=sObj; state.shape=sShape; state.styles=sStyles; state.styleDetail=sDetail;
+    return p;
+  }
+
   const tiles = [];
   for(let i=0;i<6;i++){
     const tile = document.createElement("div"); tile.className = "variantTile";
@@ -4383,10 +4397,14 @@ async function spawnVariants(item, wrap, targetObjKey){
       if(i>0) await new Promise(r=>setTimeout(r,500));
       if(batch.signal.aborted){ inFlightCtls.delete(ctl); break; }
       try{
-        const j = await apiFetch("/api/generate", {prompt: promptItem.sd, aspect: $("#aspect").value, image: srcData, strength, quality: getQuality()}, ctl.signal);
+        const promptItem = buildVariantPrompt();
+        const body = {prompt: promptItem.sd, aspect: $("#aspect").value, quality: getQuality()};
+        if(srcData){ body.image=srcData; body.strength=0.78; }
+        const j = await apiFetch("/api/generate", body, ctl.signal);
         const key = genId();
         await idbPut(key, await (await fetch(j.image)).blob());
         const vItem = {...(cross?promptItem:item), id:genId(), parentId:item.id, variant:true,
+          sd: promptItem.sd,
           editInstruction: cross ? ("design applied to "+OBJECTS[targetObjKey].label) : "similar variation",
           renderImg:{idb:key}, renderMs:null};
         hist.unshift({...vItem}); hist = hist.slice(0,300); LS_set("podder_hist",hist); refreshCounts();
