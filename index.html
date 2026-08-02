@@ -2526,12 +2526,12 @@ function buildPrompt(){
       isFig
         ? `A single ${objNoun}, instantly and unmistakably recognizable — exactly one sculpted decorative piece, alone and centered, nothing else in the scene.`
         : `A single ${objNoun}, instantly and unmistakably recognizable as a real, functional ${objNoun} — exactly one object, alone and centered, nothing else in the scene.`,
+      `The whole piece is ${pal.t}.`,
       o.fn,
       `Its overall form is ${formPhrase}.`,
       `It is richly decorated with ${clauses.join(", and ")}, applied as ${reliefWord} deep, physically sculpted three-dimensional relief — raised, carved and self-shadowed so the surface itself changes shape, never a flat painted or printed pattern.${jewelryNote}`,
       printable ? PRINTABLE : "",
       wildNote,
-      `The whole piece is ${pal.t}.`,
       `Photographed ${view.t}, sitting directly on a plain seamless light-grey studio surface with no pedestal, stand or platform beneath it, and no other objects, furniture or scenery anywhere in frame.`,
       "Soft even diffuse studio lighting, matte non-reflective surface, ultra-detailed, sharp focus, professional product photography, 4k."
     ].filter(Boolean).join(" ").replace(/\s{2,}/g," ");
