@@ -1,12 +1,12 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Podder — trippy 3D-print prompt generator</title>
-<link rel="icon" type="image/x-icon" href="Podder.ico" sizes="16x16 24x24 32x32 48x48 64x64 128x128 256x256" />
-<link rel="icon" type="image/png" sizes="192x192" href="Podder-192.png" />
-<link rel="icon" type="image/png" sizes="512x512" href="Podder-512.png" />
+<link rel="icon" type="image/x-icon" href="Podder-spin.ico" sizes="32x32 48x48 64x64 256x256" />
+<link rel="icon" type="image/png" sizes="192x192" href="Podder-spin-192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="Podder-spin.png" />
 <link rel="apple-touch-icon" href="Podder-192.png" />
 <link rel="manifest" href="manifest.json" />
 <style>
@@ -91,7 +91,14 @@
   select{width:100%;padding:10px;border-radius:10px;background:#1a1130;color:var(--ink);
     border:1px solid var(--panel-brd);font-size:14px}
 
-  .actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+  .actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;align-items:center}
+  .quality-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;margin-left:auto;user-select:none}
+  .quality-toggle input{display:none}
+  .qt-label{font-size:13px;color:var(--sub);min-width:72px;text-align:right}
+  .qt-track{width:40px;height:22px;background:var(--accent);border-radius:11px;position:relative;transition:background .25s}
+  .qt-thumb{position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:left .25s}
+  .quality-toggle input:checked~.qt-track{background:var(--accent2)}
+  .quality-toggle input:checked~.qt-track .qt-thumb{left:20px}
   .btn{border:none;cursor:pointer;font-weight:700;font-size:15px;padding:14px 22px;border-radius:13px;transition:.15s;color:#fff}
   .btn.primary{background:linear-gradient(100deg,var(--accent),var(--accent3));box-shadow:0 8px 26px rgba(192,75,255,.4)}
   .btn.primary:hover{transform:translateY(-1px);box-shadow:0 12px 32px rgba(192,75,255,.55)}
@@ -128,11 +135,10 @@
   .thumbPlaceholder span{font-size:12px;font-weight:600}
   .thumbBadge{position:absolute;left:0;right:0;bottom:0;padding:10px 12px;font-size:12.5px;font-weight:700;color:#fff;
     background:linear-gradient(0deg,rgba(0,0,0,.72),transparent);text-shadow:0 1px 3px rgba(0,0,0,.6)}
-  .thumbSave{position:absolute;top:8px;right:8px;min-width:32px;height:32px;padding:0 8px;border-radius:8px;
-    background:rgba(10,7,16,.78);border:1px solid var(--panel-brd);display:flex;align-items:center;justify-content:center;
-    font-size:14px;cursor:pointer;opacity:0;transition:opacity .15s;white-space:nowrap}
+  .thumbSave{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:8px;
+    background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:14px;
+    display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;cursor:pointer;z-index:2}
   .thumbTile:hover .thumbSave{opacity:1}
-  .thumbSave:hover{border-color:var(--accent2)}
 
   .cardModalWrap{position:fixed;inset:0;background:rgba(5,2,10,.72);backdrop-filter:blur(3px);
     display:none;align-items:flex-start;justify-content:center;padding:40px 20px;z-index:60;overflow-y:auto}
@@ -143,22 +149,19 @@
     display:flex;align-items:center;justify-content:center;z-index:2}
   .cardModalClose:hover{border-color:var(--accent2)}
 
-  /* --- Boot gate: shown while ComfyUI is still starting up (Podder Studio flow) --- */
-  .bootGate{position:fixed;inset:0;background:#050209;z-index:100;display:none;
-    align-items:center;justify-content:center;padding:20px}
-  .bootGate.show{display:flex}
-  #bootCanvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-  .bootBox{position:relative;z-index:1;text-align:center;max-width:400px}
-  .bootBox img{width:84px;height:84px;border-radius:20px;animation:bootSpin 2.6s linear infinite;
-    filter:drop-shadow(0 0 18px #b84fff)}
-  @keyframes bootSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-  .bootBox h2{margin:16px 0 6px;font-size:24px;text-shadow:0 0 20px #c04bff}
-  .bootBox p{color:rgba(200,180,240,.75);font-size:14px;line-height:1.6;margin:0}
-  .bootTime{color:var(--accent2);font-size:13px;margin-top:10px;min-height:18px}
-  .bootSkip{margin-top:18px;font-size:12.5px;color:#6f5f8f;cursor:pointer;text-decoration:underline}
-  .bootSkip:hover{color:var(--ink)}
+  /* --- PIN gate: full-screen lock until /api/auth approves --- */
+  .pinGate{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+  .pinGate.hidden{display:none}
+  .pinBox{text-align:center;max-width:340px;width:100%}
+  .pinBox h2{margin:14px 0 4px;font-size:28px}
+  .pinBox p{color:var(--muted);font-size:14px;margin:0 0 18px}
+  .pinBox form{display:flex;gap:10px}
+  .pinBox input{flex:1;padding:12px 14px;border-radius:12px;border:1px solid var(--panel-brd);background:#1a1130;color:var(--ink);
+    font-size:20px;letter-spacing:6px;text-align:center;min-width:0}
+  .pinErr{color:#e07a7a;font-size:13px;margin-top:12px}
   /* Spinning swirl shown inside a card while its image is rendering */
-  .render-spin{width:56px;height:56px;border-radius:14px;display:block;margin:26px auto 10px;animation:bootSpin 2.6s linear infinite}
+  .render-spin{width:56px;height:56px;border-radius:14px;display:block;margin:26px auto 10px;animation:podSpin 2.6s linear infinite}
+  @keyframes podSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
   /* --- Variant strip: 6 img2img takes on a picture, thumbnail-sized like the history grid --- */
   .variantGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin-top:12px}
   .variantTile{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--panel-brd);
@@ -256,7 +259,7 @@
       <h1>Podder</h1>
     </div>
   </header>
-  <p class="tag">Far-out, <b>always-3D-printable</b> design generator for your local <b>ComfyUI → Meshy → 3D-print</b> pipeline. Renders trippy sacred-geometry / drippy / swirly styling straight to an image — single isolated object, one solid printable form, no fragile parts, clean studio background — then touch it up and send it to Meshy.</p>
+  <p class="tag">Far-out, <b>always-3D-printable</b> design generator. Renders trippy sacred-geometry / drippy / swirly styling straight to an image in the cloud — single isolated object, one solid printable form, no fragile parts, clean studio background — ready for image-to-3D and printing.</p>
 
   <div class="tabs">
     <div class="tab active" data-tab="gen">✦ Generate</div>
@@ -264,58 +267,6 @@
     <div class="tab" data-tab="hist">↺ History <span class="count-badge" id="histCount">0</span></div>
     <div class="tab" data-tab="rerolls">🎲 Rerolls <span class="count-badge" id="rerollCount">0</span></div>
     <div class="tab" data-tab="price">💲 Pricing</div>
-  </div>
-
-  <!-- LOCAL AI PIPELINE -->
-  <div class="lai" id="lai">
-    <div class="lai-head" id="laiHead">
-      <span>🖥️</span>
-      <h3>Local render — ComfyUI</h3>
-      <span class="stat"><span class="dot" id="dotComfy"></span>ComfyUI</span>
-      <button class="tbtn" id="laiRecheck" style="padding:4px 10px;font-size:12px" title="Re-check connections">↻ Re-check</button>
-      <button class="tbtn" id="laiOpenComfy" style="padding:4px 10px;font-size:12px" title="Open the ComfyUI interface in a new tab">🖥 View ComfyUI</button>
-      <button class="tbtn" id="restartComfyBtn" style="padding:4px 10px;font-size:12px" title="Kill and relaunch the ComfyUI backend — use this if renders hang or fail">⟳ Restart backend</button>
-      <button class="tbtn hidden" id="installBtn" style="padding:4px 10px;font-size:12px" title="Install Podder as a real app — gives it its own taskbar icon for good">📌 Install app</button>
-      <button class="tbtn" id="quitBtn" style="padding:4px 10px;font-size:12px;margin-left:auto;color:#c77f7f" title="Close Podder + ComfyUI">✕ Quit</button>
-      <span class="caret">▾</span>
-    </div>
-    <div class="lai-body">
-      <div class="lai-warn hidden" id="laiWarn">
-        Not connected. Start the launcher: run <b>podder.bat</b> (or <b>node podder-server.mjs</b>) and open
-        <b>http://localhost:8199</b>. Opening the raw file can't reach ComfyUI.
-      </div>
-      <div class="lai-grid">
-        <div class="fld">
-          <label>Checkpoint (model)</label>
-          <select id="ckpt"><option>— connect ComfyUI —</option></select>
-        </div>
-        <div class="fld">
-          <label>Sampler</label>
-          <select id="sampler"></select>
-        </div>
-        <div class="fld">
-          <label>Steps</label>
-          <input type="number" id="steps" value="15" min="1" max="150" />
-        </div>
-        <div class="fld">
-          <label id="cfgLabel">CFG</label>
-          <input type="number" id="cfg" value="7" min="1" max="30" step="0.5" />
-        </div>
-        <div class="fld">
-          <label>Image size</label>
-          <select id="size">
-            <option value="768x768" selected>768 × 768 (default)</option>
-            <option value="512x768">512 × 768 (SD 1.5 portrait)</option>
-            <option value="512x512">512 × 512 (SD 1.5 square)</option>
-            <option value="1024x1024">1024 × 1024 (SDXL/Flux full res)</option>
-            <option value="832x1216">832 × 1216 (SDXL portrait)</option>
-          </select>
-        </div>
-      </div>
-      <div class="lai-note">
-        With the launcher running, each generated prompt gets a <b>🖼 Render</b> button — Podder queues it in ComfyUI and shows the image right here. The <b>Avoid</b> line is sent as the negative prompt automatically.
-      </div>
-    </div>
   </div>
 
   <!-- GENERATE TAB -->
@@ -393,12 +344,25 @@
             <option value="eye-level">Eye level</option>
           </select>
         </div>
+        <div class="row" style="margin-bottom:0">
+          <div class="label">Image shape</div>
+          <select id="aspect">
+            <option value="1:1" selected>Square (1:1)</option>
+            <option value="2:3">Portrait (2:3)</option>
+            <option value="3:2">Landscape (3:2)</option>
+          </select>
+        </div>
       </div>
 
       <div class="actions">
         <button class="btn primary" id="genBtn">✦ Generate</button>
         <button class="btn ghost" id="surpriseBtn">🎲 Surprise me</button>
         <button class="btn ghost" id="stopAllBtn" title="Stop every render currently in progress">⏹ Stop all</button>
+        <label class="quality-toggle" title="Fast: klein 4B (~$0.01, <1s) — Quality: pro (~$0.05, ~5s)">
+          <span id="qtLabel" class="qt-label">⚡ Fast</span>
+          <input type="checkbox" id="qualityToggle" />
+          <span class="qt-track"><span class="qt-thumb"></span></span>
+        </label>
       </div>
     </div>
 
@@ -413,7 +377,6 @@
   <!-- HISTORY TAB -->
   <div id="tab-hist" class="hidden">
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
-      <button class="btn ghost" id="cleanupOutputs" title="Delete every rendered image on disk that isn't currently a favorite, in history, a reroll, or saved to your 3D Printing folder">🧹 Clean up unused renders</button>
       <button class="btn ghost" id="clearHist">Clear history</button>
     </div>
     <div class="out" id="histList"></div>
@@ -485,20 +448,22 @@
   </div>
 
   <footer>
-    Runs 100% in your browser — nothing leaves this page. Favorites &amp; history saved locally.<br>
+    Images render in the cloud; your favorites &amp; history stay in this browser.<br>
     Tip: render, use ✎ Edit to touch up a result, then save it and upload to <b>meshy.ai</b> for image-to-3D.
   </footer>
 </div>
 
-<!-- BOOT GATE: covers the page while ComfyUI is still starting (Podder Studio flow) -->
-<div class="bootGate" id="bootGate">
-  <canvas id="bootCanvas"></canvas>
-  <div class="bootBox">
-    <img src="Podder-192.png" alt="" />
-    <h2>Hold tight…</h2>
-    <p>Hold tight while we get the app ready for you.</p>
-    <div class="bootTime" id="bootTime"></div>
-    <div class="bootSkip" id="bootSkip">skip →</div>
+<!-- PIN GATE -->
+<div class="pinGate" id="pinGate">
+  <div class="pinBox">
+    <img src="Podder-192.png" alt="" width="72" height="72" style="border-radius:18px" />
+    <h2>Podder</h2>
+    <p>Enter your access PIN to start creating.</p>
+    <form id="pinForm">
+      <input type="password" id="pinInput" inputmode="numeric" autocomplete="off" placeholder="PIN" />
+      <button class="btn primary" type="submit">Unlock</button>
+    </form>
+    <div class="pinErr hidden" id="pinErr">Wrong PIN — try again.</div>
   </div>
 </div>
 
@@ -3529,8 +3494,10 @@ function buildPrompt(){
   }
   const sdStyles = [...new Set(sdPhrases)].slice(0, Math.max(1,clauseTarget));
   const sdRelief = reliefWord+" carved relief";
-  // SDXL reads ~150 tokens comfortably — give it a richer tail than SD 1.5.
-  const fam = modelFamily($("#ckpt") ? $("#ckpt").value : "");
+  // The hosted app always renders Flux via the cloud API, so the rich Flux prompt path
+  // below is the only one that runs (the keyword branches are kept for the local version's
+  // prompt-display parity but are effectively dead here).
+  const fam = "flux";
   const tail = fam==="sd15"
     ? "centered on a plain light gray seamless studio background, soft even diffuse lighting, matte surface, sharp focus, high quality"
     : "the ornamentation deeply sculpted into the surface with crisp self-shadowed relief, centered on a plain light gray seamless studio background, soft even diffuse studio lighting, matte non-reflective surface, professional product photography, ultra detailed textures, sharp focus, 4k";
@@ -3557,6 +3524,7 @@ function buildPrompt(){
       isFig
         ? `A single ${objNoun}, instantly and unmistakably recognizable — exactly one sculpted decorative piece, alone and centered, nothing else in the scene.`
         : `A single ${objNoun}, instantly and unmistakably recognizable as a real, functional ${objNoun} — exactly one object, alone and centered, nothing else in the scene.`,
+      `The whole piece is ${pal.t}.`,
       o.fn,
       `Its overall form is ${formPhrase}.`,
       wild>=3
@@ -3566,7 +3534,6 @@ function buildPrompt(){
         : `It is lightly decorated with ${clauses.join(", and ")}, applied as ${reliefWord} physically sculpted three-dimensional relief — shallow, elegant accents with plenty of smooth bare surface between them.${jewelryNote}`,
       printable ? PRINTABLE : "",
       wildNote,
-      `The whole piece is ${pal.t}.`,
       `Photographed ${view.t}, sitting directly on a plain seamless light-grey studio surface with no pedestal, stand or platform beneath it, and no other objects, furniture or scenery anywhere in frame.`,
       "Soft even diffuse studio lighting, matte non-reflective surface, ultra-detailed, sharp focus, professional product photography, 4k."
     ].filter(Boolean).join(" ").replace(/\s{2,}/g," ");
@@ -3615,11 +3582,11 @@ function buildCard(item, opts={}){
     </div>
     <div class="tools">
       <div class="tbtn fav ${isFav?'on':''}">${isFav?'★ Saved':'☆ Favorite'}</div>
-      <div class="tbtn render" title="${item.renderImg?'Render 6 similar designs under this picture':'Generate the image locally in ComfyUI'}">${item.renderImg?'🔄 Similar ×6':'🖼 Render'}</div>
+      <div class="tbtn render" title="${item.renderImg?'Render 6 similar designs under this picture':'Generate the image'}">${item.renderImg?'🔄 Similar ×6':'🖼 Render'}</div>
       ${opts.showReroll?'<div class="tbtn reroll" title="Render 6 random objects in this same style">🎲 Reroll ×6</div>':''}
       ${opts.showRemove?'<div class="tbtn remove">✕ Remove</div>':''}
     </div>
-    <div class="render-wrap">${item.renderImg?'':'<div class="render-status">Start the launcher + ComfyUI, then click 🖼 Render.</div>'}</div>`;
+    <div class="render-wrap">${item.renderImg?'':'<div class="render-status">Click 🖼 Render to generate this design.</div>'}</div>`;
   card.querySelector(".fav").onclick=()=>{
     toggleFav(item);
     const b=card.querySelector(".fav"); const on=favs.some(f=>sameItem(f,item));
@@ -3660,14 +3627,16 @@ function renderThumbGrid(list, container, opts={}){
     const tile=document.createElement("div"); tile.className="thumbTile";
     const objInfo=OBJECTS[item.obj];
     if(item.renderImg){
-      const src=`/comfy/view?filename=${encodeURIComponent(item.renderImg.filename)}&subfolder=${encodeURIComponent(item.renderImg.subfolder||"")}&type=${encodeURIComponent(item.renderImg.type||"output")}`;
-      tile.innerHTML=`<img class="thumbImg" src="${src}" loading="lazy" />
+      tile.innerHTML=`<img class="thumbImg" loading="lazy" />
         <div class="thumbBadge">${objInfo?.emoji||""} ${objInfo?.label||item.obj}</div>`;
-      // Save straight from the grid — no need to open the card first.
-      const sv=document.createElement("div"); sv.className="thumbSave"; sv.textContent="📁";
-      sv.title="Save to 3D Printing folder";
-      sv.onclick=(e)=>{ e.stopPropagation(); saveToDesktop(item, item.renderImg, sv); };
-      tile.appendChild(sv);
+      imgSrc(item.renderImg).then(u=>{ if(u) tile.querySelector(".thumbImg").src=u; });
+      const saveBtn=document.createElement("button"); saveBtn.className="thumbSave"; saveBtn.title="Download"; saveBtn.textContent="📁";
+      saveBtn.onclick=async(e)=>{
+        e.stopPropagation();
+        const u=await imgSrc(item.renderImg); if(!u) return;
+        const a=document.createElement("a"); a.href=u; a.download=renderFilename(item); a.click();
+      };
+      tile.appendChild(saveBtn);
     } else {
       tile.classList.add("noImg");
       tile.innerHTML=`<div class="thumbPlaceholder">${objInfo?.emoji||"🖼"}<span>No picture yet</span></div>
@@ -3695,21 +3664,15 @@ function closeCardModal(){ $("#cardModalWrap").classList.remove("show"); $("#car
 // the same top box always edits from this original image again, so you get independent variations
 // to compare rather than an ever-growing stack of edit boxes above and below each new picture.
 function renderImageInto(wrap, item, imgRef){
-  const src = `/comfy/view?filename=${encodeURIComponent(imgRef.filename)}&subfolder=${encodeURIComponent(imgRef.subfolder||"")}&type=${encodeURIComponent(imgRef.type||"output")}`;
   wrap.innerHTML = "";
-  const image = new Image(); image.className = "render"; image.src = src;
-  image.dataset.filename = imgRef.filename; image.dataset.subfolder = imgRef.subfolder||""; image.dataset.type = imgRef.type||"output";
-  image.onerror = ()=>{ wrap.innerHTML = `<div class="render-status err">This saved image is no longer in ComfyUI's output folder — click 🔄 Re-render for a fresh one.</div>`; };
+  const image = new Image(); image.className = "render";
+  image.onerror = ()=>{ wrap.innerHTML = `<div class="render-status err">This saved image is missing from this browser — click 🔄 Re-render for a fresh one.</div>`; };
   wrap.appendChild(image);
   const meta = document.createElement("div"); meta.className = "render-meta";
   const dl = document.createElement("a");
-  dl.href = src; dl.download = downloadName(item, imgRef.filename); dl.textContent = "⬇ Save image";
+  dl.download = downloadName(item, "x.png"); dl.textContent = "⬇ Save image";
   meta.appendChild(dl);
-  const saveBtn = document.createElement("span");
-  saveBtn.textContent = "📁 Save to 3D Printing folder";
-  saveBtn.style.cssText = "font-size:13px;cursor:pointer;color:var(--accent2)";
-  saveBtn.onclick = ()=>saveToDesktop(item, imgRef, saveBtn);
-  meta.appendChild(saveBtn);
+  imgSrc(imgRef).then(u=>{ if(!u){ image.onerror(); return; } image.src=u; dl.href=u; });
   // "Apply design to other objects" — img2img this picture into a different object's form.
   const sel = document.createElement("select"); sel.className = "variantSel";
   // Grouped by category — cross-category applies are allowed on purpose (a vase's glaze DNA
@@ -3740,8 +3703,8 @@ function renderImageInto(wrap, item, imgRef){
     const grid = document.createElement("div"); grid.className = "variantGrid";
     pastVariants.reverse().forEach(v => {
       const tile = document.createElement("div"); tile.className = "variantTile";
-      const vsrc = `/comfy/view?filename=${encodeURIComponent(v.renderImg.filename)}&subfolder=${encodeURIComponent(v.renderImg.subfolder||"")}&type=${encodeURIComponent(v.renderImg.type||"output")}`;
-      tile.innerHTML = `<img class="thumbImg" src="${vsrc}" loading="lazy" />`;
+      tile.innerHTML = `<img class="thumbImg" loading="lazy" />`;
+      imgSrc(v.renderImg).then(u=>{ if(u) tile.querySelector("img").src = u; });
       tile.title = "Open full size";
       tile.onclick = ()=>openCardModal(v, {});
       grid.appendChild(tile);
@@ -3756,7 +3719,6 @@ function renderImageInto(wrap, item, imgRef){
     slot.insertBefore(lbl, slot.firstChild);
     wrap.appendChild(slot);
   });
-  return src;
 }
 // Fills an .edit-result slot with a finished edit — image, save link, save-to-desktop button,
 // its OWN favorite button (an edit is a distinct favoritable item from the card's original
@@ -3765,91 +3727,17 @@ function renderImageInto(wrap, item, imgRef){
 // again, so you get independent variations to compare rather than an ever-growing stack of
 // edit boxes above and below each new picture.
 function renderEditResultInto(wrap, item, imgRef){
-  const src = `/comfy/view?filename=${encodeURIComponent(imgRef.filename)}&subfolder=${encodeURIComponent(imgRef.subfolder||"")}&type=${encodeURIComponent(imgRef.type||"output")}`;
   wrap.innerHTML = "";
-  const image = new Image(); image.className = "render"; image.src = src;
-  image.dataset.filename = imgRef.filename; image.dataset.subfolder = imgRef.subfolder||""; image.dataset.type = imgRef.type||"output";
+  const image = new Image(); image.className = "render";
   wrap.appendChild(image);
   const meta = document.createElement("div"); meta.className = "render-meta";
   const dl = document.createElement("a");
-  dl.href = src; dl.download = downloadName(item, imgRef.filename); dl.textContent = "⬇ Save image";
+  dl.download = downloadName(item, "x.png"); dl.textContent = "⬇ Save image";
   meta.appendChild(dl);
-  const saveBtn = document.createElement("span");
-  saveBtn.textContent = "📁 Save to 3D Printing folder";
-  saveBtn.style.cssText = "font-size:13px;cursor:pointer;color:var(--accent2)";
-  saveBtn.onclick = ()=>saveToDesktop(item, imgRef, saveBtn);
-  meta.appendChild(saveBtn);
+  imgSrc(imgRef).then(u=>{ if(u){ image.src=u; dl.href=u; } });
   meta.appendChild(buildFavBtn(item));
   if(item.renderMs){ const t=document.createElement("span"); t.className="render-time"; t.textContent=fmtDuration(item.renderMs); meta.appendChild(t); }
   wrap.appendChild(meta);
-  return src;
-}
-// Maps each object type to its Desktop\3D Printing subfolder — reuses the folders already
-// there (Vases, Planters, Birdhouses, Bird Feeder) and adds one per remaining object type.
-// wallplanter merges into "Planters" (same functional category, avoids near-duplicate folders).
-const SAVE_FOLDER = {
-  // Home goods
-  vase:"Vases", planter:"Planters", wallplanter:"Planters",
-  birdhouse:"Birdhouses", birdfeeder:"Bird Feeder",
-  votive:"Votive Holders", incense:"Incense Holders", bowl:"Bowls",
-  lantern:"Lanterns", pencup:"Pen Cups", jewelry:"Ring Holders",
-  ornament:"Hanging Ornaments", mushroomdeco:"Garden Mushrooms",
-  trinketdish:"Trinket Dishes", coindish:"Coin Dishes", coaster:"Coasters",
-  pictureframe:"Picture Frames", cactusplanter:"Cactus Planters", herbpot:"Herb Pots",
-  necklacestand:"Necklace Stands", earringstand:"Earring Stands", watchstand:"Watch Stands",
-  budvase:"Bud Vases", chalice:"Chalices", wallpocket:"Wall Pocket Planters",
-  phonestand:"Phone Stands", tabletstand:"Tablet Stands", headphonestand:"Headphone Stands",
-  sunglassesstand:"Sunglasses Stands", bookend:"Bookends", winebottleholder:"Wine Bottle Holders",
-  coinbank:"Coin Banks", cardholder:"Card Holders", makeupbrush:"Makeup Brush Holders",
-  toothbrush:"Toothbrush Holders",
-  // Figurines
-  dragonfig:"Figurines/Dragons", dinofig:"Figurines/Dinosaurs", animalfig:"Figurines/Animals",
-  mythicfig:"Figurines/Mythical Beasts", robotfig:"Figurines/Robots", characterfig:"Figurines/Characters",
-  skullfig:"Figurines/Skulls", bustfig:"Figurines/Busts", chessfig:"Figurines/Chess Pieces",
-  gargoylefig:"Figurines/Gargoyles", chibimonfig:"Figurines/Chibi Monsters",
-  warminifig:"Figurines/War Miniatures", darkfantasyfig:"Figurines/Dark Fantasy",
-  seafig:"Figurines/Sea Creatures", kaijufig:"Figurines/Kaiju", insectfig:"Figurines/Insects",
-  cryptidfig:"Figurines/Cryptids", vinylfig:"Figurines/Vinyl Mascots",
-  kawaiifoodfig:"Figurines/Kawaii Food", blobfig:"Figurines/Blob Buddies",
-  nestingfig:"Figurines/Nesting Dolls", animefig:"Figurines/Anime Heroes",
-  cyberfig:"Figurines/Cyberpunk", piratefig:"Figurines/Pirates",
-  wastelandfig:"Figurines/Wastelanders", deityfig:"Figurines/Deities",
-  yokaifig:"Figurines/Yokai", fairyfig:"Figurines/Fairies", golemfig:"Figurines/Golems",
-  chonkfig:"Figurines/Chonky Animals", deathmachinefig:"Figurines/Death Machines",
-  mechafig:"Figurines/Mechas", horrorfig:"Figurines/Horror Icons",
-  mermaidfig:"Figurines/Mermaids", tikifig:"Figurines/Tiki Totems",
-  holidayfig:"Figurines/Holiday", superfig:"Figurines/Superheroes",
-  steamfig:"Figurines/Steampunk", birdfig:"Figurines/Birds",
-  // Spiritual
-  buddhafig:"Spiritual/Meditation", hindufig:"Spiritual/Hindu",
-  egyptfig:"Spiritual/Egyptian", chinesefig:"Spiritual/Chinese",
-  japanesefig:"Spiritual/Japanese", mesofig:"Spiritual/Mesoamerican",
-  greekfig:"Spiritual/Greek", norsefig:"Spiritual/Norse", celticfig:"Spiritual/Celtic",
-  africanfig:"Spiritual/African", polynfig:"Spiritual/Polynesian",
-  slavicfig:"Spiritual/Slavic", persianfig:"Spiritual/Persian",
-  tibetanfig:"Spiritual/Tibetan", koreanfig:"Spiritual/Korean",
-  nativefig:"Spiritual/Native American", inuitfig:"Spiritual/Arctic",
-  vodoufig:"Spiritual/Caribbean", seasianfig:"Spiritual/Southeast Asian",
-  shipibofig:"Spiritual/Shipibo-Conibo", dmtfig:"Spiritual/DMT Realm",
-  alienfig:"Spiritual/Alien"
-};
-// Writes the render straight to the Desktop\3D Printing folder via the launcher (server-side
-// filesystem access — a browser page can't pick a save folder on its own for security reasons).
-async function saveToDesktop(item, imgRef, btn){
-  const oldTxt = btn.textContent; btn.textContent = "⏳ Saving…";
-  try{
-    const folder = SAVE_FOLDER[item.obj] || "";
-    const r = await fetch("/save-desktop", {method:"POST", headers:{"content-type":"application/json"},
-      body: JSON.stringify({filename:imgRef.filename, subfolder:imgRef.subfolder||"", type:imgRef.type||"output", saveAs: downloadName(item, imgRef.filename), folder})});
-    const j = await r.json();
-    if(!r.ok || !j.ok) throw new Error(j.error || ("HTTP "+r.status));
-    toast("📁 Saved to 3D Printing"+(folder?"/"+folder:""));
-    btn.textContent = "✅ Saved";
-    setTimeout(()=>{ btn.textContent = oldTxt; }, 2500);
-  }catch(e){
-    toast("Save failed: "+String(e.message||e));
-    btn.textContent = oldTxt;
-  }
 }
 // AI touch-up: describe a change, regenerate anchored to the current image (img2img).
 // Attached to every image wrap, so edits can be chained (edit an edit) via natural DOM nesting.
@@ -3904,118 +3792,67 @@ function buildEditBox(item, wrap){
   return box;
 }
 
-// Upload the currently-displayed image's bytes into ComfyUI's input folder so a LoadImage
-// node can reference it (Podder's renders live in ComfyUI's OUTPUT folder, which LoadImage
-// can't see directly — this round-trip is the standard way to feed an existing render back
-// in for img2img). The filename MUST be unique per upload — ComfyUI's node-level execution
-// cache keys LoadImage purely on the filename widget value, so reusing "podder_edit_src.png"
-// every time (even with overwrite:true replacing the file on disk) makes ComfyUI silently
-// reuse the tensor from the very first upload instead of re-reading the new bytes, which is
-// exactly why every edit looked identical to the original.
-async function uploadImageToComfy(imgSrc){
-  const imgResp = await fetch(imgSrc);
-  if(!imgResp.ok) throw new Error("Couldn't read the image to edit");
-  const blob = await imgResp.blob();
-  const fd = new FormData();
-  fd.append("image", blob, `podder_edit_src_${Date.now()}_${Math.floor(Math.random()*1e6)}.png`);
-  fd.append("type", "input");
-  fd.append("overwrite", "true");
-  const r = await fetch("/comfy/upload/image", {method:"POST", body:fd});
-  if(!r.ok) throw new Error("Upload to ComfyUI failed ("+r.status+")");
-  return await r.json();   // {name, subfolder, type}
-}
-// img2img graph: same checkpoint/family branch as buildWorkflow, but the latent comes from
-// VAE-encoding the uploaded image instead of an empty latent, and denoise < 1 anchors the
-// result to the original image's structure instead of generating from scratch.
-function buildEditWorkflow(positive, negative, item, uploaded, denoise){
-  const ckpt = $("#ckpt").value;
-  const fam  = modelFamily(ckpt);
-  const steps = +$("#steps").value || 30;
-  const imgName = uploaded.subfolder ? uploaded.subfolder+"/"+uploaded.name : uploaded.name;
-  const prefix = "Podder/"+downloadName(item,"x").replace(/\.[^.]+$/,"")+"_edit";
-
-  if(fam==="flux" && LAI.flux && LAI.flux.available){
-    const guidance = Math.min(10, Math.max(1, +$("#cfg").value || 3.5));
-    return {
-      "1":{class_type:"UNETLoader",inputs:{unet_name:ckpt,weight_dtype:"fp8_e4m3fn"}},
-      "2":{class_type:"DualCLIPLoader",inputs:{clip_name1:LAI.flux.t5xxl,clip_name2:LAI.flux.clipL,type:"flux"}},
-      "3":{class_type:"VAELoader",inputs:{vae_name:LAI.flux.vae}},
-      "4":{class_type:"CLIPTextEncode",inputs:{text:positive,clip:["2",0]}},
-      "5":{class_type:"ConditioningZeroOut",inputs:{conditioning:["4",0]}},
-      "6":{class_type:"FluxGuidance",inputs:{guidance,conditioning:["4",0]}},
-      "11":{class_type:"LoadImage",inputs:{image:imgName}},
-      "7":{class_type:"VAEEncode",inputs:{pixels:["11",0],vae:["3",0]}},
-      "8":{class_type:"KSampler",inputs:{seed:Math.floor(Math.random()*1e15),steps,cfg:1,sampler_name:"euler",scheduler:"simple",denoise,model:["1",0],positive:["6",0],negative:["5",0],latent_image:["7",0]}},
-      "9":{class_type:"VAEDecode",inputs:{samples:["8",0],vae:["3",0]}},
-      "10":{class_type:"SaveImage",inputs:{filename_prefix:prefix,images:["9",0]}}
-    };
-  }
-  const sampler = $("#sampler").value || "euler";
-  const cfg = +$("#cfg").value || 7;
-  return {
-    "4":{class_type:"CheckpointLoaderSimple",inputs:{ckpt_name:ckpt}},
-    "11":{class_type:"LoadImage",inputs:{image:imgName}},
-    "5":{class_type:"VAEEncode",inputs:{pixels:["11",0],vae:["4",2]}},
-    "6":{class_type:"CLIPTextEncode",inputs:{text:positive,clip:["4",1]}},
-    "7":{class_type:"CLIPTextEncode",inputs:{text:negative,clip:["4",1]}},
-    "3":{class_type:"KSampler",inputs:{seed:Math.floor(Math.random()*1e15),steps,cfg,sampler_name:sampler,scheduler:"karras",denoise,model:["4",0],positive:["6",0],negative:["7",0],latent_image:["5",0]}},
-    "8":{class_type:"VAEDecode",inputs:{samples:["3",0],vae:["4",2]}},
-    "9":{class_type:"SaveImage",inputs:{filename_prefix:prefix,images:["8",0]}}
-  };
-}
+// img2img edit: sends the current image (as a data URL) plus the instruction to /api/generate.
+// strength maps to Flux's prompt_strength — how far the result may drift from the source.
 async function editImage(item, wrap, box, instruction, strength){
-  if(!LAI.comfy){ toast("Start the launcher + ComfyUI first"); $("#lai").classList.add("open"); return; }
   const img = wrap.querySelector(":scope > img.render");
-  if(!img){ toast("No image to edit yet"); return; }
+  if(!img || !img.src){ toast("No image to edit yet"); return; }
   const btn = box.querySelector(".edit-apply"), resultEl = box.querySelector(".edit-result");
   const oldTxt = btn.textContent; btn.textContent = "⏳ …";
-  resultEl.innerHTML = `<div style="text-align:center"><img class="render-spin" src="Podder-192.png" alt="" /><div class="render-status">Uploading image to ComfyUI…</div></div>`;
+  resultEl.innerHTML = `<div style="text-align:center"><img class="render-spin" src="Podder-192.png" alt="" /><div class="render-status">Editing…</div></div>`;
   const status = resultEl.querySelector(".render-status");
   const t0 = Date.now();
+  const ctl = new AbortController(); inFlightCtls.add(ctl);
+  const tick = setInterval(()=>{ status.textContent = "Editing… "+Math.round((Date.now()-t0)/1000)+"s"; }, 1000);
   try{
-    const uploaded = await uploadImageToComfy(img.src);
-    status.textContent = "Queuing edit…";
+    const srcData = await blobToDataURL(await (await fetch(img.src)).blob());
     const positive = (item.sd || item.text) + ". " + instruction + ".";
-    const negative = item.sdNeg || item.neg || "";
-    const id = await comfyQueue(buildEditWorkflow(positive, negative, item, uploaded, strength));
-    const out = await comfyWait(id, n=>{ status.textContent = "Editing… "+n; });
-    const imgRef = {filename:out.filename, subfolder:out.subfolder||"", type:out.type||"output"};
+    const j = await apiFetch("/api/generate", {prompt: positive, aspect: $("#aspect").value, image: srcData, strength, quality: getQuality()}, ctl.signal);
+    const key = genId();
+    await idbPut(key, await (await fetch(j.image)).blob());
+    const imgRef = {idb:key};
     // An edit is its own favoritable item, distinct from the card's original. It MUST get its
     // own id: identity checks (sameItem) go by id first, so spreading the source item without
     // replacing the id made the edit's ☆ button toggle the ORIGINAL's favorite instead of its own.
     const editItem = {...item, id: genId(), edited: true, parentId: item.id, editInstruction: instruction, sd: (item.sd || item.text || "") + " — edited: " + instruction, renderImg:imgRef, renderMs: Date.now()-t0};
-    // Edits join history exactly like top-level renders (renderCard does the same for those):
-    // History is the log of every picture made — and it's also what protects a picture from
-    // "🧹 Clean up outputs", which deletes anything not referenced by favorites/history/rerolls.
-    if(!hist.some(h=>h.renderImg && h.renderImg.filename===imgRef.filename)){
-      hist.unshift({...editItem});
-      hist = hist.slice(0,300);
-      LS_set("podder_hist",hist);
-      refreshCounts();
-    }
+    // Edits join history exactly like top-level renders — history is the log of every picture
+    // made, and it's what keeps an image's bytes alive in this browser's local image store.
+    hist.unshift({...editItem});
+    hist = hist.slice(0,300);
+    LS_set("podder_hist",hist);
+    refreshCounts();
     renderEditResultInto(resultEl, editItem, imgRef);
     const label = document.createElement("div"); label.className = "render-status"; label.style.color = "#54d69b";
     label.textContent = `✎ Edited: "${instruction}" (strength ${strength})`;
     resultEl.insertBefore(label, resultEl.firstChild);
   }catch(e){
     const msg = String(e.message||e);
-    resultEl.innerHTML = msg==="Cancelled" ? `<div class="render-status">⏹ Cancelled</div>` : `<div class="render-status err">Edit failed: ${msg}</div>`;
+    resultEl.innerHTML = (ctl.signal.aborted || /abort/i.test(msg)) ? `<div class="render-status">⏹ Cancelled</div>` : `<div class="render-status err">Edit failed: ${msg}</div>`;
   }finally{
+    clearInterval(tick); inFlightCtls.delete(ctl);
     btn.textContent = oldTxt;
   }
 }
 
 /* ---------- ACTIONS ---------- */
 async function generate(){
-  // A fresh batch means the user has moved on — stop anything still rendering from the last one
-  // rather than letting it keep occupying ComfyUI behind the user's back.
-  await cancelInFlight();
+  // A fresh batch means the user has moved on — abort anything still rendering from the last one.
+  cancelInFlight();
   const n=+$("#count").value;
   const out=[];
   for(let i=0;i<n;i++) out.push(buildPrompt());
-  // With ComfyUI connected: collapse prompts and auto-render every card.
   render(out, $("#output"), {emptyMsg:"Hit Generate."});
-  if(LAI.comfy) document.querySelectorAll("#output .card").forEach(c=>renderCard(c._item, c));
+  const cards = [...document.querySelectorAll("#output .card")];
+  const batch = new AbortController(); inFlightCtls.add(batch);
+  (async()=>{
+    for(let i=0;i<cards.length;i++){
+      if(batch.signal.aborted) break;
+      if(i>0) await new Promise(r=>setTimeout(r,500));
+      if(batch.signal.aborted) break;
+      await renderCard(cards[i]._item, cards[i]);
+    }
+    inFlightCtls.delete(batch);
+  })();
   // History is populated when a render actually finishes (see renderCard) — it's a log of
   // the last 300 PICTURES, not a log of prompts that may never have been rendered.
 }
@@ -4113,7 +3950,6 @@ function refreshCounts(){$("#favCount").textContent=favs.length;$("#histCount").
 // render). Creates one new persistent "subfolder" (a reroll group) — rerolling again adds another
 // group rather than replacing this one, so old sets stay browsable in the Rerolls tab.
 async function rerollFromItem(sourceItem){
-  if(!LAI.comfy){ toast("Start the launcher + ComfyUI first"); $("#lai").classList.add("open"); return; }
   // Temporarily drive buildPrompt() with the source item's style DNA + palette, then restore
   // whatever the user currently has set on the Generate tab so this doesn't disrupt their work.
   const savedObj=state.obj, savedShape=state.shape, savedStyles=new Set(state.styles), savedDetail=new Set(state.styleDetail), savedPalette=$("#palette").value;
@@ -4172,7 +4008,7 @@ function renderRerollsTab(){
       grid.appendChild(card);
       // Auto-render anything in this group that hasn't finished yet (e.g. group was just
       // created, or a previous render attempt failed) — mirrors the Generate tab's auto-render.
-      if(!item.renderImg && LAI.comfy) renderCard(item,card).then(()=>LS_set("podder_rerolls",rerolls));
+      if(!item.renderImg) renderCard(item,card).then(()=>LS_set("podder_rerolls",rerolls));
     });
     container.appendChild(section);
   });
@@ -4185,212 +4021,90 @@ const WILD = {1:"subtle", 2:"bold", 3:"psychedelic"};
 function onWild(){$("#wildVal").textContent=WILD[$("#wild").value];}
 function onCount(){$("#countVal").textContent=$("#count").value;}
 
-/* ---------- LOCAL RENDER (ComfyUI via the launcher proxy) ---------- */
-const LAI = { comfy:false, clientId:"podder-"+Math.floor(Math.random()*1e9) };
+/* ---------- CLOUD RENDER (serverless API + browser image store) ---------- */
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
-// Model family from the checkpoint filename — drives resolution + prompt richness.
-function modelFamily(name){
-  if(/flux/i.test(name||"")) return "flux";
-  if(/xl|juggernaut|realvis|playground/i.test(name||"")) return "sdxl";
-  return "sd15";
-}
-function autoSizeForModel(){
-  const fam=modelFamily($("#ckpt").value);
-  // 768x768 is the default for every model family now (a deliberate speed/quality middle ground
-  // rather than SD1.5's native 512x768 or SDXL/Flux's native 1024x1024) — pick a bigger size from
-  // the dropdown manually if you want full native resolution for a particular model.
-  const rec = "768x768";
-  if($("#cfgLabel")) $("#cfgLabel").textContent = fam==="flux" ? "Guidance" : "CFG";
-  if($("#cfg") && fam==="flux" && (+$("#cfg").value)>10) $("#cfg").value = "3.5";
-  if($("#size").value!==rec){ $("#size").value=rec; }
-}
-
-// Probe both backends through the proxy, populate model/sampler dropdowns, set status.
-async function probeLAI(){
+// --- PIN gate ---
+function getPin(){ return localStorage.getItem("podder_pin") || ""; }
+// "ok" = accepted, "bad" = server explicitly rejected the PIN, "error" = server unreachable.
+// The distinction matters: a stored PIN must only be forgotten on "bad" — dropping it on a
+// transient network blip forces a pointless re-login.
+async function verifyPin(pin){
   try{
-    const r = await fetch("/comfy/object_info/CheckpointLoaderSimple");
-    if(r.ok){
-      const j = await r.json();
-      const ckpts = (j.CheckpointLoaderSimple?.input?.required?.ckpt_name?.[0]) || [];
-
-      // Flux support: separate unet/CLIP/VAE loaders, not a single checkpoint.
-      // Only offer Flux if the whole trio (unet, clip_l, t5xxl, vae) is actually present.
-      LAI.flux = {available:false, unet:null, clipL:null, t5xxl:null, vae:null};
-      try{
-        const [rg, rc, rv, rz] = await Promise.all([
-          fetch("/comfy/object_info/UNETLoader"),
-          fetch("/comfy/object_info/DualCLIPLoader"),
-          fetch("/comfy/object_info/VAELoader"),
-          fetch("/comfy/object_info/ConditioningZeroOut")
-        ]);
-        LAI.fluxNodesInstalled = rg.ok && rc.ok && rv.ok && rz.ok;
-        if(LAI.fluxNodesInstalled){
-          const gj = await rg.json(), cj = await rc.json(), vj = await rv.json();
-          const unets = (gj.UNETLoader?.input?.required?.unet_name?.[0]) || [];
-          const clips = (cj.DualCLIPLoader?.input?.required?.clip_name1?.[0]) || [];
-          const vaes  = (vj.VAELoader?.input?.required?.vae_name?.[0]) || [];
-          LAI.flux.unet  = unets.find(u=>/flux/i.test(u)) || null;
-          LAI.flux.clipL = clips.find(c=>/clip_l/i.test(c)) || null;
-          LAI.flux.t5xxl = clips.find(c=>/t5xxl/i.test(c) && /fp8/i.test(c)) || clips.find(c=>/t5xxl/i.test(c)) || null;
-          LAI.flux.vae   = vaes.find(v=>/^ae\.safetensors$/i.test(v)) || vaes.find(v=>/flux/i.test(v)) || null;
-          LAI.flux.available = !!(LAI.flux.unet && LAI.flux.clipL && LAI.flux.t5xxl && LAI.flux.vae);
-        }
-      }catch(e){ LAI.flux = {available:false}; }
-
-      // One dropdown: real checkpoints + (if fully available) the Flux GGUF unet as a pseudo-checkpoint entry.
-      let opts = ckpts.map(c=>`<option>${c}</option>`);
-      if(LAI.flux.available) opts.unshift(`<option value="${LAI.flux.unet}">🌀 ${LAI.flux.unet} (FLUX)</option>`);
-      $("#ckpt").innerHTML = opts.length ? opts.join("") : `<option>(no checkpoints found)</option>`;
-      // prefer Flux > SDXL > SD1.5 when installed, and match the resolution
-      if(LAI.flux.available) $("#ckpt").value = LAI.flux.unet;
-      else { const best = ckpts.find(c=>modelFamily(c)==="sdxl"); if(best) $("#ckpt").value = best; }
-      if(opts.length){ autoSizeForModel(); $("#ckpt").onchange = autoSizeForModel; }
-      const rs = await fetch("/comfy/object_info/KSampler");
-      if(rs.ok){
-        const js = await rs.json();
-        const samplers = (js.KSampler?.input?.required?.sampler_name?.[0]) || [];
-        $("#sampler").innerHTML = samplers.map(s=>`<option${s==="dpmpp_2m"?" selected":""}>${s}</option>`).join("");
-      }
-      // Zombie check: after a CUDA crash ComfyUI's HTTP API stays up but the GPU context is
-      // dead — /system_stats is the one endpoint that touches CUDA, so it 500s. Without this,
-      // the boot gate dismisses into a backend that accepts jobs it can never render.
-      const hs = await fetch("/comfy/system_stats");
-      if(!hs.ok) throw new Error("gpu context dead");
-      LAI.comfy = true;
-    }
-  }catch(e){ LAI.comfy = false; }
-
-  $("#dotComfy").className  = "dot " + (LAI.comfy ? "ok":"bad");
-  $("#laiWarn").classList.toggle("hidden", LAI.comfy);
-  if(!LAI.comfy) $("#lai").classList.add("open");   // expand to surface the setup hint
+    const r = await fetch("/api/auth",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({pin})});
+    if(r.ok) return "ok";
+    return r.status===401 ? "bad" : "error";
+  }catch(e){ return "error"; }
 }
+function showPinGate(){ $("#pinGate").classList.remove("hidden"); setTimeout(()=>$("#pinInput").focus(),50); }
+function hidePinGate(){ $("#pinGate").classList.add("hidden"); }
 
-// Standard txt2img graph in ComfyUI "API format", with our prompt injected.
-// Flux uses a structurally different graph (separate unet/CLIP/VAE loaders, guidance-distilled
-// sampling with cfg=1 + a FluxGuidance node, and a zeroed-out negative) so it branches here.
-function buildWorkflow(positive, negative, item){
-  const ckpt    = $("#ckpt").value;
-  const fam     = modelFamily(ckpt);
-  const steps   = +$("#steps").value || 30;
-  const [w,h]   = $("#size").value.split("x").map(Number);
-  const seed    = Math.floor(Math.random()*1e15);
-  const prefix  = item?"Podder/"+downloadName(item,"x").replace(/\.[^.]+$/,""):"podder";
+// Every API call carries the verified PIN; a 401 anywhere re-locks the app.
+async function apiFetch(path, body, signal){
+  const r = await fetch(path,{method:"POST",signal,
+    headers:{"content-type":"application/json","x-podder-pin":getPin()},
+    body:JSON.stringify(body)});
+  if(r.status===401){ localStorage.removeItem("podder_pin"); showPinGate(); throw new Error("PIN required"); }
+  const j = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(j.detail || j.error || ("HTTP "+r.status));
+  return j;
+}
+const blobToDataURL = blob => new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(blob); });
 
-  if(fam==="flux" && LAI.flux && LAI.flux.available){
-    const guidance = Math.min(10, Math.max(1, +$("#cfg").value || 3.5)); // reuse the CFG field as Flux guidance
-    return {
-      "1":{class_type:"UNETLoader",inputs:{unet_name:ckpt,weight_dtype:"fp8_e4m3fn"}},
-      "2":{class_type:"DualCLIPLoader",inputs:{clip_name1:LAI.flux.t5xxl,clip_name2:LAI.flux.clipL,type:"flux"}},
-      "3":{class_type:"VAELoader",inputs:{vae_name:LAI.flux.vae}},
-      "4":{class_type:"CLIPTextEncode",inputs:{text:positive,clip:["2",0]}},
-      "5":{class_type:"ConditioningZeroOut",inputs:{conditioning:["4",0]}},
-      "6":{class_type:"FluxGuidance",inputs:{guidance,conditioning:["4",0]}},
-      "7":{class_type:"EmptySD3LatentImage",inputs:{width:w,height:h,batch_size:1}},
-      "8":{class_type:"KSampler",inputs:{seed,steps,cfg:1,sampler_name:"euler",scheduler:"simple",denoise:1,model:["1",0],positive:["6",0],negative:["5",0],latent_image:["7",0]}},
-      "9":{class_type:"VAEDecode",inputs:{samples:["8",0],vae:["3",0]}},
-      "10":{class_type:"SaveImage",inputs:{filename_prefix:prefix,images:["9",0]}}
-    };
+// --- Image store: rendered pictures live in IndexedDB (favorites/history/rerolls reference
+// them by key) so they survive reloads without touching localStorage's tiny quota. ---
+let __idb=null;
+function idb(){
+  if(__idb) return __idb;
+  __idb = new Promise((res,rej)=>{
+    const rq = indexedDB.open("podder-images",1);
+    rq.onupgradeneeded = ()=>rq.result.createObjectStore("img");
+    rq.onsuccess = ()=>res(rq.result);
+    rq.onerror = ()=>rej(rq.error);
+  });
+  return __idb;
+}
+async function idbPut(key, blob){ const db=await idb(); return new Promise((res,rej)=>{ const tx=db.transaction("img","readwrite"); tx.objectStore("img").put(blob,key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
+async function idbGet(key){ const db=await idb(); return new Promise((res,rej)=>{ const rq=db.transaction("img").objectStore("img").get(key); rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>rej(rq.error); }); }
+async function idbKeys(){ const db=await idb(); return new Promise((res,rej)=>{ const rq=db.transaction("img").objectStore("img").getAllKeys(); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>rej(rq.error); }); }
+async function idbDel(key){ const db=await idb(); return new Promise((res,rej)=>{ const tx=db.transaction("img","readwrite"); tx.objectStore("img").delete(key); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
+
+// renderImg -> displayable URL. {idb:key} resolves from the store (object URLs are cached —
+// they stay valid for the life of the page); {url} passes straight through.
+const __urlCache = new Map();
+async function imgSrc(renderImg){
+  if(!renderImg) return null;
+  if(renderImg.url) return renderImg.url;
+  if(renderImg.idb){
+    if(__urlCache.has(renderImg.idb)) return __urlCache.get(renderImg.idb);
+    const blob = await idbGet(renderImg.idb).catch(()=>null);
+    if(!blob) return null;
+    const u = URL.createObjectURL(blob);
+    __urlCache.set(renderImg.idb, u);
+    return u;
   }
-
-  const sampler = $("#sampler").value || "euler";
-  const cfg     = +$("#cfg").value || 7;
-  return {
-    "4":{class_type:"CheckpointLoaderSimple",inputs:{ckpt_name:ckpt}},
-    "5":{class_type:"EmptyLatentImage",inputs:{width:w,height:h,batch_size:1}},
-    "6":{class_type:"CLIPTextEncode",inputs:{text:positive,clip:["4",1]}},
-    "7":{class_type:"CLIPTextEncode",inputs:{text:negative,clip:["4",1]}},
-    "3":{class_type:"KSampler",inputs:{seed,steps,cfg,sampler_name:sampler,scheduler:"karras",denoise:1,model:["4",0],positive:["6",0],negative:["7",0],latent_image:["5",0]}},
-    "8":{class_type:"VAEDecode",inputs:{samples:["3",0],vae:["4",2]}},
-    "9":{class_type:"SaveImage",inputs:{filename_prefix:prefix,images:["8",0]}}
-  };
+  return null;   // items imported from the local ComfyUI version can't resolve here
 }
-// Every ComfyUI job Podder queues (renders + edits) is tracked here while in flight, so a
-// fresh Generate/Surprise can cancel whatever's left over from a batch the user has moved on
-// from — otherwise ComfyUI just keeps burning GPU time on renders nobody's waiting for anymore.
-const inFlightIds = new Set();
-const cancelledIds = new Set();   // comfyWait checks this each poll so a stop feels immediate, not a 10-min timeout
-async function cancelInFlight(){
-  if(inFlightIds.size===0) return 0;
-  const ids=[...inFlightIds];
-  ids.forEach(id=>cancelledIds.add(id));
-  inFlightIds.clear();
-  try{ await fetch("/comfy/interrupt",{method:"POST"}); }catch(e){}          // stop whatever's executing right now
-  try{ await fetch("/comfy/queue",{method:"POST",headers:{"content-type":"application/json"},
-    body:JSON.stringify({delete:ids})}); }catch(e){}                        // drop anything still pending
-  return ids.length;
-}
-async function comfyQueue(graph){
-  const r = await fetch("/comfy/prompt",{method:"POST",headers:{"content-type":"application/json"},
-    body:JSON.stringify({prompt:graph,client_id:LAI.clientId})});
-  if(!r.ok) throw new Error("ComfyUI rejected the job ("+r.status+"). "+(await r.text()).slice(0,180));
-  const j = await r.json();
-  if(j.node_errors && Object.keys(j.node_errors).length) throw new Error("Workflow error: "+JSON.stringify(j.node_errors).slice(0,180));
-  inFlightIds.add(j.prompt_id);
-  return j.prompt_id;
-}
-// Thrown message when the backend's GPU context has died mid-render — renderCard watches for
-// it and triggers the automatic ComfyUI restart instead of just painting an error on the card.
-const COMFY_GPU_DEAD = "ComfyUI's GPU crashed (out of memory)";
-async function comfyWait(id, onTick){
+// Drop stored images nothing references anymore — runs at startup, the web version's
+// automatic equivalent of the old "Clean up unused renders" button.
+async function pruneImageStore(){
   try{
-    let downCount = 0, sickCount = 0, lostCount = 0;
-    for(let i=0;i<600;i++){
-      if(cancelledIds.has(id)){ cancelledIds.delete(id); throw new Error("Cancelled"); }
-      await sleep(1000);
-      if(cancelledIds.has(id)){ cancelledIds.delete(id); throw new Error("Cancelled"); }
-      const r = await fetch("/comfy/history/"+id);
-      if(r.ok){
-        downCount = 0;
-        const entry = (await r.json())[id];
-        if(entry){
-          if(entry.outputs){
-            for(const nodeId in entry.outputs){
-              const imgs = entry.outputs[nodeId].images;
-              if(imgs && imgs.length) return imgs[0];
-            }
-          }
-          if(entry.status?.status_str === "error") throw new Error("ComfyUI render error — check if the model loaded correctly.");
-        }
-      } else {
-        // Proxy returned non-OK (502 = ComfyUI unreachable). Count consecutive failures.
-        if(++downCount >= 5) throw new Error("ComfyUI stopped responding — it may have crashed. Restart Podder Studio and try again.");
-      }
-      if(onTick) onTick((i+1)+"s");
-      // Every 15s: two liveness checks beyond plain HTTP.
-      // 1) /system_stats touches CUDA — after a GPU OOM the worker thread is dead and the job
-      //    sits in queue_running forever while HTTP stays healthy. This is the only signal.
-      // 2) job absent from both history AND queue = ComfyUI restarted and lost it.
-      if((i+1) % 15 === 0){
-        try{
-          const hs = await fetch("/comfy/system_stats");
-          if(!hs.ok){ if(++sickCount >= 2) throw new Error(COMFY_GPU_DEAD); }
-          else sickCount = 0;
-          const qr = await fetch("/comfy/queue");
-          if(qr.ok){
-            const q = await qr.json();
-            const inQ = [...(q.queue_running||[]),...(q.queue_pending||[])].some(e=>e[1]===id);
-            if(!inQ){
-              const r2 = await fetch("/comfy/history/"+id);
-              if(r2.ok){
-                const e2 = (await r2.json())[id];
-                if(e2?.outputs) for(const n in e2.outputs){ const im=e2.outputs[n].images; if(im?.length) return im[0]; }
-              }
-              // Two consecutive absent-checks (30s apart) before declaring the job dead —
-              // a single snapshot can catch ComfyUI mid-transition (job between queue states)
-              // and would kill a render that is actually fine (observed 2026-08-01).
-              if(++lostCount >= 2) throw new Error("ComfyUI lost the job — it may have restarted. Click Re-render to try again.");
-            } else lostCount = 0;
-          }
-        } catch(qe){ if(String(qe.message).includes("ComfyUI")) throw qe; }
-      }
-    }
-    throw new Error("timed out waiting for ComfyUI");
-  } finally {
-    inFlightIds.delete(id);   // done (success, failure, or cancelled) — nothing left to cancel for this one
-    cancelledIds.delete(id);
-  }
+    const referenced = new Set([...favs,...hist,...rerolls.flatMap(g=>g.items)]
+      .map(it=>it.renderImg&&it.renderImg.idb).filter(Boolean));
+    for(const k of await idbKeys()) if(!referenced.has(k)) await idbDel(k);
+  }catch(e){}
 }
+
+// In-flight renders/edits, abortable by ⏹ Stop all or a fresh Generate.
+const inFlightCtls = new Set();
+function cancelInFlight(){
+  const n = inFlightCtls.size;
+  inFlightCtls.forEach(c=>c.abort());
+  inFlightCtls.clear();
+  return n;
+}
+
+
 // Descriptive download name, e.g. "BirdFeeder_swirly-sacred_obsidian.png"
 function slugWords(s){
   return String(s).replace(/[^a-z0-9]+/gi," ").trim().split(/\s+/)
@@ -4404,32 +4118,38 @@ function downloadName(item, comfyFilename){
   const pal = (item.palette || "art") + (item.edited ? "_edited" : "");
   return `${obj}${shape}_${styles}_${pal}.${/^(png|jpg|jpeg|webp)$/.test(ext)?ext:"png"}`;
 }
-async function renderCard(item, card){
-  if(!LAI.comfy){ toast("Start the launcher + ComfyUI first"); $("#lai").classList.add("open"); return; }
-  // Re-entry guard: boot flow, recovery flow, and the button can all target the same card;
-  // without this a race would queue the same prompt twice.
-  if(item._rendering) return; item._rendering = true;
+async function renderCard(item, card, revealAfter, startAfter){
   const btn = card.querySelector(".render"), wrap = card.querySelector(".render-wrap");
   btn.disabled = true; btn.textContent = "⏳ …";
-  wrap.innerHTML = `<div style="text-align:center"><img class="render-spin" src="Podder-192.png" alt="" /><div class="render-status">Preparing…</div></div>`;
+  wrap.innerHTML = `<div style="text-align:center"><img class="render-spin" src="Podder-192.png" alt="" /><div class="render-status">Rendering in the cloud…</div></div>`;
   const status = wrap.querySelector(".render-status");
   const t0 = Date.now();
+  const ctl = new AbortController(); inFlightCtls.add(ctl);
+  const tick = setInterval(()=>{ status.textContent = "Rendering… "+Math.round((Date.now()-t0)/1000)+"s"; }, 1000);
   try{
-    const positive = item.sd || item.text;                    // compact SD prompt; old saved items fall back
-    const negative = item.sdNeg || item.neg || "";
-    status.textContent = "Queuing in ComfyUI…";
-    const id  = await comfyQueue(buildWorkflow(positive, negative, item));
-    const img = await comfyWait(id, n=>{ status.textContent = "Rendering… "+n; });
-    const imgRef = {filename:img.filename, subfolder:img.subfolder||"", type:img.type||"output"};
+    if(startAfter) await startAfter.catch(()=>{});
+    const positive = item.sd || item.text;                    // compact prompt; old saved items fall back
+    const j = await apiFetch("/api/generate", {prompt: positive, aspect: $("#aspect").value, quality: getQuality()}, ctl.signal);
+    // Every render gets its own image-store key — a re-render must never overwrite the bytes an
+    // older history row points at (history is a log of pictures, not of prompts).
+    const key = genId();
+    await idbPut(key, await (await fetch(j.image)).blob());
+    // Ordered reveal: the picture is fetched and safely stored, but it only appears once the
+    // card above has shown its result — batches fill strictly top-down, never bottom-up.
+    if(revealAfter) await revealAfter.catch(()=>{});
+    const imgRef = {idb:key};
     item.renderImg = imgRef;               // so a later ☆ click captures THIS picture, not just the prompt
     item.renderMs = Date.now()-t0;
     renderImageInto(wrap, item, imgRef);
+    if(j.mock){
+      const m = document.createElement("div"); m.className = "render-status"; m.style.color = "#e0b054";
+      m.textContent = "⚠ Mock image — set REPLICATE_API_TOKEN on the server for real renders.";
+      wrap.appendChild(m);
+    }
 
     // History: a rolling log of the last 300 PICTURES. Snapshot (never alias `item`) so a later
     // re-render on this same card can't retroactively change what an older history row shows.
-    // Keyed by the image filename (ComfyUI always makes these unique) rather than prompt content,
-    // so re-rendering the same prompt correctly adds a new row instead of being deduped away.
-    if(!hist.some(h=>h.renderImg && h.renderImg.filename===imgRef.filename)){
+    {
       hist.unshift({...item, renderImg:imgRef});
       hist = hist.slice(0,300);
       LS_set("podder_hist",hist);
@@ -4445,13 +4165,11 @@ async function renderCard(item, card){
       LS_set("podder_favs",favs);
     }
   }catch(e){
+    if(revealAfter) await revealAfter.catch(()=>{});   // even failures report in top-down order
     const msg = String(e.message||e);
-    wrap.innerHTML = msg==="Cancelled" ? `<div class="render-status">⏹ Cancelled</div>` : `<div class="render-status err">Render failed: ${msg}</div>`;
-    // GPU context died mid-render — the backend is unrecoverable without a process restart.
-    // Kick off the automatic restart (guarded so only the first failing card triggers it).
-    if(msg===COMFY_GPU_DEAD) recoverComfy();
+    wrap.innerHTML = (ctl.signal.aborted || /abort/i.test(msg)) ? `<div class="render-status">⏹ Cancelled</div>` : `<div class="render-status err">Render failed: ${msg}</div>`;
   }finally{
-    item._rendering = false;
+    clearInterval(tick); inFlightCtls.delete(ctl);
     btn.disabled = false; btn.textContent = item.renderImg ? "🔄 Similar ×6" : "🖼 Render";
   }
 }
@@ -4474,7 +4192,6 @@ function buildPromptAs(sourceItem, targetObjKey){
 // keeps strength low (design + structure held); a different object pushes strength higher so
 // the new form can take over while the surface DNA carries across.
 async function spawnVariants(item, wrap, targetObjKey){
-  if(!LAI.comfy){ toast("Start the launcher + ComfyUI first"); $("#lai").classList.add("open"); return; }
   const img = wrap.querySelector(":scope > img.render");
   if(!img || !img.src){ toast("Render the picture first"); return; }
   const cross = !!(targetObjKey && targetObjKey!==item.obj);
@@ -4488,32 +4205,45 @@ async function spawnVariants(item, wrap, targetObjKey){
   }
   toast(cross ? `✨ Applying this design to 6 ${OBJECTS[targetObjKey].label} takes…` : "🔄 Rendering 6 similar designs…");
 
-  let uploaded;
-  try{ uploaded = await uploadImageToComfy(img.src); }
+  let srcData;
+  try{ srcData = await blobToDataURL(await (await fetch(img.src)).blob()); }
   catch(e){ toast("Couldn't read the image: "+String(e.message||e)); return; }
 
+  // Create all 6 spinner tiles immediately so the user sees the full strip, then render sequentially.
+  const tiles = [];
   for(let i=0;i<6;i++){
     const tile = document.createElement("div"); tile.className = "variantTile";
     tile.innerHTML = `<img class="render-spin vspin" src="Podder-192.png" alt="" />`;
     grid.appendChild(tile);
-    (async ()=>{
+    tiles.push(tile);
+  }
+  const batch = new AbortController(); inFlightCtls.add(batch);
+  (async()=>{
+    for(let i=0;i<6;i++){
+      if(batch.signal.aborted) break;
+      const tile = tiles[i];
+      const ctl = new AbortController(); inFlightCtls.add(ctl);
+      if(i>0) await new Promise(r=>setTimeout(r,500));
+      if(batch.signal.aborted){ inFlightCtls.delete(ctl); break; }
       try{
-        const vId = await comfyQueue(buildEditWorkflow(promptItem.sd, promptItem.sdNeg||"", promptItem, uploaded, strength));
-        const out = await comfyWait(vId);
-        const imgRef = {filename:out.filename, subfolder:out.subfolder||"", type:out.type||"output"};
+        const j = await apiFetch("/api/generate", {prompt: promptItem.sd, aspect: $("#aspect").value, image: srcData, strength, quality: getQuality()}, ctl.signal);
+        const key = genId();
+        await idbPut(key, await (await fetch(j.image)).blob());
         const vItem = {...(cross?promptItem:item), id:genId(), parentId:item.id, variant:true,
           editInstruction: cross ? ("design applied to "+OBJECTS[targetObjKey].label) : "similar variation",
-          renderImg:imgRef, renderMs:null};
+          renderImg:{idb:key}, renderMs:null};
         hist.unshift({...vItem}); hist = hist.slice(0,300); LS_set("podder_hist",hist); refreshCounts();
-        const src = `/comfy/view?filename=${encodeURIComponent(imgRef.filename)}&subfolder=${encodeURIComponent(imgRef.subfolder||"")}&type=${encodeURIComponent(imgRef.type||"output")}`;
-        tile.innerHTML = `<img class="thumbImg" src="${src}" loading="lazy" />`;
+        tile.innerHTML = `<img class="thumbImg" loading="lazy" />`;
+        const u = await imgSrc(vItem.renderImg);
+        if(u) tile.querySelector("img").src = u;
         tile.title = "Open full size";
         tile.onclick = ()=>openCardModal(vItem, {});
       }catch(e){
         tile.innerHTML = `<div class="vfail" title="${String(e.message||e).replace(/"/g,"&quot;")}">✕</div>`;
-      }
-    })();
-  }
+      }finally{ inFlightCtls.delete(ctl); }
+    }
+    inFlightCtls.delete(batch);
+  })();
 }
 
 /* ---------- INIT ---------- */
@@ -4535,7 +4265,6 @@ buildChips();buildShapeChips();buildStyleDetail();refreshCounts();
     results.style.display = "none";
     clear.style.display = "none";
     buildChips(); buildShapeChips();
-    // scroll object chips into view
     const chip = document.querySelector(`#objChips [data-obj="${objKey}"]`);
     if(chip) chip.scrollIntoView({behavior:"smooth", block:"nearest"});
   }
@@ -4544,14 +4273,11 @@ buildChips();buildShapeChips();buildStyleDetail();refreshCounts();
     q = q.trim().toLowerCase();
     clear.style.display = q ? "" : "none";
     if(!q){ results.style.display = "none"; return; }
-
     const hits = [];
     Object.entries(OBJECTS).forEach(([key, o])=>{
-      // object label match
       if(o.label.toLowerCase().includes(q)){
         hits.push({objKey:key, label:`${o.emoji} ${o.label}`, sub:"", shape:null, score:o.label.toLowerCase().startsWith(q)?0:1});
       }
-      // shape label match
       o.shapes.forEach(s=>{
         if(s.label.toLowerCase().includes(q) && s.label.toLowerCase()!=="auto"){
           hits.push({objKey:key, label:`${o.emoji} ${o.label}`, sub:`→ ${s.label}`, shape:s.label, score:s.label.toLowerCase().startsWith(q)?2:3});
@@ -4559,7 +4285,6 @@ buildChips();buildShapeChips();buildStyleDetail();refreshCounts();
       });
     });
     hits.sort((a,b)=>a.score-b.score || a.label.localeCompare(b.label));
-
     results.innerHTML = "";
     if(!hits.length){
       results.style.display = "";
@@ -4593,12 +4318,90 @@ buildChips();buildShapeChips();buildStyleDetail();refreshCounts();
   document.addEventListener("click", e=>{ if(!input.contains(e.target)&&!results.contains(e.target)){ results.style.display="none"; } });
   input.addEventListener("focus", ()=>{ if(input.value.trim()) runSearch(input.value); });
 })();
+
+/* ---------- SPLASH SCREEN ---------- */
+(function(){
+  // Inject CSS
+  const style = document.createElement("style");
+  style.textContent = `
+    #podderSplash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;background:#050209;}
+    #podderSplash canvas{position:absolute;inset:0;width:100%;height:100%;}
+    #podderSplash .splashBox{position:relative;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;padding:32px;}
+    #podderSplash h2{font-size:2em;margin:0;background:linear-gradient(135deg,#c04bff,#54d69b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    #podderSplash p{color:#b9a8d8;margin:0;font-size:1em;line-height:1.5;}
+    #podderSplash .splashSkip{margin-top:8px;color:#6f5f8f;font-size:0.85em;cursor:pointer;text-decoration:underline;}
+    #podderSplash img{width:72px;height:72px;border-radius:18px;}
+  `;
+  document.head.appendChild(style);
+
+  // Create overlay
+  const el = document.createElement("div");
+  el.id = "podderSplash";
+  el.innerHTML = `
+    <canvas id="splashCanvas"></canvas>
+    <div class="splashBox">
+      <img src="Podder-192.png" alt="" onerror="this.style.display='none'"/>
+      <h2>Hold tight…</h2>
+      <p>Hold tight while we get the app ready for you.</p>
+      <div class="splashSkip" id="splashSkip">skip →</div>
+    </div>`;
+  document.body.appendChild(el);
+
+  // WebGL shader
+  function startShader(canvas){
+    const gl = canvas.getContext("webgl")||canvas.getContext("experimental-webgl");
+    if(!gl) return ()=>{};
+    const VS=`attribute vec2 a;void main(){gl_Position=vec4(a,0,1);}`;
+    const FS=`precision highp float;uniform float T;uniform vec2 R;
+    vec3 hsv(vec3 c){vec4 K=vec4(1.,2./3.,1./3.,3.);vec3 p=abs(fract(c.xxx+K.xyz)*6.-K.www);return c.z*mix(K.xxx,clamp(p-K.xxx,0.,1.),c.y);}
+    float plasma(vec2 p,float t){return sin(p.x*3.7+t)+sin(p.y*4.1+t*1.1)+sin((p.x+p.y)*2.9+t*.9)+sin(length(p)*5.-t*1.3);}
+    void main(){
+      vec2 uv=(gl_FragCoord.xy-.5*R)/min(R.x,R.y);
+      float t=T*.5;
+      float f=plasma(uv,t*.3)*.25+.5;
+      float f2=plasma(uv+vec2(1.3,2.7),t*.4)*.25+.5;
+      vec3 col=hsv(vec3(f*.6+.55,0.8,0.6))*0.5+hsv(vec3(f2*.4+.3,0.7,0.5))*0.5;
+      gl_FragColor=vec4(col,1.0);
+    }`;
+    function mkShader(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);return s;}
+    const prog=gl.createProgram();
+    gl.attachShader(prog,mkShader(gl.VERTEX_SHADER,VS));
+    gl.attachShader(prog,mkShader(gl.FRAGMENT_SHADER,FS));
+    gl.linkProgram(prog); gl.useProgram(prog);
+    const buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+    const a=gl.getAttribLocation(prog,"a"); gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a,2,gl.FLOAT,false,0,0);
+    const uT=gl.getUniformLocation(prog,"T"), uR=gl.getUniformLocation(prog,"R");
+    let raf; const t0=performance.now();
+    function frame(){ canvas.width=canvas.offsetWidth; canvas.height=canvas.offsetHeight;
+      gl.viewport(0,0,canvas.width,canvas.height);
+      gl.uniform1f(uT,(performance.now()-t0)/1000);
+      gl.uniform2f(uR,canvas.width,canvas.height);
+      gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+      raf=requestAnimationFrame(frame); }
+    frame();
+    return ()=>cancelAnimationFrame(raf);
+  }
+
+  const canvas = el.querySelector("#splashCanvas");
+  const stopShader = startShader(canvas);
+  const dismiss = ()=>{ stopShader(); el.remove(); };
+  el.querySelector("#splashSkip").onclick = dismiss;
+
+  // Auto-dismiss after 6 seconds
+  setTimeout(dismiss, 6000);
+})();
 $("#genBtn").onclick=generate;
 $("#surpriseBtn").onclick=surprise;
 $("#stopAllBtn").onclick=async()=>{
   const n=await cancelInFlight();
   toast(n>0 ? `⏹ Stopped ${n} render${n===1?"":"s"}` : "Nothing is generating right now");
 };
+$("#qualityToggle").onchange=()=>{
+  const q=$("#qualityToggle").checked;
+  $("#qtLabel").textContent=q?"🎯 Quality":"⚡ Fast";
+};
+function getQuality(){ return $("#qualityToggle").checked ? "quality" : "fast"; }
 $("#count").oninput=onCount;
 $("#wild").oninput=onWild;
 $("#overdriveBtn").onclick=()=>{
@@ -4609,22 +4412,6 @@ $("#overdriveBtn").onclick=()=>{
   toast(state.overdrive ? "⚡ Overdrive ON — every prompt now ends with MAKE IT ULTRA WEIRD" : "Overdrive off");
 };
 $("#clearHist").onclick=()=>{if(confirm("Clear all history?")){hist=[];LS_set("podder_hist",hist);refreshCounts();showTab("hist");}};
-$("#cleanupOutputs").onclick=async()=>{
-  // Images saved via "📁 Save to 3D Printing folder" already have their own permanent copy on
-  // your Desktop, independent of ComfyUI's output folder — only favorites/history/rerolls need
-  // protecting here (rerolls flatten out of their groups first since they're nested arrays).
-  const rerollItems=rerolls.flatMap(g=>g.items);
-  const keep=[...new Set([...favs,...hist,...rerollItems].map(it=>it.renderImg&&it.renderImg.filename).filter(Boolean))];
-  if(!confirm(`Delete every rendered image on disk that isn't one of your ${keep.length} favorited/history/reroll pictures? This can't be undone.`)) return;
-  const btn=$("#cleanupOutputs"); const old=btn.textContent; btn.disabled=true; btn.textContent="⏳ Cleaning…";
-  try{
-    const r=await fetch("/cleanup-outputs",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({keep})});
-    const j=await r.json();
-    if(!r.ok||!j.ok) throw new Error(j.error||("HTTP "+r.status));
-    toast(`🧹 Deleted ${j.deleted} unused render${j.deleted===1?"":"s"} (${(j.freedBytes/1048576).toFixed(1)} MB freed)`);
-  }catch(e){ toast("Cleanup failed: "+String(e.message||e)); }
-  finally{ btn.disabled=false; btn.textContent=old; }
-};
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>showTab(t.dataset.tab));
 $("#cardModalClose").onclick=closeCardModal;
 $("#cardModalWrap").onclick=(e)=>{ if(e.target.id==="cardModalWrap") closeCardModal(); };
@@ -4633,171 +4420,34 @@ document.querySelectorAll(".lock").forEach(l=>l.onclick=()=>{
   const k=l.dataset.lock;state.locks[k]=!state.locks[k];
   l.classList.toggle("on",state.locks[k]);l.textContent=(state.locks[k]?"🔒":"🔓")+" lock";
 });
-$("#laiHead").onclick=()=>$("#lai").classList.toggle("open");
-$("#laiRecheck").onclick=(e)=>{e.stopPropagation();toast("Re-checking…");probeLAI();};
-// ComfyUI now runs with NO console window (Podder Studio starts it hidden) — this button is
-// the way to look at it: opens ComfyUI's own web interface, which shows queue + progress.
-$("#laiOpenComfy").onclick=(e)=>{e.stopPropagation(); window.open("http://127.0.0.1:8188","_blank");};
-$("#restartComfyBtn").onclick=(e)=>{
-  e.stopPropagation();
-  if(!confirm("Kill and relaunch the ComfyUI backend?")) return;
-  recoverComfy("⟳ Restarting ComfyUI…");
-};
-$("#quitBtn").onclick=async(e)=>{
-  e.stopPropagation();
-  if(!confirm("Close Podder and shut down ComfyUI?")) return;
-  try{ await fetch("/shutdown",{method:"POST"}); }catch(e){}
-  window.close();
-};
-// Install-app: the browser fires beforeinstallprompt when Podder is installable and not yet
-// installed. Surfacing it as a real in-app button finally fixes the taskbar icon for good —
-// installed apps get their own identity + the swirl icon instead of the browser's.
-if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
-let __installEvt=null;
-window.addEventListener("beforeinstallprompt",(e)=>{ e.preventDefault(); __installEvt=e; $("#installBtn").classList.remove("hidden"); });
-$("#installBtn").onclick=async(e)=>{
-  e.stopPropagation();
-  if(!__installEvt) return;
-  __installEvt.prompt();
-  const r=await __installEvt.userChoice.catch(()=>null);
-  if(r && r.outcome==="accepted"){ $("#installBtn").classList.add("hidden"); __installEvt=null; }
-};
-window.addEventListener("appinstalled",()=>{ $("#installBtn").classList.add("hidden"); toast("📌 Podder installed — real taskbar icon from now on"); });
-// Keep probing until ComfyUI appears — with the one-click Podder Studio launcher, ComfyUI is
-// usually still booting when this page opens. A full-screen "warming up" gate covers the app
-// meanwhile (skippable); once connected it dissolves, the dot flips green, and any cards that
-// were waiting for a backend render themselves — no manual Re-check needed.
-function initBootShader(){
-  const canvas = document.getElementById("bootCanvas");
-  if(!canvas) return null;
-  const gl = canvas.getContext("webgl")||canvas.getContext("experimental-webgl");
-  if(!gl) return null;
-  const VS = `attribute vec2 a;void main(){gl_Position=vec4(a,0,1);}`;
-  const FS = `
-precision highp float;
-uniform float T;
-uniform vec2 R;
-uniform vec2 M;
-vec3 hsv(vec3 c){vec4 K=vec4(1.,2./3.,1./3.,3.);vec3 p=abs(fract(c.xxx+K.xyz)*6.-K.www);return c.z*mix(K.xxx,clamp(p-K.xxx,0.,1.),c.y);}
-mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
-float plasma(vec2 p,float t){return sin(p.x*3.7+t)+sin(p.y*4.1+t*1.1)+sin((p.x+p.y)*2.9+t*.9)+sin(length(p)*5.-t*1.3);}
-float sdTorus(vec3 p,vec2 r){return length(vec2(length(p.xz)-r.x,p.y))-r.y;}
-float scene(vec3 p,float t){
-  p.xz=rot(t*.4)*p.xz; p.xy=rot(t*.25)*p.xy;
-  float a=sdTorus(p,vec2(.5,.18));
-  p.yz=rot(t*.35+1.57)*p.yz;
-  return min(a,sdTorus(p,vec2(.5,.08)));
-}
-vec3 norm(vec3 p,float t){float e=.001;return normalize(vec3(scene(p+vec3(e,0,0),t)-scene(p-vec3(e,0,0),t),scene(p+vec3(0,e,0),t)-scene(p-vec3(0,e,0),t),scene(p+vec3(0,0,e),t)-scene(p-vec3(0,0,e),t)));}
-vec2 ripple(vec2 uv,vec2 mouse,float t){
-  float dist=length(uv-mouse);
-  float wave=sin(dist*25.-t*4.)*.03*exp(-dist*3.5);
-  float wave2=sin(dist*15.-t*3.)*.02*exp(-dist*2.5);
-  float wave3=sin(dist*40.-t*6.)*.015*exp(-dist*5.);
-  return uv+(uv-mouse)/max(dist,.001)*(wave+wave2+wave3);
-}
-void main(){
-  vec2 uv=(gl_FragCoord.xy-.5*R)/min(R.x,R.y);
-  vec2 muv=(M-.5*R)/min(R.x,R.y);
-  float t=T*.6;
-  vec2 ruv=ripple(uv,muv,T*3.);
-  vec2 p=ruv;
-  float wx=plasma(p,t*.5),wy=plasma(p+vec2(3.7,1.3),t*.5);
-  vec2 w1=vec2(wx,wy)*.35;
-  float wx2=plasma(p+w1,t*.4),wy2=plasma(p+w1+vec2(2.1,5.8),t*.4);
-  vec2 w2=vec2(wx2,wy2)*.25;
-  float f=plasma(p+w2,t*.3)*.25+.5;
-  float mDist=length(uv-muv);
-  float mGlow=exp(-mDist*mDist*8.)*.3;
-  vec3 bg=hsv(vec3(f+t*.06+length(uv)*.08+mGlow*.5,.95,.55+mGlow));
-  bg*=.12+.88*(1.-exp(-length(uv)*2.8));
-  bg+=hsv(vec3(T*.15+.6,1.,1.))*mGlow;
-  vec3 ro=vec3(0.,.25,2.2),rd=normalize(vec3(ruv,-1.4));
-  float d=.01,hit=-1.;
-  for(int i=0;i<96;i++){float h=scene(ro+rd*d,t);if(h<.0015){hit=d;break;}d+=h*.9;if(d>6.)break;}
-  vec3 col=bg;
-  if(hit>0.){
-    vec3 pos=ro+rd*hit,n=norm(pos,t);
-    vec3 l=normalize(vec3(sin(t*.7)*2.,1.5,cos(t*.7)*2.)-pos);
-    float diff=max(dot(n,l),0.)*.8+.2,spec=pow(max(dot(reflect(-l,n),-rd),0.),48.);
-    float sh=t*.12+pos.x*.4+pos.z*.3;
-    vec3 sc=hsv(vec3(sh,.9,1.)),rim=hsv(vec3(sh+.5,1.,1.));
-    float r=pow(1.-abs(dot(n,-rd)),4.);
-    col=sc*diff+hsv(vec3(sh+.25,.7,1.))*spec*1.5+rim*r*1.3;
+// PIN bootstrap: a stored PIN is re-verified silently; otherwise the gate stays up until
+// /api/auth approves. The first batch only generates once the app is actually unlocked.
+$("#pinForm").onsubmit = async (e)=>{
+  e.preventDefault();
+  const pin = $("#pinInput").value.trim();
+  if(!pin) return;
+  const btn = e.target.querySelector("button"); btn.disabled = true;
+  const ok = (await verifyPin(pin)) === "ok";
+  btn.disabled = false;
+  if(ok){
+    localStorage.setItem("podder_pin", pin);
+    $("#pinErr").classList.add("hidden"); $("#pinInput").value = "";
+    hidePinGate();
+    // user clicks Generate manually
+  } else {
+    $("#pinErr").classList.remove("hidden"); $("#pinInput").select();
   }
-  float md=99.;
-  {float gd=.01;for(int i=0;i<48;i++){float h=abs(scene(ro+rd*gd,t));md=min(md,h);gd+=max(h,.03)*1.1;if(gd>4.)break;}}
-  col+=hsv(vec3(t*.12+.1,1.,1.))*exp(-max(md,0.)*7.)*.9+bg*.35;
-  col*=1.-smoothstep(.6,1.3,length(uv));
-  col=col/(col+.8);
-  col=pow(max(col,0.),vec3(.45));
-  gl_FragColor=vec4(col,1.);
-}`;
-  function mk(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);return s;}
-  const prog=gl.createProgram();
-  gl.attachShader(prog,mk(gl.VERTEX_SHADER,VS));
-  gl.attachShader(prog,mk(gl.FRAGMENT_SHADER,FS));
-  gl.linkProgram(prog);gl.useProgram(prog);
-  const buf=gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER,buf);
-  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
-  const al=gl.getAttribLocation(prog,"a");
-  gl.enableVertexAttribArray(al);gl.vertexAttribPointer(al,2,gl.FLOAT,false,0,0);
-  const uT=gl.getUniformLocation(prog,"T"),uR=gl.getUniformLocation(prog,"R"),uM=gl.getUniformLocation(prog,"M");
-  let mx=canvas.clientWidth/2, my=canvas.clientHeight/2;
-  canvas.addEventListener("mousemove",e=>{mx=e.offsetX;my=canvas.clientHeight-e.offsetY;});
-  const t0=performance.now();let raf;
-  function frame(){
-    const w=canvas.clientWidth,h=canvas.clientHeight;
-    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);}
-    gl.uniform1f(uT,(performance.now()-t0)/1000);gl.uniform2f(uR,canvas.width,canvas.height);gl.uniform2f(uM,mx,my);
-    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);raf=requestAnimationFrame(frame);
+};
+(async ()=>{
+  pruneImageStore();
+  const v = getPin() ? await verifyPin(getPin()) : "bad";
+  if(v === "ok"){
+    hidePinGate();
+  } else {
+    if(v === "bad") localStorage.removeItem("podder_pin");   // keep the PIN on transient errors
+    showPinGate();
   }
-  frame();
-  return ()=>cancelAnimationFrame(raf);
-}
-
-// Full-screen boot gate: shader + poll until probeLAI succeeds (which now includes the GPU
-// health check), then a short grace so the first render doesn't hit a half-initialized engine.
-async function waitForComfy(){
-  const gate = $("#bootGate"), timeEl = $("#bootTime");
-  gate.classList.add("show");
-  const stopShader = initBootShader();
-  const dismiss = ()=>{ gate.classList.remove("show"); if(stopShader) stopShader(); };
-  $("#bootSkip").onclick = dismiss;
-  // Web version: no ComfyUI — just a 6-second branded splash, then auto-dismiss.
-  for(let s=6;s>0;s--){ timeEl.textContent=""; await sleep(1000); }
-  dismiss();
-}
-
-// A CUDA OOM leaves ComfyUI a zombie (HTTP up, worker thread dead) — nothing short of a
-// process restart recovers it. Kill + relaunch via the local server, sit through the boot
-// gate again, then re-render every card that never got its picture.
-let comfyRestarting = false;
-async function recoverComfy(msg){
-  if(comfyRestarting) return; comfyRestarting = true;
-  LAI.comfy = false;
-  $("#dotComfy").className = "dot bad";
-  toast(msg || "⚠️ ComfyUI's GPU crashed — restarting it automatically…");
-  await cancelInFlight();     // flip remaining pollers to "Cancelled" — the old process is done for
-  try{ await fetch("/restart-comfy",{method:"POST"}); }catch(e){}
-  await sleep(3000);          // let the kill + relaunch begin before we start polling
-  await waitForComfy();
-  comfyRestarting = false;
-  document.querySelectorAll("#output .card").forEach(c=>{
-    if(c._item && !c._item.renderImg) renderCard(c._item, c);
-  });
-}
-
-(async function(){
-  await probeLAI();
-  if(!LAI.comfy) await waitForComfy();
-  document.querySelectorAll("#output .card").forEach(c=>{
-    if(c._item && !c._item.renderImg) renderCard(c._item, c);
-  });
 })();
-// first render
-generate();
 </script>
 <script>
 /* ---------- PRICING TAB (ported from the standalone PrintQuote app) ---------- */
