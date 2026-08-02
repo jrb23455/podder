@@ -1,6 +1,6 @@
 // POST /api/generate
 //   headers: x-podder-pin
-//   body: { prompt, aspect?: "1:1"|"2:3"|"3:2", image?: dataURL, strength?: 0..1 }
+//   body: { prompt, aspect?: "1:1"|"2:3"|"3:2", image?: dataURL, strength?: 0..1, quality?: "fast"|"quality" }
 //   ->   { image: dataURL, mock?: true }
 //
 // Runs Flux on Replicate server-side so the API token never reaches the browser.
@@ -12,7 +12,10 @@ import { pinOk } from './auth.js';
 
 export const maxDuration = 60;
 
-const MODEL = 'black-forest-labs/flux-2-pro';
+const MODELS = {
+  fast:    { model: 'black-forest-labs/flux-2-klein-4b', useVersionApi: true,  goFast: true,  imgField: 'images' },
+  quality: { model: 'black-forest-labs/flux-2-pro',      useVersionApi: false, goFast: false, imgField: 'image'  },
+};
 
 function mockImage(prompt) {
   const label = (prompt || 'mock render').slice(0, 90).replace(/[<>&"]/g, ' ');
@@ -28,19 +31,23 @@ function mockImage(prompt) {
   return 'data:image/svg+xml;base64,' + Buffer.from(svg).toString('base64');
 }
 
-async function replicate(input, token) {
-  const deadline = Date.now() + 50_000;   // stay inside the 60s function window
+async function replicate(input, token, cfg) {
+  const deadline = Date.now() + 50_000;
 
-  // Accounts holding <$5 credit are throttled to 1 concurrent prediction (burst refills every
-  // ~10s) — a 3-card Podder batch trips that instantly. On a throttle response, wait out the
-  // refill and retry instead of failing the card; with credit on the account the first attempt
-  // just succeeds and none of this runs.
+  const url = cfg.useVersionApi
+    ? 'https://api.replicate.com/v1/predictions'
+    : `https://api.replicate.com/v1/models/${cfg.model}/predictions`;
+
+  const body = cfg.useVersionApi
+    ? { version: cfg.model, input }
+    : { input };
+
   let pred;
   for (;;) {
-    const create = await fetch(`https://api.replicate.com/v1/models/${MODEL}/predictions`, {
+    const create = await fetch(url, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Prefer: 'wait=30' },
-      body: JSON.stringify({ input }),
+      body: JSON.stringify(body),
     });
     pred = await create.json();
     if (create.ok) break;
@@ -65,30 +72,28 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
   if (!pinOk(req.headers['x-podder-pin'])) return res.status(401).json({ error: 'bad_pin' });
 
-  const { prompt, aspect = '1:1', image, strength } = req.body || {};
+  const { prompt, aspect = '1:1', image, strength, quality = 'fast' } = req.body || {};
   if (!prompt || typeof prompt !== 'string') return res.status(400).json({ error: 'missing_prompt' });
 
-  // Tolerate the classic env-var paste accidents: surrounding whitespace/newlines, wrapping
-  // quotes, or a copied "Bearer " prefix — all of which make Replicate reject the token.
   const token = (process.env.REPLICATE_API_TOKEN || '')
     .trim().replace(/^["']|["']$/g, '').replace(/^Bearer\s+/i, '').trim();
   if (!token) return res.status(200).json({ image: mockImage(prompt), mock: true });
+
+  const cfg = MODELS[quality] || MODELS.fast;
 
   try {
     const input = {
       prompt,
       aspect_ratio: ['1:1', '2:3', '3:2'].includes(aspect) ? aspect : '1:1',
       output_format: 'png',
-      go_fast: false,
+      go_fast: cfg.goFast,
     };
     if (image) {
-      input.image = image;
+      input[cfg.imgField] = cfg.imgField === 'images' ? [image] : image;
     }
-    const url = await replicate(input, token);
+    const imgUrl = await replicate(input, token, cfg);
 
-    // Replicate delivery URLs expire — hand the browser real bytes instead so favorites
-    // and history (stored client-side in IndexedDB) keep working forever.
-    const imgResp = await fetch(url);
+    const imgResp = await fetch(imgUrl);
     if (!imgResp.ok) throw new Error(`Image fetch failed (${imgResp.status})`);
     const buf = Buffer.from(await imgResp.arrayBuffer());
     const type = imgResp.headers.get('content-type') || 'image/png';

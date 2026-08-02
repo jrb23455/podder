@@ -91,7 +91,14 @@
   select{width:100%;padding:10px;border-radius:10px;background:#1a1130;color:var(--ink);
     border:1px solid var(--panel-brd);font-size:14px}
 
-  .actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+  .actions{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;align-items:center}
+  .quality-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;margin-left:auto;user-select:none}
+  .quality-toggle input{display:none}
+  .qt-label{font-size:13px;color:var(--sub);min-width:72px;text-align:right}
+  .qt-track{width:40px;height:22px;background:var(--accent);border-radius:11px;position:relative;transition:background .25s}
+  .qt-thumb{position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:left .25s}
+  .quality-toggle input:checked~.qt-track{background:var(--accent2)}
+  .quality-toggle input:checked~.qt-track .qt-thumb{left:20px}
   .btn{border:none;cursor:pointer;font-weight:700;font-size:15px;padding:14px 22px;border-radius:13px;transition:.15s;color:#fff}
   .btn.primary{background:linear-gradient(100deg,var(--accent),var(--accent3));box-shadow:0 8px 26px rgba(192,75,255,.4)}
   .btn.primary:hover{transform:translateY(-1px);box-shadow:0 12px 32px rgba(192,75,255,.55)}
@@ -341,6 +348,11 @@
         <button class="btn primary" id="genBtn">✦ Generate</button>
         <button class="btn ghost" id="surpriseBtn">🎲 Surprise me</button>
         <button class="btn ghost" id="stopAllBtn" title="Stop every render currently in progress">⏹ Stop all</button>
+        <label class="quality-toggle" title="Fast: klein 4B (~$0.01, <1s) — Quality: pro (~$0.05, ~5s)">
+          <span id="qtLabel" class="qt-label">⚡ Fast</span>
+          <input type="checkbox" id="qualityToggle" />
+          <span class="qt-track"><span class="qt-thumb"></span></span>
+        </label>
       </div>
     </div>
 
@@ -2806,7 +2818,7 @@ async function editImage(item, wrap, box, instruction, strength){
   try{
     const srcData = await blobToDataURL(await (await fetch(img.src)).blob());
     const positive = (item.sd || item.text) + ". " + instruction + ".";
-    const j = await apiFetch("/api/generate", {prompt: positive, aspect: $("#aspect").value, image: srcData, strength}, ctl.signal);
+    const j = await apiFetch("/api/generate", {prompt: positive, aspect: $("#aspect").value, image: srcData, strength, quality: getQuality()}, ctl.signal);
     const key = genId();
     await idbPut(key, await (await fetch(j.image)).blob());
     const imgRef = {idb:key};
@@ -3128,7 +3140,7 @@ async function renderCard(item, card, revealAfter, startAfter){
   try{
     if(startAfter) await startAfter.catch(()=>{});
     const positive = item.sd || item.text;                    // compact prompt; old saved items fall back
-    const j = await apiFetch("/api/generate", {prompt: positive, aspect: $("#aspect").value}, ctl.signal);
+    const j = await apiFetch("/api/generate", {prompt: positive, aspect: $("#aspect").value, quality: getQuality()}, ctl.signal);
     // Every render gets its own image-store key — a re-render must never overwrite the bytes an
     // older history row points at (history is a log of pictures, not of prompts).
     const key = genId();
@@ -3225,7 +3237,7 @@ async function spawnVariants(item, wrap, targetObjKey){
       if(i>0) await new Promise(r=>setTimeout(r,500));
       if(batch.signal.aborted){ inFlightCtls.delete(ctl); break; }
       try{
-        const j = await apiFetch("/api/generate", {prompt: promptItem.sd, aspect: $("#aspect").value, image: srcData, strength}, ctl.signal);
+        const j = await apiFetch("/api/generate", {prompt: promptItem.sd, aspect: $("#aspect").value, image: srcData, strength, quality: getQuality()}, ctl.signal);
         const key = genId();
         await idbPut(key, await (await fetch(j.image)).blob());
         const vItem = {...(cross?promptItem:item), id:genId(), parentId:item.id, variant:true,
@@ -3253,6 +3265,11 @@ $("#stopAllBtn").onclick=async()=>{
   const n=await cancelInFlight();
   toast(n>0 ? `⏹ Stopped ${n} render${n===1?"":"s"}` : "Nothing is generating right now");
 };
+$("#qualityToggle").onchange=()=>{
+  const q=$("#qualityToggle").checked;
+  $("#qtLabel").textContent=q?"🎯 Quality":"⚡ Fast";
+};
+function getQuality(){ return $("#qualityToggle").checked ? "quality" : "fast"; }
 $("#count").oninput=onCount;
 $("#wild").oninput=onWild;
 $("#overdriveBtn").onclick=()=>{
