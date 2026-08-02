@@ -2840,13 +2840,16 @@ async function generate(){
   const out=[];
   for(let i=0;i<n;i++) out.push(buildPrompt());
   render(out, $("#output"), {emptyMsg:"Hit Generate."});
-  // Cards render sequentially, 3s apart — avoids rate-limit bursting and gives a clean top-down fill.
   const cards = [...document.querySelectorAll("#output .card")];
+  const batch = new AbortController(); inFlightCtls.add(batch);
   (async()=>{
     for(let i=0;i<cards.length;i++){
+      if(batch.signal.aborted) break;
       if(i>0) await new Promise(r=>setTimeout(r,500));
+      if(batch.signal.aborted) break;
       await renderCard(cards[i]._item, cards[i]);
     }
+    inFlightCtls.delete(batch);
   })();
   // History is populated when a render actually finishes (see renderCard) — it's a log of
   // the last 300 PICTURES, not a log of prompts that may never have been rendered.
@@ -3212,11 +3215,14 @@ async function spawnVariants(item, wrap, targetObjKey){
     grid.appendChild(tile);
     tiles.push(tile);
   }
+  const batch = new AbortController(); inFlightCtls.add(batch);
   (async()=>{
     for(let i=0;i<6;i++){
+      if(batch.signal.aborted) break;
       const tile = tiles[i];
       const ctl = new AbortController(); inFlightCtls.add(ctl);
       if(i>0) await new Promise(r=>setTimeout(r,500));
+      if(batch.signal.aborted){ inFlightCtls.delete(ctl); break; }
       try{
         const j = await apiFetch("/api/generate", {prompt: promptItem.sd, aspect: $("#aspect").value, image: srcData, strength}, ctl.signal);
         const key = genId();
@@ -3234,6 +3240,7 @@ async function spawnVariants(item, wrap, targetObjKey){
         tile.innerHTML = `<div class="vfail" title="${String(e.message||e).replace(/"/g,"&quot;")}">✕</div>`;
       }finally{ inFlightCtls.delete(ctl); }
     }
+    inFlightCtls.delete(batch);
   })();
 }
 
