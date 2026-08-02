@@ -3676,6 +3676,9 @@ function renderImageInto(wrap, item, imgRef){
   const dl = document.createElement("a");
   dl.download = downloadName(item, "x.png"); dl.textContent = "⬇ Save image";
   meta.appendChild(dl);
+  const sv3d=document.createElement("button"); sv3d.className="btn ghost"; sv3d.style.cssText="font-size:12px;padding:3px 8px;margin-left:6px";
+  sv3d.textContent="📁 Save to 3D Printing"; sv3d.onclick=()=>saveToDesktop(item,imgRef,sv3d);
+  meta.appendChild(sv3d);
   imgSrc(imgRef).then(u=>{ if(!u){ image.onerror(); return; } image.src=u; dl.href=u; });
   // "Apply design to other objects" — img2img this picture into a different object's form.
   const sel = document.createElement("select"); sel.className = "variantSel";
@@ -3738,6 +3741,9 @@ function renderEditResultInto(wrap, item, imgRef){
   const dl = document.createElement("a");
   dl.download = downloadName(item, "x.png"); dl.textContent = "⬇ Save image";
   meta.appendChild(dl);
+  const sv3d=document.createElement("button"); sv3d.className="btn ghost"; sv3d.style.cssText="font-size:12px;padding:3px 8px;margin-left:6px";
+  sv3d.textContent="📁 Save to 3D Printing"; sv3d.onclick=()=>saveToDesktop(item,imgRef,sv3d);
+  meta.appendChild(sv3d);
   imgSrc(imgRef).then(u=>{ if(u){ image.src=u; dl.href=u; } });
   meta.appendChild(buildFavBtn(item));
   if(item.renderMs){ const t=document.createElement("span"); t.className="render-time"; t.textContent=fmtDuration(item.renderMs); meta.appendChild(t); }
@@ -4146,6 +4152,115 @@ function cancelInFlight(){
   return n;
 }
 
+
+// Maps each object type to its 3D Printing subfolder (mirrors local Podder)
+const SAVE_FOLDER = {
+  vase:"Vases", planter:"Planters", wallplanter:"Planters",
+  birdhouse:"Birdhouses", birdfeeder:"Bird Feeder",
+  votive:"Votive Holders", incense:"Incense Holders", bowl:"Bowls",
+  lantern:"Lanterns", pencup:"Pen Cups", jewelry:"Ring Holders",
+  ornament:"Hanging Ornaments", mushroomdeco:"Garden Mushrooms",
+  trinketdish:"Trinket Dishes", coindish:"Coin Dishes", coaster:"Coasters",
+  pictureframe:"Picture Frames", cactusplanter:"Cactus Planters", herbpot:"Herb Pots",
+  necklacestand:"Necklace Stands", earringstand:"Earring Stands", watchstand:"Watch Stands",
+  budvase:"Bud Vases", chalice:"Chalices", wallpocket:"Wall Pocket Planters",
+  phonestand:"Phone Stands", tabletstand:"Tablet Stands", headphonestand:"Headphone Stands",
+  sunglassesstand:"Sunglasses Stands", bookend:"Bookends", winebottleholder:"Wine Bottle Holders",
+  coinbank:"Coin Banks", cardholder:"Card Holders", makeupbrush:"Makeup Brush Holders",
+  toothbrush:"Toothbrush Holders",
+  dragonfig:"Figurines/Dragons", dinofig:"Figurines/Dinosaurs", animalfig:"Figurines/Animals",
+  mythicfig:"Figurines/Mythical Beasts", robotfig:"Figurines/Robots", characterfig:"Figurines/Characters",
+  skullfig:"Figurines/Skulls", bustfig:"Figurines/Busts", chessfig:"Figurines/Chess Pieces",
+  gargoylefig:"Figurines/Gargoyles", chibimonfig:"Figurines/Chibi Monsters",
+  warminifig:"Figurines/War Miniatures", darkfantasyfig:"Figurines/Dark Fantasy",
+  seafig:"Figurines/Sea Creatures", kaijufig:"Figurines/Kaiju", insectfig:"Figurines/Insects",
+  cryptidfig:"Figurines/Cryptids", vinylfig:"Figurines/Vinyl Mascots",
+  kawaiifoodfig:"Figurines/Kawaii Food", blobfig:"Figurines/Blob Buddies",
+  nestingfig:"Figurines/Nesting Dolls", animefig:"Figurines/Anime Heroes",
+  cyberfig:"Figurines/Cyberpunk", piratefig:"Figurines/Pirates",
+  wastelandfig:"Figurines/Wastelanders", deityfig:"Figurines/Deities",
+  yokaifig:"Figurines/Yokai", fairyfig:"Figurines/Fairies", golemfig:"Figurines/Golems",
+  chonkfig:"Figurines/Chonky Animals", deathmachinefig:"Figurines/Death Machines",
+  mechafig:"Figurines/Mechas", horrorfig:"Figurines/Horror Icons",
+  mermaidfig:"Figurines/Mermaids", tikifig:"Figurines/Tiki Totems",
+  holidayfig:"Figurines/Holiday", superfig:"Figurines/Superheroes",
+  steamfig:"Figurines/Steampunk", birdfig:"Figurines/Birds",
+  buddhafig:"Spiritual/Meditation", hindufig:"Spiritual/Hindu",
+  egyptfig:"Spiritual/Egyptian", chinesefig:"Spiritual/Chinese",
+  japanesefig:"Spiritual/Japanese", mesofig:"Spiritual/Mesoamerican",
+  greekfig:"Spiritual/Greek", norsefig:"Spiritual/Norse", celticfig:"Spiritual/Celtic",
+  africanfig:"Spiritual/African", polynfig:"Spiritual/Polynesian",
+  slavicfig:"Spiritual/Slavic", persianfig:"Spiritual/Persian",
+  tibetanfig:"Spiritual/Tibetan", koreanfig:"Spiritual/Korean",
+  nativefig:"Spiritual/Native American", inuitfig:"Spiritual/Arctic",
+  vodoufig:"Spiritual/Caribbean", seasianfig:"Spiritual/Southeast Asian",
+  shipibofig:"Spiritual/Shipibo-Conibo", dmtfig:"Spiritual/DMT Realm",
+  alienfig:"Spiritual/Alien"
+};
+
+// Persists the user-chosen 3D Printing root folder handle across page loads via IndexedDB.
+let _printRoot = null;
+async function _idb(mode, val){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open("podder-fs",1);
+    req.onupgradeneeded=e=>e.target.result.createObjectStore("h");
+    req.onerror=e=>rej(e.target.error);
+    req.onsuccess=e=>{
+      const db=e.target.result, tx=db.transaction("h",mode);
+      const store=tx.objectStore("h");
+      const r=val===undefined?store.get("root"):store.put(val,"root");
+      r.onsuccess=ev=>res(ev.target.result);
+      r.onerror=ev=>rej(ev.target.error);
+    };
+  });
+}
+async function getPrintRoot(){
+  if(_printRoot) return _printRoot;
+  try{
+    const h=await _idb("readonly");
+    if(!h) return null;
+    const perm=await h.queryPermission({mode:"readwrite"});
+    if(perm==="granted"){ _printRoot=h; return h; }
+    if(await h.requestPermission({mode:"readwrite"})==="granted"){ _printRoot=h; return h; }
+  }catch(e){}
+  return null;
+}
+async function saveToDesktop(item, imgRef, btn){
+  const oldTxt=btn.textContent;
+  if(!window.showDirectoryPicker){
+    // Fallback: plain browser download
+    const u=await imgSrc(imgRef); if(!u){ toast("Image not ready"); return; }
+    const a=document.createElement("a"); a.href=u; a.download=downloadName(item,"x.png"); a.click();
+    toast("📁 Downloaded — move to your 3D Printing folder");
+    return;
+  }
+  btn.textContent="⏳ Saving…";
+  try{
+    let root=await getPrintRoot();
+    if(!root){
+      toast("Pick your 3D Printing folder…");
+      root=await window.showDirectoryPicker({mode:"readwrite",startIn:"desktop"});
+      _printRoot=root; await _idb("readwrite",root);
+    }
+    const folder=SAVE_FOLDER[item.obj]||"";
+    let dir=root;
+    for(const part of folder.split("/").filter(Boolean))
+      dir=await dir.getDirectoryHandle(part,{create:true});
+    const fname=downloadName(item,"x.png");
+    const fh=await dir.getFileHandle(fname,{create:true});
+    const ws=await fh.createWritable();
+    const u=await imgSrc(imgRef); if(!u) throw new Error("Image not available");
+    const blob=await(await fetch(u)).blob();
+    await ws.write(blob); await ws.close();
+    toast("📁 Saved to 3D Printing"+(folder?"/"+folder:""));
+    btn.textContent="✅ Saved";
+    setTimeout(()=>{ btn.textContent=oldTxt; },2500);
+  }catch(e){
+    if(e.name==="AbortError"){ btn.textContent=oldTxt; return; }
+    toast("Save failed: "+(e.message||String(e)));
+    btn.textContent=oldTxt;
+  }
+}
 
 // Descriptive download name, e.g. "BirdFeeder_swirly-sacred_obsidian.png"
 function slugWords(s){
