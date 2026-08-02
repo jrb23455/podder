@@ -863,18 +863,18 @@ const OBJECTS = {
       {label:"Wave",prompt:"a smooth curved wave-shaped block form, flat on the book-facing side"},
       {label:"Stacked",prompt:"a stacked-tier block form of graduated layers, flat on the book-facing side"}
     ]},
-  winebottleholder:{emoji:"🍾", label:"Wine bottle holder", promptName:"wine bottle holder",
-    fn:"It is a wine bottle holder — a solid, wide, squat block of material with a large round hole punched clean through the body at a steep diagonal angle. The body is wider than it is tall, sits flat on a broad base, and the angled hole is the defining visual feature — a smooth tunnel running through the block where a bottle would slide in and lean at a tilt. It is NOT a vase, NOT a cylinder, NOT a tube, NOT a cup — the silhouette is a chunky block or wedge, not a tall round vessel. Shown completely empty — no bottle, no glass, nothing inside.",
+  winebottleholder:{emoji:"🍾", label:"Wine bottle holder", promptName:"wine bottle cradle",
+    fn:"It is a wine bottle cradle — a curved open trough or scoop shape, like a small boat or hammock, that a bottle rests in at an angle. The cradle is open on top with a smooth curved channel running along its length, tilted so one end is higher than the other. It has a wide stable base and solid thick walls. It is NOT a vase, NOT a cylinder, NOT a cup — it is a low, wide, open cradle. Shown completely empty — no bottle, no glass, nothing resting in it.",
     shapes:[
-      {label:"Auto",prompt:"driven entirely by the chosen style — a wide squat block or wedge with the diagonal bottle hole through it"},
-      {label:"Spiral",prompt:"the block's outer surface twists like a wrung-out towel or barber pole, spiraling from base to top, while the diagonal bottle hole runs straight through the center of the twist"},
-      {label:"Twisted",prompt:"the entire block torques and corkscrews from base to top like twisted taffy, with the diagonal hole visible through the middle"},
-      {label:"Cube",prompt:"a clean chamfered cube with the diagonal bottle hole punched through from one corner to the opposite corner"},
-      {label:"Faceted gem",prompt:"an angular, sharp-edged gemstone or crystal shape with flat faceted faces, the diagonal bottle hole cut through the center"},
-      {label:"Wedge",prompt:"a thick triangular wedge lying on its longest face, with the diagonal bottle hole running through from the tall end to the short end"},
-      {label:"Sphere",prompt:"a squat sphere or oblate pebble shape sitting flat, with the diagonal bottle hole bored through the middle"},
-      {label:"Wave",prompt:"a smooth flowing wave-shaped block with one sweeping curve, the diagonal bottle hole running through the thickest part"},
-      {label:"Arch",prompt:"a thick solid arch or horseshoe shape sitting on two wide feet, with the diagonal bottle hole running through the top of the arch"}
+      {label:"Auto",prompt:"driven entirely by the chosen style — a low wide open cradle or scoop shape, not a vase or cylinder"},
+      {label:"Spiral",prompt:"the cradle's outer walls twist and spiral like a wrung-out towel or barber pole, coiling from one end to the other"},
+      {label:"Twisted",prompt:"the entire cradle torques and corkscrews along its length like twisted taffy"},
+      {label:"Cube",prompt:"a blocky chamfered rectangular cradle with clean angular walls and a smooth curved channel scooped out of the top"},
+      {label:"Faceted gem",prompt:"an angular, sharp-edged crystalline cradle with flat faceted outer faces and a smooth curved channel along the top"},
+      {label:"Wedge",prompt:"a thick triangular wedge-shaped cradle, wide at one end and tapering to a point at the other, with the bottle channel along the top"},
+      {label:"Sphere",prompt:"a squat half-sphere or bowl-like cradle, scooped out along one axis to form the bottle channel"},
+      {label:"Wave",prompt:"a smooth flowing wave-shaped cradle with one sweeping S-curve along its length"},
+      {label:"Arch",prompt:"the cradle is shaped like an arched bridge, curving up in the middle with the bottle channel running along the top of the arch"}
     ]},
   coinbank:{emoji:"🐷", label:"Coin bank", promptName:"sealed hollow vessel",
     fn:"It is a decorative bank — a hollow sculptural body with a single narrow slot cut into the top, and a stable flat base. Apart from the one slot it is fully closed and solid, hollow inside. It is shown completely bare — nothing visible inside or around it, and with no removable plug, stopper or access panel.",
@@ -2460,7 +2460,7 @@ function buildPrompt(){
     ? (state.obj==="birdhouse"
         ? "a rounded gourd-, orb- or pod-like birdhouse with a clear round entrance hole — clean and recognizable"
         : state.obj==="winebottleholder"
-        ? "a wide, squat wedge or block — wider than it is tall — with a large round hole angled through the body at roughly 45 degrees, clearly a wine bottle holder and NOT a vase, cylinder or cup"
+        ? "a low, wide, open cradle or scoop — like a small boat or hammock — with a smooth curved channel along its length, tilted so one end is higher, clearly a wine bottle cradle and NOT a vase, cylinder or cup"
         : `a clean, classic, clearly recognizable ${objNoun} shape, ornamented but never distorted beyond recognition`)
     : shapeObj.prompt;
   // Every render is 3D-print-safe, unconditionally — no toggle, no exceptions.
