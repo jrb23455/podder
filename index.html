@@ -495,10 +495,10 @@
   <canvas id="bootCanvas"></canvas>
   <div class="bootBox">
     <img src="Podder-192.png" alt="" />
-    <h2>Warming up…</h2>
-    <p>ComfyUI is booting and the Flux model is loading.<br>Usually ready in about 20 seconds.</p>
+    <h2>Hold tight…</h2>
+    <p>Hold tight while we get the app ready for you.</p>
     <div class="bootTime" id="bootTime"></div>
-    <div class="bootSkip" id="bootSkip">browse Podder while it warms up →</div>
+    <div class="bootSkip" id="bootSkip">skip →</div>
   </div>
 </div>
 
@@ -4760,23 +4760,14 @@ void main(){
 // Full-screen boot gate: shader + poll until probeLAI succeeds (which now includes the GPU
 // health check), then a short grace so the first render doesn't hit a half-initialized engine.
 async function waitForComfy(){
-  const gate = $("#bootGate"), timeEl = $("#bootTime"), t0 = Date.now();
+  const gate = $("#bootGate"), timeEl = $("#bootTime");
   gate.classList.add("show");
   const stopShader = initBootShader();
   const dismiss = ()=>{ gate.classList.remove("show"); if(stopShader) stopShader(); };
   $("#bootSkip").onclick = dismiss;
-  const timer = setInterval(()=>{
-    const s = Math.round((Date.now()-t0)/1000);
-    timeEl.textContent = "waiting "+s+"s"+(s>45 ? " — taking longer than usual. Is ComfyUI starting?" : "");
-  }, 1000);
-  while(!LAI.comfy){
-    await sleep(4000);
-    await probeLAI();
-  }
-  clearInterval(timer);
-  for(let g=8;g>0;g--){ timeEl.textContent="Ready — starting in "+g+"s…"; await sleep(1000); }
+  // Web version: no ComfyUI — just a 6-second branded splash, then auto-dismiss.
+  for(let s=6;s>0;s--){ timeEl.textContent=""; await sleep(1000); }
   dismiss();
-  toast("🟢 ComfyUI ready");
 }
 
 // A CUDA OOM leaves ComfyUI a zombie (HTTP up, worker thread dead) — nothing short of a
