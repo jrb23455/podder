@@ -357,6 +357,7 @@
       <div class="actions">
         <button class="btn primary" id="genBtn">✦ Generate</button>
         <button class="btn ghost" id="surpriseBtn">🎲 Surprise me</button>
+        <button class="btn ghost" id="randomizeBtn" title="Each render slot gets its own random object, shape &amp; style from this category">🎲 Randomize all</button>
         <button class="btn ghost" id="stopAllBtn" title="Stop every render currently in progress">⏹ Stop all</button>
         <label class="quality-toggle" title="Fast: klein 4B (~$0.01, <1s) — Quality: pro (~$0.05, ~5s)">
           <span id="qtLabel" class="qt-label">⚡ Fast</span>
@@ -3884,6 +3885,44 @@ function surprise(){
   buildChips(); buildShapeChips(); buildStyleDetail();
   generate();
 }
+async function randomizeAll(){
+  cancelInFlight();
+  const n=+$("#count").value;
+  const keys=Object.keys(OBJECTS).filter(k=>catOf(k)===state.cat);
+  const sObj=state.obj,sShape=state.shape,sStyles=state.styles,sDetail=state.styleDetail;
+  const sView=$("#view").value,sPal=$("#palette").value,sWild=$("#wild").value;
+  const out=[];
+  for(let i=0;i<n;i++){
+    state.obj=pick(keys);
+    state.shape=pick(OBJECTS[state.obj].shapes).label;
+    state.styles=new Set(shuffle(Object.keys(STYLES)).slice(0,1+Math.floor(Math.random()*3)));
+    state.styleDetail=new Set();
+    state.styles.forEach(k=>{
+      const vars=STYLES[k]?.variants||[];
+      if(!vars.length) return;
+      const cnt=Math.min(vars.length,Math.random()<0.3?2:1);
+      shuffle([...vars]).slice(0,cnt).forEach(v=>state.styleDetail.add(k+"::"+v.label));
+    });
+    const pOpts=["random",...PALETTES.map(p=>p.v)];
+    $("#palette").value=pick(pOpts);
+    $("#view").value=pick(VIEWS).v;
+    out.push(buildPrompt());
+  }
+  state.obj=sObj;state.shape=sShape;state.styles=sStyles;state.styleDetail=sDetail;
+  $("#view").value=sView;$("#palette").value=sPal;$("#wild").value=sWild;
+  render(out,$("#output"),{emptyMsg:"Hit Generate."});
+  const cards=[...document.querySelectorAll("#output .card")];
+  const batch=new AbortController();inFlightCtls.add(batch);
+  (async()=>{
+    for(let i=0;i<cards.length;i++){
+      if(batch.signal.aborted) break;
+      if(i>0) await new Promise(r=>setTimeout(r,500));
+      if(batch.signal.aborted) break;
+      await renderCard(cards[i]._item,cards[i]);
+    }
+    inFlightCtls.delete(batch);
+  })();
+}
 // item.renderImg (and renderMs) are mutated onto the live item object by renderCard()/editImage()
 // once a render finishes, so favoriting just needs the item — no DOM lookup required. This also
 // lets edited images (which are their own distinct item, not the card's original) be favorited.
@@ -4426,6 +4465,7 @@ void main(){
 })();
 $("#genBtn").onclick=generate;
 $("#surpriseBtn").onclick=surprise;
+$("#randomizeBtn").onclick=randomizeAll;
 $("#stopAllBtn").onclick=async()=>{
   const n=await cancelInFlight();
   toast(n>0 ? `⏹ Stopped ${n} render${n===1?"":"s"}` : "Nothing is generating right now");
