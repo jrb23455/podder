@@ -266,6 +266,11 @@
   <div id="tab-gen">
     <div class="panel">
       <div class="row">
+        <div class="label">Category</div>
+        <div class="chips" id="catChips"></div>
+      </div>
+
+      <div class="row">
         <div class="label">Object <span class="lock" data-lock="obj" title="Keep this fixed when you regenerate">🔓 lock</span></div>
         <div class="chips" id="objChips"></div>
       </div>
@@ -454,6 +459,15 @@
 // Each object: fn = function/feature + empty rules (silhouette is handled by shapes).
 // shapes[0] is always the style-driven "Auto". Anti-house protection for birdhouse
 // shapes lives in SD_OBJ.birdhouse.neg (gated by shapeObj.houseLike), not here.
+// Top-level categories. Every OBJECTS entry belongs to one via its `cat` field; entries
+// without one default to "homegoods" (all the original objects), so adding a category never
+// requires touching the existing catalog. The Generate tab shows one category at a time.
+const CATEGORIES = {
+  homegoods: {emoji:"🏠", label:"Home goods"},
+  figurines: {emoji:"🐉", label:"Figurines"},
+  spiritual: {emoji:"🕉️", label:"Spiritual"},
+};
+
 const OBJECTS = {
   vase:      {emoji:"🏺", label:"Vase",
     fn:"The vessel is hollow with a wide open mouth at the top and a solid, stable flat base. The interior is completely bare — nothing inside.",
@@ -914,8 +928,681 @@ const OBJECTS = {
       {label:"Lattice cup",prompt:"a straight cylindrical cup with geometric square lattice cutout holes through the cup walls"},
       {label:"Barrel",prompt:"a rounded barrel form cup or stand"},
       {label:"Fluted",prompt:"a fluted, vertically reeded cup or stand form"}
+    ]},
+
+  /* ---------- FIGURINES (cat:"figurines" — the figurine creator) ---------- */
+  dragonfig:{emoji:"🐉", label:"Dragon", promptName:"dragon figurine", cat:"figurines",
+    fn:"It is a single solid decorative dragon figurine — one sculpted collectible piece. Wings, horns, tail and limbs are thick, sturdy and fully fused to the body as one continuous mass — wings folded or held close against the body, never spread wide, thin or free-floating — and the whole creature is seamlessly fused to an integrated flat display base. Just the one figurine alone — no scenery, rocks, treasure, fire, smoke or second creature.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind dragon pose, compact and grounded"},
+      {label:"Perched",prompt:"perched upright on its haunches with its chest proud, wings folded tight against the back, tail wrapped around the feet"},
+      {label:"Coiled",prompt:"coiled compactly around itself in a spiral, tail wrapping the body, head resting on the outer coil"},
+      {label:"Roaring",prompt:"rearing up on thick hind legs mid-roar, head thrown back, wings half-folded and chunky, tail braced against the base"},
+      {label:"Sleeping",prompt:"curled asleep in a tight rounded ball, nose tucked under the tail, wings draped over the body like a blanket"},
+      {label:"Serpentine",prompt:"a long wingless serpentine dragon winding in flowing S-curves, its whole length resting on the base"},
+      {label:"Hatchling",prompt:"a chubby wide-eyed baby dragon sitting upright with stubby folded wings and an oversized head"},
+      {label:"Chibi",prompt:"a cute chibi dragon with an oversized head, stubby rounded body and tiny folded wings"}
+    ]},
+  dinofig:{emoji:"🦖", label:"Dinosaur", promptName:"dinosaur figurine", cat:"figurines",
+    fn:"It is a single solid decorative dinosaur figurine — one sculpted collectible piece with a thick sturdy body, legs and tail fully fused into one continuous mass, planted firmly on an integrated flat display base. Just the one figurine alone — no scenery, plants, volcano or second creature.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind dinosaur pose, compact and grounded"},
+      {label:"T-Rex",prompt:"a tyrannosaurus standing tall on two thick legs with its heavy tail resting down against the base for support, small arms tucked close"},
+      {label:"Triceratops",prompt:"a triceratops standing four-square with its broad frilled head lowered slightly, thick rounded horns"},
+      {label:"Stegosaurus",prompt:"a stegosaurus with a row of thick rounded back plates fused solidly into the spine, tail resting on the base"},
+      {label:"Long-neck",prompt:"a long-necked sauropod with its thick neck curving up and over, tail sweeping down to rest on the base"},
+      {label:"Raptor",prompt:"a compact raptor crouched low in a prowling stance, tail held thick and straight, resting on the base"},
+      {label:"Ankylosaurus",prompt:"a low, wide armored ankylosaurus with a knobbly domed back and a thick club tail resting on the base"},
+      {label:"Chibi",prompt:"a cute chibi dinosaur with an oversized head and stubby rounded body"}
+    ]},
+  animalfig:{emoji:"🦊", label:"Animal", promptName:"animal figurine", cat:"figurines",
+    fn:"It is a single solid stylized animal figurine — one sculpted collectible piece in a compact, grounded pose with ears, tail and limbs held close and fully fused to the body, on an integrated flat display base. Just the one figurine alone — a sculpted decorative object, never a live animal, with no scenery or second creature.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind stylized animal, compact and grounded"},
+      {label:"Fox",prompt:"a sitting fox with its bushy tail wrapped neatly around its feet, ears up"},
+      {label:"Owl",prompt:"a plump owl perched upright with folded wings, big round sculpted eyes"},
+      {label:"Cat",prompt:"a cat sitting tall and elegant with its tail curled around its front paws"},
+      {label:"Bear",prompt:"a stocky bear sitting back on its haunches, rounded and heavy"},
+      {label:"Rabbit",prompt:"a rounded crouching rabbit with long ears laid back along its body"},
+      {label:"Turtle",prompt:"a turtle with a high domed sculptural shell, head and thick legs out"},
+      {label:"Whale",prompt:"a rounded whale resting belly-down on the base, tail curling up and over its back in one thick fused sweep"},
+      {label:"Elephant",prompt:"a standing elephant with its trunk curled back against its body, thick legs"},
+      {label:"Wolf",prompt:"a wolf sitting back on its haunches howling upward, tail wrapped around its feet"}
+    ]},
+  mythicfig:{emoji:"🦄", label:"Mythical beast", promptName:"mythical creature figurine", cat:"figurines",
+    fn:"It is a single solid mythical-creature figurine — one sculpted collectible piece in a compact grounded pose, every wing, horn, tentacle and limb thick and fully fused to the body as one continuous mass, on an integrated flat display base. Just the one figurine alone — no scenery, clouds, waves or second creature.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind mythical beast, compact and grounded"},
+      {label:"Unicorn",prompt:"a unicorn standing with all four hooves planted, a thick spiral horn, mane and tail fused close to the body"},
+      {label:"Phoenix",prompt:"a phoenix perched upright with folded flame-textured wings and sweeping tail feathers fused into one mass behind it"},
+      {label:"Griffin",prompt:"a griffin sitting back on its lion haunches, folded wings, eagle head held high"},
+      {label:"Kraken",prompt:"a kraken rising from its own coiled tentacles, every tentacle thick and fused into the base cluster"},
+      {label:"Sea serpent",prompt:"a sea serpent winding in thick S-coils, its whole length fused to the base, head rising from the center"},
+      {label:"Cerberus",prompt:"a three-headed cerberus hound sitting back on its haunches, all three necks fused into one thick chest"},
+      {label:"Gnome dragon",prompt:"a plump, friendly little dragon-gnome hybrid sitting upright with a pointed hat fused to its head"}
+    ]},
+  robotfig:{emoji:"🤖", label:"Robot", promptName:"robot figurine", cat:"figurines",
+    fn:"It is a single solid robot figurine — one sculpted collectible piece read entirely as carved sculpture: panel lines, rivets, vents and joints are all sculpted relief in the same single material, never separate parts, screens, glass, wires or actual mechanisms. Arms and legs are thick and fused to the body, standing firmly on an integrated flat display base. Just the one figurine alone.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind robot form, compact and grounded"},
+      {label:"Chibi bot",prompt:"a cute chibi robot with an oversized rounded head, stubby body and thick little arms held close"},
+      {label:"Retro box",prompt:"a boxy retro tin-toy style robot with a rectangular body, domed head and thick tube arms at its sides"},
+      {label:"Mech walker",prompt:"a stocky two-legged mech walker with thick armored legs and a compact cockpit body"},
+      {label:"Humanoid",prompt:"a sleek humanoid android standing upright, arms at its sides, sculpted panel lines"},
+      {label:"Tread rover",prompt:"a rover robot with a rounded body fused onto thick sculpted tank treads"},
+      {label:"Round buddy",prompt:"a spherical little buddy robot with a dome eye, stubby fused arms and flat feet"}
+    ]},
+  characterfig:{emoji:"🧙", label:"Character", promptName:"character figurine", cat:"figurines",
+    fn:"It is a single solid full-body character figurine — one sculpted stylized collectible piece, clearly a carved figurine and never a lifelike person. The figure stands or sits in a compact grounded pose, arms held close or resting on the body, robes, cloaks, weapons and props thick and fully fused into the same single mass, on an integrated flat display base. Just the one figurine alone.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind stylized character, compact and grounded"},
+      {label:"Wizard",prompt:"a bearded wizard in a heavy hooded robe, both hands resting on a thick staff planted on the base, tall pointed hat"},
+      {label:"Knight",prompt:"an armored knight standing at rest, both gauntlets resting on the pommel of a thick sword planted point-down on the base"},
+      {label:"Astronaut",prompt:"a chunky suited astronaut standing with feet planted wide, one hand raised in a small wave fused close to the helmet"},
+      {label:"Viking",prompt:"a stout viking warrior with a thick braided beard, round shield fused to one arm and an axe held against the chest"},
+      {label:"Ninja",prompt:"a crouched ninja low on one knee, both arms tucked close to the body, mask and hood sculpted smooth"},
+      {label:"Gnome",prompt:"a plump garden gnome with a tall pointed hat, hands folded over a round belly"},
+      {label:"Witch",prompt:"a witch in flowing sculpted robes holding a round potion orb against her chest with both hands, wide-brimmed pointed hat"},
+      {label:"Samurai",prompt:"a samurai in layered sculpted armor standing at rest, katana sheathed and fused against the hip"}
+    ]},
+  skullfig:{emoji:"💀", label:"Skull", promptName:"decorative skull sculpture", cat:"figurines",
+    fn:"It is a single solid decorative skull sculpture — one sculpted collectible piece with a flat stable underside so it sits firmly on the surface. Eye sockets and nose opening are shallow sculpted recesses, never fragile openwork. Just the one skull alone — no bones, candles, scenery or second object.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind skull form"},
+      {label:"Classic",prompt:"a classic human skull form, rounded cranium and sculpted jaw in one fused piece"},
+      {label:"Sugar skull",prompt:"a rounded sugar-skull form with a broad friendly face ready for ornate carved decoration"},
+      {label:"Faceted",prompt:"a low-poly faceted crystalline skull built from flat angular planes"},
+      {label:"Horned",prompt:"a demon skull with thick curling ram horns fused seamlessly into the temples"},
+      {label:"Dragon skull",prompt:"an elongated dragon skull with a tapering snout, brow ridges and short thick horn spikes, resting on its jaw"},
+      {label:"Cyber skull",prompt:"a skull with sculpted mechanical panel lines, vents and rivets carved into one side, all one fused material"}
+    ]},
+  bustfig:{emoji:"🗿", label:"Bust", promptName:"head-and-shoulders bust sculpture", cat:"figurines",
+    fn:"It is a single solid head-and-shoulders bust sculpture — one sculpted collectible piece, clearly a carved bust and never a lifelike person, cut off cleanly at the chest and fused to an integrated plinth base beneath the shoulders. Just the one bust alone.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind bust"},
+      {label:"Classical",prompt:"a classical Greco-Roman style bust with calm features and sculpted curled hair"},
+      {label:"Moai",prompt:"a monolithic moai-style head with a long heavy brow, deep-set eyes and a strong jaw"},
+      {label:"Android",prompt:"an android head bust with smooth sculpted faceplates and carved panel seams, all one fused material"},
+      {label:"Pharaoh",prompt:"a pharaoh bust with a broad sculpted headdress framing the face"},
+      {label:"Warrior",prompt:"a helmeted warrior bust, the crested helmet fused seamlessly to the head"},
+      {label:"Alien",prompt:"an alien head bust with a tall smooth cranium and large almond eye recesses"}
+    ]},
+  chessfig:{emoji:"♟️", label:"Chess piece", promptName:"oversized decorative chess piece", cat:"figurines",
+    fn:"It is a single oversized decorative chess piece — one solid sculptural piece with the classic silhouette of its rank, on a wide round weighted-looking base. Just the one piece alone — no chessboard, no other pieces.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind chess-piece silhouette"},
+      {label:"King",prompt:"a tall king piece crowned with a thick cross finial"},
+      {label:"Queen",prompt:"a tall queen piece with a coronet of rounded points"},
+      {label:"Knight",prompt:"a knight piece — a sculpted horse head and arched neck rising from the round base"},
+      {label:"Rook",prompt:"a rook piece — a sturdy castle tower with a thick crenellated crown"},
+      {label:"Bishop",prompt:"a bishop piece with its classic mitre top and sculpted diagonal groove"},
+      {label:"Pawn",prompt:"a plump pawn piece with a rounded ball head on a collared stem"}
+    ]},
+  gargoylefig:{emoji:"👺", label:"Gargoyle", promptName:"gargoyle figurine", cat:"figurines",
+    fn:"It is a single solid gargoyle figurine — one sculpted guardian-grotesque collectible piece crouched in a compact pose, wings folded tight against the back, claws gripping the front edge of an integrated flat stone-slab base it is fully fused to. Just the one figurine alone — no building, ledge, cathedral or scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind crouched grotesque"},
+      {label:"Perched classic",prompt:"the classic hunched gargoyle crouch, elbows on knees, chin resting on its fists"},
+      {label:"Winged crouch",prompt:"crouched low on all fours with thick folded wings arching over its back"},
+      {label:"Guardian lion",prompt:"a seated guardian lion-dog with a curled mane, one paw resting on a sphere fused to the base"},
+      {label:"Grotesque face",prompt:"a wall-plaque grotesque — a snarling sculpted face emerging from a flat-backed medallion"},
+      {label:"Howling",prompt:"seated back on its haunches howling upward, wings folded tight"}
+    ]},
+  chibimonfig:{emoji:"🐾", label:"Chibi monster", promptName:"chibi creature companion figurine", cat:"figurines",
+    fn:"It is a single solid chibi creature-companion figurine — one sculpted collectible monster-mascot piece with an oversized head, big friendly sculpted eyes and a small rounded body, every ear, tail, fin, leaf and flame-crest thick and fully fused to the body, in a compact grounded pose on an integrated round display base. Just the one creature alone — clearly a sculpted collectible figurine, never a flat cartoon drawing, with no scenery or second creature.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind chibi creature, compact and grounded"},
+      {label:"Flame imp",prompt:"a chubby fire-elemental imp creature with a sculpted flame crest sweeping back from its head and tail, the flames carved thick like frozen waves"},
+      {label:"Water sprite",prompt:"a round water-elemental creature with smooth fins and a curled wave-like tail fused against its body"},
+      {label:"Electric rodent",prompt:"a plump electric-elemental rodent creature with zigzag lightning-motif ears and tail held thick and close to the body"},
+      {label:"Leaf sprout",prompt:"a grass-elemental creature with a thick sculpted leaf and bulb growing from its back, fused seamlessly into the body"},
+      {label:"Rock pup",prompt:"a stocky rock-elemental pup creature built from rounded boulder-like segments"},
+      {label:"Ghost wisp",prompt:"a ghost-elemental creature — a rounded hooded wisp with stubby arms, its tapered tail curling down and fusing onto the base"},
+      {label:"Dragon whelp",prompt:"a chubby dragon-elemental whelp with stubby folded wings and an oversized head"},
+      {label:"Ice fox",prompt:"an ice-elemental fox creature with crystalline faceted tail plumes wrapped around its feet"}
+    ]},
+  warminifig:{emoji:"⚔️", label:"War miniature", promptName:"grimdark wargame miniature figurine", cat:"figurines",
+    fn:"It is a single solid grimdark wargame miniature — one sculpted heroic-scale collectible war figurine with exaggerated bulky armor plates, oversized shoulder guards and its weapon held tight against the body, every plate, skull emblem, banner and weapon thick and fully fused into one continuous mass, standing planted on an integrated round scenic base sculpted with rubble. Just the one miniature alone — clearly a sculpted gaming piece, no battlefield scenery beyond its own base, no second figure.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind heroic-scale war miniature, planted and grounded"},
+      {label:"Armored crusader",prompt:"a hulking armored crusader in massive plate armor with oversized pauldrons, a blocky rifle held across the chest"},
+      {label:"Orc warboss",prompt:"a massive orc warboss with a jutting jaw, layered scrap-armor plates and an oversized cleaver resting on its shoulder"},
+      {label:"Battle walker",prompt:"a stocky walking war machine with thick armored legs and heavy weapon-arm fists, sculpted panel lines"},
+      {label:"Plague knight",prompt:"a corrupted plague knight in rusted rounded armor, boils and rot sculpted as relief, a notched blade held against its side"},
+      {label:"Bone legionnaire",prompt:"a skeletal legionnaire in ancient armor, a tall shield planted on the base with a thick-hafted spear fused against its edge"},
+      {label:"Machine cultist",prompt:"a hooded machine-cult priest, mechanical arms and thick cables sculpted fused against its layered robes"},
+      {label:"Daemon brute",prompt:"a horned daemon brute crouched with its knuckles planted on the base, wings folded tight against the back"},
+      {label:"Banner champion",prompt:"an armored champion gripping a tall banner pole planted on the base, the banner sculpted as one solid slab fused to the pole"}
+    ]},
+  darkfantasyfig:{emoji:"🗡️", label:"Dark fantasy", promptName:"dark fantasy warrior figurine", cat:"figurines",
+    fn:"It is a single solid dark-fantasy warrior figurine — one sculpted collectible piece in ornate weathered gothic armor, its tattered cape, horns and oversized weapon all sculpted thick and fully fused into one continuous mass, in a grounded stance on an integrated rocky display base. Just the one figurine alone — clearly a sculpted collectible, never a lifelike person, with no ruins, fog or scenery beyond its own base and no second figure.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind dark-fantasy figure, grounded and brooding"},
+      {label:"Fallen knight",prompt:"a battle-worn knight in ornate gothic plate, a tattered sculpted cape fused down the back, sword point resting on the base"},
+      {label:"Greatsword wielder",prompt:"a warrior braced under an enormous greatsword resting across the shoulders, the blade fused to the shoulder armor"},
+      {label:"Hooded wanderer",prompt:"a hooded wanderer in layered sculpted robes leaning on a gnarled staff planted on the base"},
+      {label:"Dragon knight",prompt:"a knight in dragon-scale armor with a horned helm, shield held up against the chest"},
+      {label:"Eldritch horror",prompt:"a many-limbed eldritch horror rising from its own coiled mass, every limb thick and fused into the base cluster"},
+      {label:"Grave sorcerer",prompt:"a gaunt sorcerer with a crystal-topped staff held against the body, long robes flowing into the base in one sculpted sweep"},
+      {label:"Colossus",prompt:"a towering armored colossus hunched forward, massive gauntlets resting on the base"},
+      {label:"Beast hunter",prompt:"a cloaked hunter in layered leathers with a huge cleaver-blade held low and tight against the leg"}
+    ]},
+  seafig:{emoji:"🦑", label:"Sea creature", promptName:"sea creature figurine", cat:"figurines",
+    fn:"It is a single solid sea-creature figurine — one sculpted collectible piece with every tentacle, fin and tendril thick, rounded and fully fused into the body or down into an integrated display base, never thin, trailing or free-floating. Just the one creature alone — clearly a sculpted collectible, never a live animal, with no water, waves, bubbles or seabed scenery beyond its own base.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind sea creature, compact and grounded"},
+      {label:"Octopus",prompt:"a plump octopus sitting atop its own thick curled arms, every arm fused into the coiled base cluster"},
+      {label:"Axolotl",prompt:"a chubby smiling axolotl resting on its belly, frilly gill plumes sculpted thick against its head"},
+      {label:"Jellyfish",prompt:"a domed jellyfish bell whose thick rounded tendrils sweep down and merge into a single sculpted column base"},
+      {label:"Crab",prompt:"a stout crab with big rounded claws held close, thick legs fused to a low base"},
+      {label:"Seahorse",prompt:"a curled seahorse, its tail coiling down and fusing into the base in one sweep"},
+      {label:"Koi",prompt:"a koi fish arcing over its own sculpted wave, the wave forming the fused base"},
+      {label:"Anglerfish",prompt:"a round anglerfish with a huge grin, its lure on a thick sculpted arc fused back into the head"}
+    ]},
+  kaijufig:{emoji:"🐲", label:"Kaiju titan", promptName:"giant monster kaiju figurine", cat:"figurines",
+    fn:"It is a single solid kaiju figurine — one sculpted collectible giant-monster piece in a heavy grounded stance, tail thick and resting on or fused to the integrated display base, spines and plates fused solidly into the back. Just the one monster alone — no city, buildings, rubble beyond its own base texture, and no second creature.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind giant monster, heavy and grounded"},
+      {label:"Reptile titan",prompt:"a towering upright reptilian titan with jagged dorsal plates down its spine and a massive tail resting on the base"},
+      {label:"Ape titan",prompt:"a colossal ape titan hunched forward, knuckles planted on the base"},
+      {label:"Moth titan",prompt:"a giant moth titan at rest, patterned wings folded back in one thick sculpted mass"},
+      {label:"Turtle titan",prompt:"a giant turtle titan standing upright, its spiked shell fused to its back"},
+      {label:"Crab titan",prompt:"an armored crab titan with massive rounded claws held close to its body"},
+      {label:"Serpent titan",prompt:"a colossal serpent titan rising from its own thick coils fused to the base"}
+    ]},
+  insectfig:{emoji:"🪲", label:"Insect", promptName:"stylized insect figurine", cat:"figurines",
+    fn:"It is a single solid stylized insect figurine — one sculpted collectible piece with deliberately chunky, thickened legs and antennae fully fused to the body and base, wings folded closed or sculpted flat against the back as one solid mass, never thin membrane wings held open. Just the one insect alone — clearly a sculpted collectible, never a real insect, with no leaves, flowers or scenery beyond its own base.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind stylized insect, chunky and grounded"},
+      {label:"Beetle",prompt:"a stout scarab beetle with a domed carved shell, thick legs planted on the base"},
+      {label:"Mantis",prompt:"a praying mantis in its classic folded-arms pose, arms held thick and close, abdomen resting on the base"},
+      {label:"Butterfly",prompt:"a butterfly resting with patterned wings folded upright together into one thick sculpted sail"},
+      {label:"Bee",prompt:"a plump rounded bee with folded wings sculpted flat against its back"},
+      {label:"Spider",prompt:"a compact spider with eight thick tapered legs all planted and fused to the base"},
+      {label:"Scorpion",prompt:"a scorpion with its thick tail curled forward over its back in one fused arc, claws held close"},
+      {label:"Moth",prompt:"a fluffy moth at rest, wings folded roof-like over its back in one solid sculpted mass"}
+    ]},
+  cryptidfig:{emoji:"🦶", label:"Cryptid", promptName:"cryptid creature figurine", cat:"figurines",
+    fn:"It is a single solid cryptid figurine — one sculpted collectible folklore-creature piece in a compact grounded pose, every limb, wing and antler thick and fully fused to the body, on an integrated display base. Just the one creature alone — clearly a sculpted collectible, with no forest, lake or scenery beyond its own base.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind folklore cryptid, compact and grounded"},
+      {label:"Bigfoot",prompt:"a shaggy bigfoot caught mid-stride in the classic walking pose, arms swinging close to the body"},
+      {label:"Mothman",prompt:"a mothman standing upright with big round eyes and wings folded tight behind its shoulders"},
+      {label:"Jackalope",prompt:"a sitting jackrabbit with thick branching antlers fused seamlessly to its head"},
+      {label:"Yeti",prompt:"a stocky yeti hunched with huge shoulders, arms hanging heavy at its sides"},
+      {label:"Lake serpent",prompt:"a lake serpent in looping humps, every hump fused down into the flat base like waves"},
+      {label:"Chupacabra",prompt:"a lean spined chupacabra crouched low on all fours, quills fused thick down its back"}
+    ]},
+  vinylfig:{emoji:"🧸", label:"Vinyl mascot", promptName:"designer vinyl mascot figurine", cat:"figurines",
+    fn:"It is a single solid designer-toy mascot figurine — one sculpted collectible piece with smooth, simple, rounded minimal forms, an oversized head, small body and stubby limbs held close, standing or sitting flat on an integrated round base. Just the one mascot alone — clearly a sculpted art toy with a calm, minimal face.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind rounded art-toy mascot"},
+      {label:"Bear",prompt:"a rounded standing bear mascot with stubby arms at its sides and small round ears"},
+      {label:"Bunny",prompt:"a rounded bunny mascot with thick drooping ears fused to its head and back"},
+      {label:"Cat",prompt:"a sitting cat mascot with a big round head and tiny triangle ears"},
+      {label:"Duck",prompt:"a plump duck mascot with a broad flat bill and no visible feet"},
+      {label:"Astro buddy",prompt:"a chubby suited astronaut mascot with an oversized round helmet head"},
+      {label:"Skeleton buddy",prompt:"a rounded mascot with a cute skull face and bone details sculpted as relief"}
+    ]},
+  kawaiifoodfig:{emoji:"🍩", label:"Kawaii food", promptName:"kawaii food character figurine", cat:"figurines",
+    fn:"It is a single solid kawaii food-character figurine — one sculpted collectible piece: a plump food item with a simple happy face sculpted into it as relief and tiny stubby arms and legs fused to the body, sitting flat on an integrated round base. Just the one character alone — clearly a sculpted collectible, never real food, with no plate, table or kitchen scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind smiling food character"},
+      {label:"Donut",prompt:"a thick smiling donut standing upright with sculpted frosting draped over the top"},
+      {label:"Boba tea",prompt:"a rounded bubble-tea cup character with a thick straw fused to the lid and sculpted pearls at the bottom"},
+      {label:"Sushi",prompt:"a plump sushi-roll character, the topping fused to the rice body like a little hat"},
+      {label:"Cupcake",prompt:"a cupcake character with a swirled frosting peak and a pleated sculpted wrapper"},
+      {label:"Taco",prompt:"a folded taco character with wavy sculpted filling cresting out of the shell"},
+      {label:"Soft serve",prompt:"a soft-serve cone character with a tall sculpted swirl, standing on its cone base"}
+    ]},
+  blobfig:{emoji:"🫧", label:"Blob buddy", promptName:"blob creature figurine", cat:"figurines",
+    fn:"It is a single solid blob-creature figurine — one sculpted collectible piece: a plump rounded blob with a simple expressive face sculpted as relief, its whole body one thick droplet-like mass resting flat on an integrated round base. Just the one blob alone.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind expressive blob"},
+      {label:"Happy",prompt:"a round upright blob with a huge sculpted grin and tiny nub arms"},
+      {label:"Sleepy",prompt:"a slumped drowsy blob puddling gently at its base, eyes closed"},
+      {label:"Melty",prompt:"a blob mid-melt, thick drips sculpted down its sides fusing into the base"},
+      {label:"Spiky",prompt:"a rounded blob with soft thick spikes sculpted all over like a friendly sea urchin"},
+      {label:"Stack",prompt:"three blobs of shrinking size stacked and fused like a snowman"},
+      {label:"Ghosty",prompt:"a blob with a wavy trailing hem fused down onto the base, two oval eyes"}
+    ]},
+  nestingfig:{emoji:"🪆", label:"Nesting doll", promptName:"matryoshka-shaped figure", cat:"figurines",
+    fn:"It is a single solid matryoshka-shaped figure — one sculpted collectible piece with the classic rounded nesting-doll silhouette: a domed head flowing into a wide rounded body with a flat stable bottom, the entire costume, face and decoration sculpted as carved relief on the one solid form. It is one single solid piece that does not open. Just the one figure alone.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — the classic rounded doll silhouette, costume carved as wild relief"},
+      {label:"Folk classic",prompt:"the traditional folk costume — headscarf, apron and floral panels carved as deep relief"},
+      {label:"Cosmic",prompt:"an astronaut nesting doll, helmet visor and suit panels carved as relief"},
+      {label:"Robot",prompt:"a robot nesting doll, faceplate, dials and rivets carved as relief"},
+      {label:"Animal",prompt:"an animal nesting doll — ears sculpted low against the domed head, paws folded in relief"},
+      {label:"Skeleton",prompt:"a festive skeleton nesting doll, bones and marigold patterns carved as relief"},
+      {label:"Samurai",prompt:"a samurai nesting doll, layered armor plates and helmet crest carved as relief"}
+    ]},
+  animefig:{emoji:"⚡", label:"Anime hero", promptName:"stylized anime-style hero figurine", cat:"figurines",
+    fn:"It is a single solid stylized anime-style hero figurine — one sculpted collectible scale-figure piece, clearly a sculpted figurine and never a real person or flat drawing. The figure holds a dynamic but grounded pose with both feet or a knee planted, hair and clothing swept into thick sculpted masses fused to the body, any weapon held tight against the body, on an integrated round display base. Just the one figure alone.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind heroic figure, dynamic but grounded"},
+      {label:"Swordsman",prompt:"a spiky-haired swordsman in a wide stance, blade drawn and held low against his side, coat sweeping into one thick sculpted mass"},
+      {label:"Mage",prompt:"a mage mid-cast, one knee planted, a thick sculpted energy orb fused between her raised hands"},
+      {label:"Mecha pilot",prompt:"a pilot in a sculpted plug suit standing confidently, helmet held against the hip"},
+      {label:"Martial artist",prompt:"a martial artist in a low grounded stance, fists guarded close, belt tails fused into a thick sculpted sweep"},
+      {label:"Archer",prompt:"an archer kneeling with the bow held vertically against the body, its limbs thick and fully fused to the arm and base"},
+      {label:"Idol",prompt:"a cheerful idol mid-performance with one hand raised, twin tails swept into thick sculpted arcs fused at the shoulders"}
+    ]},
+  cyberfig:{emoji:"🌆", label:"Cyberpunk", promptName:"cyberpunk character figurine", cat:"figurines",
+    fn:"It is a single solid cyberpunk character figurine — one sculpted collectible piece, clearly a sculpted figurine and never a real person. Jackets, cables, armor plates and implants are all sculpted thick and fused against the body as relief in the one material, any weapon held tight against the body, in a grounded stance on an integrated round street-texture base. Just the one figure alone — no city, neon signs or rain.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind cyberpunk figure, grounded and cool"},
+      {label:"Street runner",prompt:"a runner in a heavy sculpted jacket, hood up, hands in pockets"},
+      {label:"Corpo samurai",prompt:"an armored corporate samurai standing at rest, katana sheathed and fused against the hip"},
+      {label:"Tech monk",prompt:"a serene monk in layered robes with thick sculpted cables braided down the back like hair"},
+      {label:"Android geisha",prompt:"an android geisha with sculpted panel seams across the face, fan held closed against the chest, kimono flowing into the base"},
+      {label:"Netrunner",prompt:"a netrunner sitting cross-legged, hands resting on knees, a thick visor band sculpted across the eyes"},
+      {label:"Heavy merc",prompt:"a bulky mercenary with an oversized cybernetic arm resting a heavy blocky gun across the shoulder"}
+    ]},
+  piratefig:{emoji:"🏴‍☠️", label:"Pirate", promptName:"pirate figurine", cat:"figurines",
+    fn:"It is a single solid pirate figurine — one sculpted collectible piece, clearly a sculpted figurine and never a real person. Coats, sashes and hats are sculpted thick and fused to the body, any cutlass or spyglass held tight against the body, in a grounded stance on an integrated deck-plank display base. Just the one figure alone — no ship, sea, treasure pile or second figure.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind pirate, grounded and swaggering"},
+      {label:"Captain",prompt:"a pirate captain in a grand sculpted coat and tricorn hat, one boot up on a small chest fused to the base, cutlass sheathed at the hip"},
+      {label:"First mate",prompt:"a burly first mate with a thick beard, arms crossed over a sculpted sash of tools"},
+      {label:"Ghost pirate",prompt:"a ghostly pirate whose tattered coat hem sweeps down and fuses into the base like mist"},
+      {label:"Siren",prompt:"a siren seated on a sculpted rock fused to the base, her thick tail curling around it"},
+      {label:"Powder monkey",prompt:"a scrappy young deckhand hugging a round powder keg nearly as big as themselves"},
+      {label:"Sea dog",prompt:"a grizzled old sailor with a peg leg and a sculpted parrot fused to his shoulder"}
+    ]},
+  wastelandfig:{emoji:"☢️", label:"Wastelander", promptName:"post-apocalyptic wanderer figurine", cat:"figurines",
+    fn:"It is a single solid post-apocalyptic wanderer figurine — one sculpted collectible piece, clearly a sculpted figurine and never a real person. Layered scavenged gear, straps, canisters and masks are sculpted thick and fused against the body as relief, any weapon held tight against the body, in a grounded stance on an integrated cracked-earth display base. Just the one figure alone — no ruins, vehicles or wasteland scenery beyond its own base.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind wasteland survivor, grounded and weathered"},
+      {label:"Raider",prompt:"a spike-armored raider with a welded scrap pauldron, a nail bat resting across one shoulder"},
+      {label:"Scavenger",prompt:"a hunched scavenger under a huge sculpted backpack of salvage, walking staff planted on the base"},
+      {label:"Gas-mask wanderer",prompt:"a cloaked wanderer in a sculpted gas mask, poncho sweeping into one thick mass"},
+      {label:"Mutant brute",prompt:"a hulking mutant brute with asymmetric shoulders, knuckles resting on the base"},
+      {label:"Vault dweller",prompt:"an optimistic jumpsuited survivor giving a thumbs-up, toolbelt sculpted as relief"},
+      {label:"Road warrior",prompt:"a leather-clad road warrior with sculpted shoulder armor, standing braced against the wind"}
+    ]},
+  deityfig:{emoji:"🏛️", label:"Deity", promptName:"mythological deity figurine", cat:"figurines",
+    fn:"It is a single solid mythological deity figurine — one sculpted collectible statue-style piece, clearly a sculpted figurine. Robes, crowns, and divine attributes are sculpted thick and fused to the body — any thunderbolt, trident or staff held tight against the body as one solid mass — in a majestic grounded pose on an integrated temple-stone display base. Just the one deity alone — no temple, clouds or worshippers.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind divine figure, majestic and grounded"},
+      {label:"Thunder god",prompt:"a bearded thunder god enthroned, a thick sculpted bolt held against his chest"},
+      {label:"Sea god",prompt:"a sea god standing amid sculpted waves fused into the base, trident held vertically against his side"},
+      {label:"War goddess",prompt:"an armored war goddess at rest, spear against her shoulder, an owl fused to her gauntlet"},
+      {label:"Jackal god",prompt:"a jackal-headed god standing formally, arms crossed over the chest holding crook and flail against the body"},
+      {label:"Sun deity",prompt:"a serene sun deity with a thick radiant disc sculpted behind the head, fused to the shoulders"},
+      {label:"Trickster",prompt:"a lean horned trickster god lounging on a sculpted rock fused to the base, grinning"}
+    ]},
+  yokaifig:{emoji:"⛩️", label:"Yokai spirit", promptName:"folklore spirit figurine", cat:"figurines",
+    fn:"It is a single solid folklore-spirit figurine — one sculpted collectible piece of a mythical spirit creature, every tail, wing, horn and prop thick and fully fused to the body, in a compact grounded pose on an integrated shrine-stone display base. Just the one spirit alone — no shrine buildings, forest or scenery beyond its own base.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind folklore spirit, compact and grounded"},
+      {label:"Fox spirit",prompt:"a sitting nine-tailed fox spirit, its tails fused together into one thick sculpted fan sweeping up behind it"},
+      {label:"Tanuki",prompt:"a plump grinning tanuki standing upright with a straw hat and a gourd flask held against its belly"},
+      {label:"Oni",prompt:"a horned oni brute crouched with a huge studded club resting across its shoulders"},
+      {label:"Tengu",prompt:"a long-nosed tengu standing with folded wings and a feather fan held against its chest"},
+      {label:"Kappa",prompt:"a kappa crouched by its sculpted pond-ring base, shell on its back and a smooth water dish sculpted into its head"},
+      {label:"Snow spirit",prompt:"a serene snow-woman spirit whose long robes sweep down and fuse into a drift on the base"}
+    ]},
+  fairyfig:{emoji:"🧚", label:"Fairy", promptName:"fairy figurine", cat:"figurines",
+    fn:"It is a single solid fairy figurine — one sculpted collectible piece, clearly a sculpted figurine. Its wings are thick sculpted shapes folded upright together or fused against the back and base — never thin spread membranes — and it sits or stands grounded on an integrated mushroom-and-moss display base. Just the one fairy alone — no garden, flowers or forest beyond its own base.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind fairy, grounded and whimsical"},
+      {label:"Mushroom fairy",prompt:"a fairy in a sculpted toadstool-cap hat sitting cross-legged on a thick mushroom fused to the base"},
+      {label:"Flower sprite",prompt:"a sprite in layered sculpted petal skirts, wings folded upright together behind the back"},
+      {label:"Moth fairy",prompt:"a fluffy moth-winged fairy at rest, patterned wings folded roof-like over the back in one solid mass"},
+      {label:"Forest guardian",prompt:"a sturdy bark-skinned forest guardian with thick antler branches fused to its head, staff planted on the base"},
+      {label:"Dew collector",prompt:"a fairy kneeling to hug a huge sculpted dewdrop orb fused to the base"},
+      {label:"Night fairy",prompt:"a fairy in a sculpted crescent-moon hood, wings wrapped around the body like a cloak"}
+    ]},
+  golemfig:{emoji:"🪨", label:"Golem", promptName:"golem figurine", cat:"figurines",
+    fn:"It is a single solid golem figurine — one sculpted collectible construct piece built from thick chunky segments that all read as one fused mass, standing heavy and grounded on an integrated display base. Just the one golem alone — no ruins or scenery beyond its own base.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind chunky construct, heavy and grounded"},
+      {label:"Stone golem",prompt:"a hulking stone golem of rounded boulder segments, knuckles resting on the base"},
+      {label:"Crystal golem",prompt:"a golem of thick faceted crystal shards clustered into a body, standing squat and heavy"},
+      {label:"Lava golem",prompt:"a stocky golem of dark crusted plates with sculpted molten seams glowing between them"},
+      {label:"Moss golem",prompt:"a gentle round moss golem with a thick sculpted sapling fused to one shoulder"},
+      {label:"Clockwork golem",prompt:"a squat clockwork golem, gears and rivets carved as deep relief into its one solid body"},
+      {label:"Rune golem",prompt:"a monolithic golem of stacked slab segments, glowing runes carved deep into every face"}
+    ]},
+  buddhafig:{emoji:"🧘", label:"Meditation", promptName:"serene meditation figurine", cat:"spiritual",
+    fn:"It is a single solid meditation figurine — one sculpted decor-statue piece in a serene, symmetrical, grounded pose, robes and hands sculpted thick and fused to the body, on an integrated lotus or stone display base. Just the one figure alone — calm and dignified, no incense, candles, altar or temple scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind serene meditation figure"},
+      {label:"Meditating buddha",prompt:"a serene buddha seated in lotus position, hands resting in the lap, on a sculpted lotus base"},
+      {label:"Laughing buddha",prompt:"a jolly round laughing buddha seated with arms raised, belly proud"},
+      {label:"Zen monk",prompt:"a small bald monk seated in meditation, robes pooling into the base in one sculpted sweep"},
+      {label:"Elephant deity",prompt:"a serene elephant-headed deity seated cross-legged, four arms held close with attributes fused against the body"},
+      {label:"Praying hands",prompt:"a pair of praying hands rising from a sculpted sleeve cuff base, fused as one solid piece"},
+      {label:"Lotus bloom",prompt:"a meditating figure emerging from the center of a thick sculpted lotus flower"},
+      {label:"Space monk",prompt:"an astronaut seated in full lotus meditation, suit and helmet sculpted smooth and round"}
+    ]},
+  hindufig:{emoji:"🙏", label:"Hindu deity", promptName:"Hindu deity figurine", cat:"spiritual",
+    fn:"It is a single solid Hindu deity figurine — one sculpted collectible statue-style piece in the formal symmetrical style of Indian temple sculpture, multiple arms and divine attributes sculpted thick and fused close to the body, on an integrated carved lotus display base. Just the one deity alone — no temple pillars, shrine scenery or worshippers.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Hindu deity, regal and divine"},
+      {label:"Ganesha",prompt:"the elephant-headed god Ganesha seated cross-legged with four thick arms held close, holding an axe, noose, broken tusk and a bowl of sweets, plump round belly, ornate crown, a tiny mouse at the base"},
+      {label:"Hanuman",prompt:"the monkey warrior god Hanuman kneeling with hands pressed together in devotion, muscular build, long curling tail fused against the back, golden armor and loincloth"},
+      {label:"Nataraja",prompt:"Shiva as Nataraja dancing within a thick ring of sculpted flames, four arms holding a drum and flame, one foot planted on a small dwarf, wild hair fanning outward with a crescent moon, serene face"},
+      {label:"Durga",prompt:"the warrior goddess Durga with eight arms each holding a different weapon fused close to the body, riding a crouching lion, ornate crown and flowing sari, fierce yet beautiful face with a third eye"},
+      {label:"Garuda",prompt:"the eagle king Garuda with a muscular man's torso and powerful folded bird wings, sharp curved beak, golden feathers, taloned feet, wearing a crown and ornate jewelry, hands folded in devotion"},
+      {label:"Nandi",prompt:"the sacred bull Nandi seated with legs tucked underneath, decorated with flower garlands and a bell collar, smooth polished surface, calm dignified face gazing forward, ornate blanket draped on back"}
+    ]},
+  egyptfig:{emoji:"👁️", label:"Egyptian god", promptName:"ancient Egyptian deity figurine", cat:"spiritual",
+    fn:"It is a single solid ancient Egyptian deity figurine — one sculpted collectible statue-style piece in the rigid formal symmetrical style of Egyptian temple sculpture, headdress and divine scepters sculpted thick and fused to the body, standing or seated in a canonical pose on an integrated hieroglyph-carved stone display base. Just the one deity alone — no temple columns, walls or scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Egyptian deity, formal and commanding"},
+      {label:"Anubis",prompt:"the jackal-headed god Anubis standing upright, pointed ears erect, holding a was scepter and ankh fused against the body, wearing a striped nemes headdress, lean muscular body in a white kilt"},
+      {label:"Bastet",prompt:"the cat-headed goddess Bastet standing gracefully, sleek feline head with alert ears, holding a sistrum rattle and small shield fused to the body, wearing a fitted turquoise dress and broad gold collar"},
+      {label:"Thoth",prompt:"the ibis-headed god Thoth standing with a long curved beak, wearing a crescent moon cradling a full moon disk headdress, holding a reed pen and scribe palette fused close, formal robes"},
+      {label:"Horus",prompt:"the falcon-headed god Horus standing with a sharp curved beak and large raptor eyes, wearing the double crown of Egypt, holding a crook and flail crossed over the chest, muscular body in a royal kilt"},
+      {label:"Sekhmet",prompt:"the lioness-headed goddess Sekhmet standing powerfully with a snarling mane, solar disk and cobra crown on her head, holding a papyrus scepter, muscular female body in a form-fitting red dress"},
+      {label:"Ammit",prompt:"the devourer Ammit crouching alert beside sculpted scales, a chimeric beast with a crocodile head and open jaws, lion forequarters and mane, and hippopotamus hindquarters, compact heavy build"}
+    ]},
+  chinesefig:{emoji:"🏮", label:"Chinese guardian", promptName:"Chinese mythical guardian figurine", cat:"spiritual",
+    fn:"It is a single solid Chinese mythical guardian figurine — one sculpted collectible statue-style piece in the ornate style of Imperial Chinese temple sculpture, flowing manes and divine weapons sculpted thick and fused to the body, on an integrated carved cloud or stone display base. Just the one guardian alone — no temple architecture, incense or altar scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Chinese mythical guardian, ornate and powerful"},
+      {label:"Guanyin",prompt:"the bodhisattva Guanyin standing on a lotus, flowing white robes with a draped hood, holding a willow branch and a vase of pure water, serene downcast compassionate eyes, elaborate hair bun with a small seated Buddha in the crown"},
+      {label:"Qilin",prompt:"the auspicious beast Qilin standing with one hoof raised, dragon-like head with branching antlers, entire body covered in iridescent fish scales, flowing mane and ox tail, stylized flames licking from shoulders and hooves"},
+      {label:"Foo Dog",prompt:"a guardian lion Shi seated upright on a rectangular pedestal, tightly curled spiral mane, broad flat face with bulging eyes and flared nostrils, one paw resting on an embroidered sphere, wide open roaring mouth"},
+      {label:"Zhong Kui",prompt:"the demon queller Zhong Kui striding forward, large burly man with thick bristling black beard, wearing disheveled scholar robes and a winged court hat, brandishing a sword overhead, fierce scowling dark face, small demons cowering at his feet"},
+      {label:"Nezha",prompt:"the boy warrior Nezha standing atop two flaming wheels, youthful body in a red shirt and golden armored vest, holding a fire-tipped spear and golden ring, long red silk sash streaming behind, hair in twin warrior buns"},
+      {label:"Pixiu",prompt:"the wealth beast Pixiu squatting with mouth agape, dragon head with a single antler and flame-shaped eyebrows, muscular lion body covered in orderly scales, small cloud-patterned wings, paws resting on gold ingots"}
+    ]},
+  japanesefig:{emoji:"🎎", label:"Japanese spirit", promptName:"Japanese spiritual guardian figurine", cat:"spiritual",
+    fn:"It is a single solid Japanese spiritual guardian figurine — one sculpted collectible statue-style piece in the style of Kamakura-era temple sculpture, robes and weapons sculpted thick and fused to the body, on an integrated carved stone or cloud display base. Just the one guardian alone — no torii gates, shrine buildings or scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Japanese spiritual guardian, dramatic and powerful"},
+      {label:"Jizo",prompt:"the monk protector Jizo standing serenely with a shaved round head, gentle closed-eye smile, simple flowing monk robes, holding a ringed staff in one hand and a glowing jewel in the other, wearing a small red knitted cap and bib"},
+      {label:"Fudo Myoo",prompt:"the wrathful king Fudo Myoo seated on a rough rock, blue-black skin surrounded by a halo of sculpted roaring flames, fierce scowling face with one fang up one fang down, holding a flaming sword and a binding rope"},
+      {label:"Komainu",prompt:"a lion-dog guardian Komainu seated upright with mouth wide open, tightly curled spiral mane, muscular compact body, alert bulging eyes and flared nostrils, curled bushy tail over the back, on a rectangular stone pedestal"},
+      {label:"Tengu",prompt:"the mountain spirit Tengu standing tall with bright red skin and an extraordinarily long prominent nose, wearing a small black cap and mountain priest robes, holding a large feathered fan, tall single-toothed wooden sandals"},
+      {label:"Kitsune",prompt:"a divine fox Kitsune seated upright with chest forward, elegant white fur, multiple bushy tails fanning upward behind, holding a glowing spirit jewel in its mouth, alert pricked ears, wearing a red bib around the neck"},
+      {label:"Raijin",prompt:"the thunder god Raijin leaping on sculpted clouds, muscular red-skinned oni body with wild hair standing on end, two small horns, carrying a connected ring of small drums behind him, holding drumstick mallets mid-strike, tiger-skin loincloth"}
+    ]},
+  mesofig:{emoji:"🐍", label:"Mesoamerican god", promptName:"Mesoamerican deity figurine", cat:"spiritual",
+    fn:"It is a single solid Mesoamerican deity figurine — one sculpted collectible statue-style piece in the bold geometric style of Aztec and Maya temple carvings, headdresses and ceremonial regalia sculpted thick and fused to the body, on an integrated carved stepped-pyramid stone display base. Just the one deity alone — no pyramid architecture or jungle scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Mesoamerican deity, bold and ancient"},
+      {label:"Quetzalcoatl",prompt:"the feathered serpent Quetzalcoatl coiled on the base, a massive sinuous reptilian body covered in iridescent green quetzal plumes, elaborate fan-like feather crest on the head, wide open jaws with curved fangs"},
+      {label:"Tlaloc",prompt:"the rain god Tlaloc standing formally with large round goggle-ringed eyes, curling jaguar fangs, turquoise skin, wearing a headdress of heron feathers and jade ornaments, holding a lightning bolt staff fused to the body"},
+      {label:"Chaac",prompt:"the rain deity Chaac standing with a long curling trunk-like snout, large round eyes, fanged mouth, holding a lightning axe raised overhead fused to the body, elaborate shell and jade headdress, square ear ornaments"},
+      {label:"Ah Puch",prompt:"the death god Ah Puch crouching, a skeletal figure with an exposed skull face, visible ribs and bony limbs, wearing a collar of dangling eyeballs, owl feathers in the headdress, black decomposition spots on the body"},
+      {label:"Kukulkan",prompt:"the plumed serpent Kukulkan descending, a feathered serpent head emerging from a circular feathered collar with open jaws and fangs, the body cascading downward in undulating carved stone coils with iridescent plumes"}
+    ]},
+  greekfig:{emoji:"🏺", label:"Greek guardian", promptName:"Greek mythical guardian figurine", cat:"spiritual",
+    fn:"It is a single solid Greek mythical guardian figurine — one sculpted collectible statue-style piece in the style of classical marble temple sculpture, wings and weapons sculpted thick and fused to the body, on an integrated carved Corinthian column-base display pedestal. Just the one guardian alone — no temple architecture or landscape scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Greek mythical guardian, classical and commanding"},
+      {label:"Sphinx",prompt:"the Greek Sphinx crouching with the body of a lion, the head of a woman with braided hair, large folded eagle wings rising from the shoulders, paws extended forward, enigmatic half-smile"},
+      {label:"Griffin",prompt:"a regal Griffin seated alert with the body of a muscular lion and the head beak and folded wings of a great eagle, taloned front feet, tufted pointed ears, lion tail curled around the haunch"},
+      {label:"Cerberus",prompt:"the three-headed hound Cerberus crouching with three fierce mastiff heads each with bared fangs, muscular dark-furred body, a serpent tail coiled against the body, heavy chain looped at the base"},
+      {label:"Nike",prompt:"the winged goddess Nike alighting mid-stride, large feathered wings spread wide fused to the back, flowing draped robes billowing around the legs, one arm extended holding a laurel wreath"},
+      {label:"Hecate",prompt:"the triple goddess Hecate as three female forms joined at the back each facing a different direction, each holding a torch and a key fused close to the body, wearing a tall polos headdress, dogs resting at the base"}
+    ]},
+  norsefig:{emoji:"🐺", label:"Norse being", promptName:"Norse mythical being figurine", cat:"spiritual",
+    fn:"It is a single solid Norse mythical being figurine — one sculpted collectible statue-style piece in the style of Viking-age carved wood and stone, with knotwork and rune details carved as relief on the surface, on an integrated carved rune-stone display base. Just the one being alone — no longships, mead halls or landscape scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Norse mythical being, fierce and ancient"},
+      {label:"Huginn & Muninn",prompt:"Odin's twin ravens perched together on a gnarled runic branch, glossy black with blue-black iridescent sheen, one tilting its head as if listening, the other peering forward intently, intelligent piercing eyes"},
+      {label:"Fenrir",prompt:"the great wolf Fenrir straining against a thin magical ribbon binding, enormous shaggy dark grey wolf with massive jaws wide open, burning furious eyes, muscles bulging, knotwork patterns on the binding ribbon"},
+      {label:"Jormungandr",prompt:"the world serpent Jormungandr coiled in a circle biting its own tail in an ouroboros, massive scaled serpentine body with a dragon-like horned head, barnacle-encrusted scales, churning wave patterns on the base"},
+      {label:"Sleipnir",prompt:"the eight-legged horse Sleipnir in a galloping stance, noble grey horse with four pairs of legs clearly visible in motion, flowing mane and tail, runes carved as relief on the haunches, powerful otherworldly build"},
+      {label:"Nisse",prompt:"a tiny household guardian Nisse with a long white beard and a tall drooping pointed red cap, wearing simple grey homespun clothes and sturdy boots, grumpy expression, round nose, holding a small wooden bowl of porridge"},
+      {label:"Valkyrie",prompt:"a shield-maiden Valkyrie standing tall with braided hair beneath a winged helmet, wearing layered Viking armor with knotwork relief, holding a round shield and spear fused close, fur-trimmed cloak draped from the shoulders"}
+    ]},
+  celticfig:{emoji:"🍀", label:"Celtic spirit", promptName:"Celtic mythical spirit figurine", cat:"spiritual",
+    fn:"It is a single solid Celtic mythical spirit figurine — one sculpted collectible statue-style piece with knotwork and vine patterns carved as relief on the surface, on an integrated carved stone or root display base. Just the one spirit alone — no standing stones, forest scenery or architecture.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Celtic spirit, ancient and verdant"},
+      {label:"Green Man",prompt:"the Green Man as a round medallion face made entirely of oak leaves and vines, dense foliage sprouting from the open mouth and framing the wide staring eyes, acorns and berries mixed into the leaf-beard, bark-textured skin"},
+      {label:"Cernunnos",prompt:"the horned god Cernunnos seated cross-legged with large branching stag antlers, bearded and bare-chested, wearing a twisted metal torc, holding a ram-headed serpent in one hand and a second torc in the other, forest animals at the base"},
+      {label:"Brigid",prompt:"the goddess Brigid standing tall with flowing red hair, wearing a green cloak with Celtic knotwork hems over a white dress, holding a bowl of sacred fire in raised hands, a woven rush Brigid's cross at the base"},
+      {label:"Epona",prompt:"the horse goddess Epona seated sidesaddle on a walking mare, wearing a flowing Celtic tunic and cloak, holding a cornucopia of grain in one arm, a foal walking alongside the mare at the base"}
+    ]},
+  africanfig:{emoji:"🎭", label:"African spirit", promptName:"African spiritual being figurine", cat:"spiritual",
+    fn:"It is a single solid African spiritual being figurine — one sculpted collectible statue-style piece in the bold style of traditional West African wood carving, with strong geometric forms and ornate beadwork sculpted as relief, on an integrated carved display base. Just the one figure alone — no village scenery or shrine architecture.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind African spiritual being, bold and powerful"},
+      {label:"Anansi",prompt:"the spider trickster Anansi as a small humanoid with spider features, round bulbous abdomen, eight spindly limbs, wide clever grinning face, wearing a small woven hat, one hand raised in a storyteller gesture, clutching a thread of silk"},
+      {label:"Mami Wata",prompt:"the water spirit Mami Wata as a mermaid, beautiful woman from the waist up with long flowing hair and jewelry, a large python coiled around her torso, lower body a fish tail curled onto a rock base, holding a mirror and comb"},
+      {label:"Oshun",prompt:"the river goddess Oshun standing gracefully in flowing golden-yellow robes, adorned with stacked gold bangles and layered coral bead necklaces, holding a circular brass fan near her face, elaborate golden headwrap, serene confident smile"},
+      {label:"Eshu",prompt:"the crossroads guardian Eshu standing on a crossroads base, compact male figure with two faces front and back of the head, a tall conical pointed hairstyle, wearing a two-toned red and black hat, holding a short knobbed staff, cowrie shell details"},
+      {label:"Oya",prompt:"the wind warrior Oya in a dynamic striding pose, tall powerful woman with buffalo horns curving from her crown, raising a sword overhead, a wide skirt of nine colored strips billowing as if in a gale, holding a horsehair flywhisk"}
+    ]},
+  polynfig:{emoji:"🌺", label:"Polynesian being", promptName:"Polynesian mythical being figurine", cat:"spiritual",
+    fn:"It is a single solid Polynesian mythical being figurine — one sculpted collectible statue-style piece in the bold style of traditional Polynesian tiki carving, with dense geometric and spiral tattoo patterns carved as relief, on an integrated carved volcanic rock or wave display base. Just the one being alone — no island landscape or ocean scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Polynesian being, powerful and primal"},
+      {label:"Maui",prompt:"the demigod Maui in a power stance, muscular stocky build covered in dense traditional tattoo patterns, hair in a topknot, holding an enormous curved bone fishhook overhead, confident wide grin, bare-chested in a woven waist wrap"},
+      {label:"Pele",prompt:"the volcano goddess Pele standing tall, striking woman with long black hair that transitions into flowing sculpted lava at the tips, draped in red and black bark cloth, lei of red lehua blossoms, volcanic rock base with glowing orange fissures"},
+      {label:"Tangaroa",prompt:"the sea creator god Tangaroa squatting, a very large round head with wide staring eyes and broad flat nose, entire body surface covered in small relief-carved human figures representing his created offspring, rounded belly, hands on stomach"},
+      {label:"Tiki guardian",prompt:"a Hawaiian Ki'i guardian with an oversized head taking up half the figure, large bulging round eyes, wide open mouth with protruding tongue, heavy protruding brow ridge, short squat body with arms at sides, bold carved geometric patterns"}
+    ]},
+  slavicfig:{emoji:"🔥", label:"Slavic folklore", promptName:"Slavic folklore figurine", cat:"spiritual",
+    fn:"It is a single solid Slavic folklore figurine — one sculpted collectible statue-style piece in the style of Russian lacquer folk art, flowing robes and magical elements sculpted thick and fused to the body, on an integrated carved birchwood or forest-floor display base. Just the one being alone — no forest landscape or village scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Slavic folklore being, magical and mysterious"},
+      {label:"Firebird",prompt:"the luminous Firebird perched with wings half-spread, a magnificent bird with blazing gold orange and crimson plumage, each feather sculpted to glow like flame, long flowing tail feathers trailing light, jewel-bright eyes"},
+      {label:"Domovoi",prompt:"a small household spirit Domovoi, a tiny elderly bearded man covered in fur about the size of a cat, wearing a belted peasant tunic, sitting near a sculpted miniature hearth, gruff but caring expression, small horns peeking from hair"},
+      {label:"Leshy",prompt:"the forest lord Leshy standing tall, a large bearded man made of bark and leaves with green skin, moss-covered shoulders, branch-like antlers growing from the head, glowing green eyes, wearing a long coat of sculpted oak leaves"},
+      {label:"Baba Yaga",prompt:"the witch Baba Yaga crouching in a giant wooden mortar on the base, bony wild-haired crone with an enormous hooked nose and iron teeth, long bony fingers gripping a pestle and a birch broom, her chicken-legged hut carved into the base"},
+      {label:"Rusalka",prompt:"the water spirit Rusalka seated on a willow branch, a pale ethereally beautiful young woman with extremely long flowing wet green-tinged hair past her feet, translucent white dress, wreaths of water lilies, melancholy haunting expression"}
+    ]},
+  persianfig:{emoji:"🦁", label:"Persian guardian", promptName:"Persian mythical guardian figurine", cat:"spiritual",
+    fn:"It is a single solid Persian mythical guardian figurine — one sculpted collectible statue-style piece in the ornate style of ancient Achaemenid and Sasanian carved reliefs, feathers and scales sculpted as precise layered rows, on an integrated carved palace-stone display base. Just the one guardian alone — no palace columns, archways or landscape.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Persian mythical guardian, majestic and ancient"},
+      {label:"Simurgh",prompt:"the great bird Simurgh perched with wings partially spread, body of a peacock with a dog-like muzzle head and pointed ears, lion claws for feet, magnificent fan tail with eye-patterns, iridescent copper crimson and gold plumage"},
+      {label:"Lamassu",prompt:"the gate guardian Lamassu in a striding pose, colossal bull body with large folded eagle wings rising from the shoulders, a bearded human head wearing a tall horned tiara with rosette bands, long beard in tight symmetrical spiral curls"},
+      {label:"Manticore",prompt:"the man-eater Manticore prowling forward, body of a red-furred lion with a bearded human face showing three rows of interlocking sharp teeth, a segmented scorpion tail arched high over the back bristling with quill spines, blue-grey eyes"},
+      {label:"Huma",prompt:"the fortune bird Huma in eternal flight with wings spread wide, a graceful radiant bird of paradise with iridescent gold and azure plumage, long trailing tail feathers streaming behind, never touching ground, on a sculpted cloud-wisp base"}
+    ]},
+  tibetanfig:{emoji:"🪷", label:"Tibetan Buddhist", promptName:"Tibetan Buddhist sacred figurine", cat:"spiritual",
+    fn:"It is a single solid Tibetan Buddhist sacred figurine — one sculpted collectible statue-style piece in the ornate style of Himalayan bronze temple sculpture, silk scarves and ritual implements sculpted thick and fused to the body, on an integrated carved double-lotus throne display base. Just the one figure alone — no monastery architecture or mountain scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Tibetan Buddhist sacred figure, serene or wrathful"},
+      {label:"Green Tara",prompt:"the goddess Green Tara with luminous green skin seated in royal ease, right leg extended to step into action, right hand in a granting gesture over the knee, left hand holding a blue lotus at the heart, five-pointed jeweled crown, silk scarves"},
+      {label:"Mahakala",prompt:"the wrathful protector Mahakala with dark blue-black skin and six arms each holding a ritual implement fused close, crown of five skulls, garland of severed heads, fanged snarl, stocky body trampling a figure, surrounded by sculpted flames"},
+      {label:"Snow Lion",prompt:"the celestial Snow Lion bounding joyfully, white fur body with a magnificent flowing turquoise blue mane cascading around head and shoulders, turquoise tufts at elbows and ankles, cheerful wide-eyed face, muscular athletic build"},
+      {label:"Wind Horse",prompt:"the sacred Wind Horse galloping at full speed through sculpted swirling clouds, strong white horse carrying three flaming jewels on its back, mane and tail streaming behind in the wind, all hooves off the ground"}
+    ]},
+  koreanfig:{emoji:"🐅", label:"Korean guardian", promptName:"Korean mythical guardian figurine", cat:"spiritual",
+    fn:"It is a single solid Korean mythical guardian figurine — one sculpted collectible statue-style piece in the style of Joseon dynasty palace stone carvings, with scales and ceremonial details sculpted as precise relief, on an integrated carved granite display base. Just the one guardian alone — no palace gates or landscape scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Korean mythical guardian, vigilant and powerful"},
+      {label:"Haetae",prompt:"the fire-eating guardian Haetae seated upright in an alert crouch, stocky muscular lion-like body covered in tight overlapping scales, single short horn on the broad forehead, bell hanging from the neck, curly mane, mouth wide open showing blunt teeth"},
+      {label:"Dokkaebi",prompt:"the goblin trickster Dokkaebi standing with feet planted apart, squat humanoid with one or two small horns on a wild-haired head, broad mischievous grin with small fangs, bulging round eyes, holding a spiked magical club in one fist"},
+      {label:"Cheollima",prompt:"the winged horse Cheollima leaping mid-gallop, powerful muscular steed with large feathered wings spread upward and back, flowing mane and tail streaming behind, all hooves off the ground, noble heroic bearing"},
+      {label:"Jangseung",prompt:"a carved totem pole guardian Jangseung, a rough-hewn wooden pole with a deeply carved human face at the top, bulging asymmetric eyes and protruding snaggle-teeth, wearing a carved wide-brimmed hat, hanja inscription down the front"}
+    ]},
+  nativefig:{emoji:"🦅", label:"Native guardian", promptName:"Native American guardian spirit figurine", cat:"spiritual",
+    fn:"It is a single solid Native American guardian spirit figurine — one sculpted collectible statue-style piece in the bold geometric style of Pacific Northwest formline art or Southwestern carved traditions, with bold outlines and traditional patterns as carved relief, on an integrated carved cedar or sandstone display base. Just the one spirit alone — no totem poles, landscape or buildings.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Native American guardian spirit, bold and sacred"},
+      {label:"Thunderbird",prompt:"the supernatural Thunderbird with wings fully outstretched, massive eagle-like bird with two prominent curved horns on the head, bold formline patterns on wings and body in black red and teal, large curved hooked beak, powerful gripping talons"},
+      {label:"Kokopelli",prompt:"the flute player Kokopelli in a dancing pose, humpbacked figure with one leg lifted high, leaning backward, playing a long flute held to the mouth, antenna-like crest projecting from the head, warm Southwestern terracotta and turquoise tones"},
+      {label:"Raven",prompt:"the trickster Raven perched with wings partially spread, bold black body with red and teal formline ovoid and U-shape patterns, long thick straight beak holding a round glowing ball of stolen light, intelligent alert eyes"},
+      {label:"Kachina",prompt:"a Hopi Sun Kachina standing in a ceremonial dance posture, large circular sun-ray headdress of radiating carved feathers around the face, lower face painted blue upper face split orange and yellow, holding a gourd rattle, white dance kilt"}
+    ]},
+  inuitfig:{emoji:"❄️", label:"Arctic spirit", promptName:"Arctic spirit being figurine", cat:"spiritual",
+    fn:"It is a single solid Arctic spirit being figurine — one sculpted collectible statue-style piece in the smooth rounded style of Inuit soapstone and bone carving, with fine surface details carved as relief, on an integrated carved ice-shelf or tundra display base. Just the one being alone — no igloo, kayak or landscape scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Arctic spirit being, ancient and primal"},
+      {label:"Sedna",prompt:"the sea goddess Sedna seated on a rocky ocean-floor base, a woman with long tangled dark hair flowing like kelp, fingerless hand stumps from which small seals and whales emerge, traditional Inuit facial tattoos, solemn powerful expression"},
+      {label:"Tupilaq",prompt:"a vengeful spirit construct Tupilaq, a small grotesque chimeric figure combining walrus tusks, seal flippers, human skull elements and fish parts, grimacing face with bared teeth and protruding tongue, compact dense and unsettling, carved-bone texture"},
+      {label:"Amarok",prompt:"the great spirit wolf Amarok standing alert on a snowy ridge, an enormous solitary wolf far larger than any normal wolf, thick shaggy dark charcoal fur, massive powerful build with heavy muscled shoulders, piercing glowing amber eyes"},
+      {label:"Akhlut",prompt:"the shapeshifter Akhlut in mid-transformation, front half a massive snarling wolf with pointed ears heavy brow and fangs, rear half a sleek orca with a prominent dorsal fin and tail fluke, glossy black and white counter-shading, glowing pale eyes"}
+    ]},
+  vodoufig:{emoji:"🕯️", label:"Caribbean spirit", promptName:"Caribbean Vodou loa figurine", cat:"spiritual",
+    fn:"It is a single solid Caribbean Vodou loa figurine — one sculpted collectible statue-style piece in a vivid folk-art style, ceremonial garments and ritual implements sculpted thick and fused to the body, on an integrated carved crossroads or cemetery-gate display base. Just the one loa alone — no graveyard scenery or ritual altar.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Vodou loa, vivid and otherworldly"},
+      {label:"Baron Samedi",prompt:"the death loa Baron Samedi standing tall in a black tailcoat and top hat, white skull-face paint on dark skin, dark glasses with one lens missing, holding a cigar in one hand and a rum bottle in the other, wide manic grin, walking cane"},
+      {label:"Erzulie Freda",prompt:"the love loa Erzulie Freda standing in flowing pink and gold silks dripping with jewelry, rings on every finger, layered gold necklaces, holding a golden mirror, tears streaking down her beautiful face, sculpted roses at the base"},
+      {label:"Papa Legba",prompt:"the crossroads opener Papa Legba as an elderly man in a straw hat and worn humble clothes, leaning on a walking stick, smoking a pipe, a small dog sitting loyally at his feet, bright knowing eyes despite his aged weathered appearance"},
+      {label:"Maman Brigitte",prompt:"the cemetery guardian Maman Brigitte standing fierce with wild hair, wearing dark clothing with flashes of purple, pale sharp features, adorned with sculpted crosses, holding a bottle, small carved gravestones on the base"}
+    ]},
+  seasianfig:{emoji:"🐘", label:"Southeast Asian", promptName:"Southeast Asian temple guardian figurine", cat:"spiritual",
+    fn:"It is a single solid Southeast Asian temple guardian figurine — one sculpted collectible statue-style piece in the ornate style of Khmer and Thai temple sculpture, tiered crowns and flowing garments sculpted thick and fused to the body, on an integrated carved naga-balustrade stone display base. Just the one guardian alone — no temple spires, ruins or jungle scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Southeast Asian temple guardian, ornate and majestic"},
+      {label:"Naga",prompt:"a multi-headed serpent guardian Naga with seven cobra hoods fanning out symmetrically as a protective canopy, iridescent green and gold scales, each hood wearing a small pointed crown, long sinuous body coiled in concentric rings on the base"},
+      {label:"Yaksha",prompt:"a giant temple guardian Yaksha standing in a wide warrior stance, towering muscular figure with brightly colored skin, wearing an elaborate pointed tiered crown and ornate gilt armor, fierce bulging eyes and fanged grimace, wielding a thick mace"},
+      {label:"Apsara",prompt:"a celestial dancer Apsara in a stylized Khmer dance pose, graceful woman in an ornate tiered crown and layered gold jewelry, bare shoulders, wearing a sampot wrap with decorative belt, hands in distinctive bent-backward-finger mudra positions"},
+      {label:"Kinnari",prompt:"a half-woman half-bird Kinnari standing gracefully, upper body of a beautiful crowned woman with ornate jewelry, lower body and legs of a bird with feathered wings partly spread and a sweeping decorative tail, gold and green coloring"},
+      {label:"Thai Garuda",prompt:"the royal bird-man Garuda standing powerfully, muscular red humanoid torso with a fierce eagle head and sharp golden beak, large folded wings fused to the back, taloned bird feet, wearing an elaborate Thai pointed crown and gilt regalia"}
+    ]},
+  shipibofig:{emoji:"🌀", label:"Shipibo-Conibo", promptName:"Shipibo-Conibo spirit figurine", cat:"spiritual",
+    fn:"It is a single solid Shipibo-Conibo spirit figurine — one sculpted collectible statue-style piece in the style of Amazonian indigenous art, the entire surface covered in dense interlocking kené geometric line patterns carved as relief, on an integrated carved jungle-floor display base. Just the one spirit alone — no jungle landscape, river or village scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind Shipibo-Conibo spirit, visionary and ancient"},
+      {label:"Ronin (Cosmic Serpent)",prompt:"the cosmic anaconda Ronin coiled in a spiral, a massive serpent whose entire body is covered in dense interlocking kené geometric line patterns, diamond-shaped head with knowing eyes, iridescent rainbow sheen on dark scales, the primordial world-creator"},
+      {label:"Yoshin (Forest Spirit)",prompt:"a forest spirit Yoshin standing among sculpted roots, a humanoid figure whose body dissolves into geometric kené patterns, face half-human half-plant with leaf-like features, arms branching into vines, dense interlocking line patterns covering every surface"},
+      {label:"Ani Shëati (Jaguar Spirit)",prompt:"the jaguar shaman spirit Ani Shëati crouching in a powerful stance, a muscular jaguar whose entire pelt is covered in kené geometric patterns instead of natural spots, glowing eyes, shamanic headdress of feathers, rosette markings transformed into sacred geometry"},
+      {label:"Nishi Ibo (Plant Teacher)",prompt:"the ayahuasca vine spirit Nishi Ibo as a standing humanoid figure woven entirely from twisted vines and leaves, the body surface covered in flowing kené line patterns, a crown of chacruna leaves, serene wise face emerging from the foliage, luminous geometric aura"},
+      {label:"Inka (Sun King)",prompt:"the ancient Inka sun ruler standing regally, a noble figure in elaborate woven robes covered in dense kené geometric patterns, wearing a radiating feathered solar crown, holding a staff topped with a sun disk, face painted with traditional Shipibo line designs"}
+    ]},
+  dmtfig:{emoji:"👁️", label:"DMT realm", promptName:"DMT realm entity figurine", cat:"spiritual",
+    fn:"It is a single solid DMT realm entity figurine — one sculpted collectible piece depicting an otherworldly hyperspace being, the entire body covered in impossible fractal geometry, sacred patterns, and kaleidoscopic tessellations carved as relief. Luminous alien intelligence radiating from stylized eyes. On an integrated geometric crystalline display base. Just the one entity alone — no landscape or dimensional scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind hyperspace entity, fractal and transcendent"},
+      {label:"Machine elf",prompt:"a self-transforming machine elf — a compact jeweled humanoid whose body is made entirely of interlocking geometric facets and crystalline modules that fold and tesselate, impish grinning face with kaleidoscope eyes, hands presenting a glowing geometric object"},
+      {label:"Jester entity",prompt:"a cosmic jester entity — a trickster figure in a fractal harlequin suit of tessellated diamond patterns, elongated grinning face with spiral eyes, wearing a multi-pointed cap that branches into fractal antennae, playful dynamic pose"},
+      {label:"Mantis being",prompt:"a praying mantis being — a tall insectoid entity with an elongated triangular head covered in geometric facets, large multifaceted compound eyes, thin segmented arms folded in a contemplative pose, thorax covered in sacred geometric relief patterns"},
+      {label:"Serpent intelligence",prompt:"a feathered serpent intelligence — a coiled serpentine entity covered in fractal feather-scale patterns, multiple eyes running along the body, a crowned head with radiating geometric plumes, the coils forming a perfect spiral on the base"},
+      {label:"Chrysanthemum goddess",prompt:"a chrysanthemum goddess — a feminine entity whose body blooms outward in layers of fractal petal-like geometric panels, a serene face at the center surrounded by radiating mandala rings, arms gracefully extended with geometric energy flowing from the fingertips"}
+    ]},
+  alienfig:{emoji:"👽", label:"Alien", promptName:"alien being figurine", cat:"spiritual",
+    fn:"It is a single solid alien being figurine — one sculpted collectible piece depicting an extraterrestrial creature, with otherworldly anatomy and non-human features. Smooth elongated or bulbous head, large dark eyes, unusual skin texture. On an integrated sci-fi display base with subtle tech or organic alien details. Just the one alien alone — no spacecraft, planet surface, or space scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind alien being, strange and otherworldly"},
+      {label:"Grey visitor",prompt:"a classic grey alien — a slender figure with an oversized smooth bulbous cranium, huge dark almond-shaped eyes, tiny nose and mouth slit, long thin fingers, standing in a calm observing pose on the base"},
+      {label:"Bio-mech alien",prompt:"a biomechanical alien — a tall creature whose body fuses organic flesh with chitinous exoskeletal armor plates, elongated ridged skull, inner jaw visible, segmented tail coiled around the base, HR Giger inspired bio-organic textures"},
+      {label:"Celestial being",prompt:"a luminous celestial alien — a tall ethereal humanoid with translucent crystalline skin, elongated skull with a glowing cranial ridge, six-fingered hands held in a peaceful gesture, robes that flow into geometric light patterns on the base"},
+      {label:"Insectoid",prompt:"an insectoid alien — a mantis-like creature standing upright with compound eyes, segmented chitinous body armor, four folded arms with delicate clawed hands, vestigial wing casings on the back, antennae swept back elegantly"},
+      {label:"Tentacled elder",prompt:"a tentacled elder alien — a massive-brained cephalopod entity with a bulging veined cranium, deep-set wise eyes, a ring of facial tentacles draped over a robed body, gnarled staff in one hand, ancient and knowing presence"}
+    ]},
+  chonkfig:{emoji:"🐷", label:"Chonky animal", promptName:"comically round animal figurine", cat:"figurines",
+    fn:"It is a single solid comically round animal figurine — one sculpted collectible piece of an adorably overweight animal, its body one plump ball-like mass with tiny limbs, ears and tail fused close, resting stably on an integrated round base. Just the one chonky creature alone — clearly a sculpted collectible, never a real animal.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind spherically fat animal"},
+      {label:"Fat cat",prompt:"an enormously round cat loafing with all paws tucked under its ball body, tiny grumpy face"},
+      {label:"Round pig",prompt:"a nearly spherical pig on stubby trotters, ears flopped forward"},
+      {label:"Chubby seal",prompt:"a plump seal slumped like a water balloon, flippers pressed to its sides"},
+      {label:"Plump penguin",prompt:"a pear-shaped penguin standing with wings pressed to its round body"},
+      {label:"Round frog",prompt:"a spherical frog sitting flat, throat puffed, tiny hands resting in front"},
+      {label:"Fat hamster",prompt:"a stuffed-cheeked hamster sitting upright, paws on its round belly"},
+      {label:"Thicc corgi",prompt:"a loaf-shaped corgi lying with stubby legs vanished beneath its body"}
+    ]},
+  deathmachinefig:{emoji:"🦾", label:"Death machine", promptName:"dark war machine figurine", cat:"figurines",
+    fn:"It is a single solid dark war-machine figurine — one sculpted collectible piece of an ominous skull-motif engine of war, every plate, spike, cannon and leg thick and fully fused into one continuous mass in one material, planted heavy and grounded on an integrated scorched-metal display base. Just the one machine alone — clearly a sculpted collectible, no battlefield, fire, smoke or victims.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind ominous war machine, heavy and grounded"},
+      {label:"Skull mech",prompt:"a hulking mech whose cockpit is a sculpted skull face, massive shoulders and fused cannon arms hanging heavy"},
+      {label:"Spider tank",prompt:"a low spider-tank on six thick armored legs planted wide, a domed turret fused on top"},
+      {label:"Reaper engine",prompt:"a hooded reaper-shaped machine, its cloak sculpted as armor plating sweeping into the base, a thick scythe-arm folded against its side"},
+      {label:"Doom walker",prompt:"a top-heavy bipedal walker bristling with sculpted spikes and fused gun clusters"},
+      {label:"Necro colossus",prompt:"a hunched skeletal colossus machine, ribcage-like armor struts and a bowed skull head"},
+      {label:"War altar",prompt:"a tracked machine carrying a sculpted altar of skulls and banners, everything fused into one grim mass"}
+    ]},
+  mechafig:{emoji:"🦿", label:"Mecha", promptName:"heroic battle mecha figurine", cat:"figurines",
+    fn:"It is a single solid heroic battle-mecha figurine — one sculpted collectible piece with crisp layered armor panels, vents and joints all sculpted as relief in one fused material, never separate parts, standing in a confident grounded stance on an integrated hangar-deck display base. Any blade or rifle is held tight against the body. Just the one mecha alone.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind heroic mecha, planted and poised"},
+      {label:"Blade frame",prompt:"a sleek duelist mecha at ready, a thick beam-saber hilt held low against its hip"},
+      {label:"Gunner frame",prompt:"a mid-weight mecha holding a blocky rifle diagonally across its chest with both hands"},
+      {label:"Heavy bruiser",prompt:"a broad heavy mecha with massive shoulder armor, fists clenched at its sides"},
+      {label:"Scout frame",prompt:"a slim scout mecha crouched on one knee, sensor head sweeping"},
+      {label:"Winged frame",prompt:"a mecha with thick folded flight-wing binders fused against its back"},
+      {label:"Ace custom",prompt:"a commander mecha with a sculpted horn crest and half-cape of armor plating fused over one shoulder"}
+    ]},
+  horrorfig:{emoji:"🧟", label:"Horror icon", promptName:"classic horror figurine", cat:"figurines",
+    fn:"It is a single solid classic-horror figurine — one sculpted collectible piece of a beloved monster archetype in a compact grounded pose, tattered clothing and props sculpted thick and fused to the body, on an integrated graveyard-soil display base. Just the one monster alone — spooky but collectible, no gore, no scenery beyond its own base.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind classic monster"},
+      {label:"Zombie",prompt:"a shambling zombie mid-lurch, arms out but bent close, tattered clothes fused to the body"},
+      {label:"Mummy",prompt:"a mummy wrapped in thick sculpted bandages, one arm reaching forward against its chest"},
+      {label:"Vampire",prompt:"an elegant vampire in a high-collared cape held closed, the cape sweeping into the base"},
+      {label:"Werewolf",prompt:"a hunched werewolf howling upward, claws against its chest, fur sculpted in thick locks"},
+      {label:"Grim reaper",prompt:"a hooded reaper, robes pooling into the base, a thick-hafted scythe held vertically against its shoulder"},
+      {label:"Plague doctor",prompt:"a beaked plague doctor in a long coat, gloved hands folded over a cane planted on the base"},
+      {label:"Scarecrow",prompt:"a sagging scarecrow slumped on its sculpted cross-frame fused into the base"}
+    ]},
+  mermaidfig:{emoji:"🧜‍♀️", label:"Mermaid", promptName:"mermaid figurine", cat:"figurines",
+    fn:"It is a single solid mermaid figurine — one sculpted collectible piece, clearly a sculpted figurine and never a real person, its thick tail curled around or fused onto an integrated rock display base, hair swept into thick sculpted masses fused to the shoulders. Just the one figure alone — no ocean, waves, water or seabed scenery beyond its own base.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind mer-figure, grounded on its rock"},
+      {label:"Rock percher",prompt:"a mermaid seated on a sculpted rock, tail wrapping around it, combing her thick sculpted hair"},
+      {label:"Wave rider",prompt:"a mermaid arcing from a thick sculpted wave that forms the fused base"},
+      {label:"Deep-sea siren",prompt:"an anglerfish mermaid with a lure arcing from her brow on a thick fused stalk, fins ragged and sculpted"},
+      {label:"Coral queen",prompt:"a regal mermaid with a thick coral crown fused to her head, trident held against her side"},
+      {label:"Merman warrior",prompt:"a broad merman warrior coiled upright on his tail, conch horn held against his chest"},
+      {label:"Sleepy mer",prompt:"a small chubby mermaid curled asleep on her rock, tail tucked around herself"}
+    ]},
+  tikifig:{emoji:"🪵", label:"Tiki totem", promptName:"carved tiki totem figurine", cat:"figurines",
+    fn:"It is a single solid carved tiki-totem figurine — one sculpted decor piece with bold deep-carved geometric faces and patterns, a stable flat bottom, everything one continuous carved column. Just the one totem alone — no bar, torches, palm trees or scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind carved totem column"},
+      {label:"Classic tiki",prompt:"a classic single tiki head-and-body column with a huge grimacing carved face"},
+      {label:"Stacked totem",prompt:"a totem pole of three stacked carved faces, each with a different expression"},
+      {label:"Twin face",prompt:"a two-faced totem, one face grinning and one scowling, back to back"},
+      {label:"Owl totem",prompt:"a totem carved as a stylized owl with folded geometric wings"},
+      {label:"Volcano god",prompt:"a squat volcano-god tiki with a crater-shaped crown and lava grooves carved down its sides"},
+      {label:"Guardian pair",prompt:"a single column carved as a tall guardian holding a small companion figure against its chest, all one piece"}
+    ]},
+  holidayfig:{emoji:"🎄", label:"Holiday", promptName:"holiday figurine", cat:"figurines",
+    fn:"It is a single solid holiday figurine — one sculpted collectible seasonal piece in a compact grounded pose, hats, scarves and props sculpted thick and fused to the body, on an integrated snowy or festive display base. Just the one figure alone — no tree, fireplace, presents pile or room scenery.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind festive figure"},
+      {label:"Santa",prompt:"a jolly santa with a thick sculpted beard, sack slung against his back in one fused mass"},
+      {label:"Snowman",prompt:"a classic three-ball snowman with a carrot nose, stick arms sculpted thick and fused"},
+      {label:"Reindeer",prompt:"a sitting reindeer with thick rounded antlers fused to its head, scarf sculpted around its neck"},
+      {label:"Elf",prompt:"a cheerful elf hugging an oversized wrapped gift fused to its chest"},
+      {label:"Gingerbread",prompt:"a gingerbread person with icing piping sculpted as relief, standing on a cookie base"},
+      {label:"Nutcracker",prompt:"a classic upright nutcracker soldier with a tall hat, staff held tight against his side"},
+      {label:"Pumpkin king",prompt:"a dapper figure with a carved jack-o-lantern head, long coat sweeping into the base"},
+      {label:"Spooky ghost",prompt:"a cute billowing ghost, its sheet hem sweeping down and fusing into the base"}
+    ]},
+  superfig:{emoji:"🦸", label:"Superhero", promptName:"armored champion figurine", cat:"figurines",
+    fn:"It is a single solid armored champion figurine — one sculpted collectible piece, clearly a sculpted figurine and never a real person. It is an entirely original armored warrior wearing layered sci-fi plate armor with sculpted panel lines and rivets across the chest and shoulders — absolutely no logo, no letter, no symbol, no shield, no insignia anywhere. Bare head with short hair — no mask, no cowl, no helmet. Strong jaw, a heavy cloak or half-cape sculpted as one thick mass fused to one shoulder and sweeping down to the integrated display base. This is a unique original armored champion — not a comic-book character, not spandex, always plate armor. Just the one warrior alone — no city skyline or scenery beyond its own base.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind original armored champion with sculpted plate armor and a heavy cloak, bold and upright"},
+      {label:"Caped sentinel",prompt:"an original armored champion standing tall in layered plate armor, fists on hips, heavy cloak sweeping behind into the base"},
+      {label:"Kneeling triumph",prompt:"an original armored champion kneeling on one knee in sculpted plate armor with bare head, one arm raised in a triumphant fist, cloak pooling dramatically around the planted knee onto the base"},
+      {label:"Brick brute",prompt:"a massive stone-skinned armored strongman in cracked plate armor, shoulders hunched, knuckles resting on the base"},
+      {label:"Speedster",prompt:"a lean armored scout in sleek fitted plate armor leaning into a sprinter's start, sculpted swoosh lines fused along the legs into the base"},
+      {label:"Vigilante",prompt:"a brooding hooded warrior in dark plate armor crouched on a sculpted rooftop ledge fused to the base, cloak wrapped around the body"},
+      {label:"Flying pose",prompt:"an armored champion soaring horizontally with both arms stretched forward in plate armor, the cloak billowing behind and sweeping down as one thick sculpted column that anchors the airborne figure to the base below"}
+    ]},
+  steamfig:{emoji:"🎩", label:"Steampunk", promptName:"steampunk adventurer figurine", cat:"figurines",
+    fn:"It is a single solid steampunk adventurer figurine — one sculpted collectible piece, clearly a sculpted figurine. Goggles, gears, gauges and brass fittings are all sculpted as fused relief in one material — never separate parts — with any tool or cane held tight against the body, in a grounded stance on an integrated riveted-plate display base. Just the one figure alone.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind brass-and-gears adventurer"},
+      {label:"Sky captain",prompt:"an airship captain in a long coat, one boot on a sculpted crate fused to the base, spyglass held against the chest"},
+      {label:"Inventor",prompt:"a wild-haired inventor hugging an oversized wrench, tool harness sculpted as relief"},
+      {label:"Gear knight",prompt:"a knight in riveted brass plate armor, gears carved as relief across the cuirass, sword point resting on the base"},
+      {label:"Clockwork lady",prompt:"an elegant figure in a bustled gown of sculpted layered plates, a parasol furled and held against the shoulder"},
+      {label:"Automaton butler",prompt:"a prim brass automaton butler holding a fused tray against its chest, bow tie sculpted as relief"},
+      {label:"Aeronaut",prompt:"a goggled aeronaut with a thick sculpted propeller-pack fused flat to the back"}
+    ]},
+  birdfig:{emoji:"🐦", label:"Bird", promptName:"bird figurine", cat:"figurines",
+    fn:"It is a single solid bird figurine — one sculpted collectible piece with deliberately thickened stylized legs fused into an integrated perch or base, wings folded against the body, tail feathers sculpted as one thick mass. Just the one bird alone — clearly a sculpted collectible, never a live bird, with no tree, sky or scenery beyond its own perch.",
+    shapes:[
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind stylized bird, perched and composed"},
+      {label:"Raven",prompt:"a raven perched on a sculpted skull fused to the base, head cocked"},
+      {label:"Peacock",prompt:"a peacock with its folded train sweeping behind as one thick carved mass of eye-feather relief"},
+      {label:"Crane",prompt:"a crane standing on thick stylized legs fused into a sculpted reed cluster base, neck in an elegant S"},
+      {label:"Cardinal",prompt:"a plump cardinal perched on a thick sculpted branch stub fused to the base"},
+      {label:"Hummingbird",prompt:"a hummingbird resting on a thick sculpted flower fused to the base, wings folded"},
+      {label:"Rooster",prompt:"a proud rooster with a thick sculpted tail cascade, chest out"},
+      {label:"Owl",prompt:"a horned owl perched upright, wings folded tight, staring straight ahead"}
     ]}
 };
+// Category of an object key. Original objects predate categories and carry no `cat` field,
+// so they default to homegoods — only new categories tag their entries explicitly.
+const catOf = k => (OBJECTS[k] && OBJECTS[k].cat) || "homegoods";
 
 const STYLES = {
   sacred:  {emoji:"🔯", label:"Sacred", variants:[
@@ -1250,7 +1937,130 @@ const SD_OBJ = {
   makeupbrush:     {noun:"tall cylindrical cup", bits:"(a single unified open-top cup, one continuous vessel not two separate pieces:1.4), empty, straight walls, flat base",
                 neg:"(brushes:1.5), (makeup:1.4), (cosmetics:1.3), (two cups:1.3), (second vessel:1.3), (pair of cups:1.3)"},
   toothbrush:      {noun:"small cylindrical cup", bits:"(empty:1.3) open-top cup, flat base",
-                neg:"(toothbrush:1.5), (toothpaste:1.4), (bathroom:1.3)"}
+                neg:"(toothbrush:1.5), (toothpaste:1.4), (bathroom:1.3)"},
+  /* ---- figurines ---- */
+  dragonfig:   {noun:"dragon figurine", bits:"(a single solid sculpted dragon collectible figurine on an integrated round display base, wings folded thick against the body:1.4)",
+                neg:"(real lizard:1.3), (multiple dragons:1.4), (spread wings:1.3), (fire:1.4), (smoke:1.4), (diorama:1.4), (rocks:1.3), (treasure:1.3), (landscape:1.3)"},
+  dinofig:     {noun:"dinosaur figurine", bits:"(a single solid sculpted dinosaur collectible figurine on an integrated round display base, thick fused limbs and tail:1.4)",
+                neg:"(real animal:1.3), (multiple dinosaurs:1.4), (jungle:1.3), (plants:1.3), (volcano:1.3), (diorama:1.4), (landscape:1.3)"},
+  animalfig:   {noun:"stylized animal figurine", bits:"(a single solid sculpted stylized animal collectible figurine in a compact sitting pose on an integrated round display base:1.4)",
+                neg:"(real animal:1.4), (fur texture:1.3), (photograph of a live animal:1.4), (multiple animals:1.4), (grass:1.3), (diorama:1.4), (landscape:1.3)"},
+  mythicfig:   {noun:"mythical creature figurine", bits:"(a single solid sculpted mythical creature collectible figurine in a compact grounded pose on an integrated round display base:1.4)",
+                neg:"(multiple creatures:1.4), (spread wings:1.3), (clouds:1.3), (waves:1.3), (fire:1.3), (diorama:1.4), (landscape:1.3)"},
+  robotfig:    {noun:"robot figurine", bits:"(a single solid sculpted robot collectible figurine, every panel line and rivet carved relief in one material, on an integrated round display base:1.4)",
+                neg:"(real machine:1.3), (wires:1.4), (cables:1.3), (screen:1.3), (glass:1.3), (multiple robots:1.4), (diorama:1.4)"},
+  characterfig:{noun:"stylized character figurine", bits:"(a single solid sculpted stylized full-body character collectible figurine in a compact standing pose on an integrated round display base:1.4)",
+                neg:"(lifelike person:1.5), (realistic human skin:1.4), (photograph of a person:1.5), (portrait photo:1.4), (multiple figures:1.4), (diorama:1.4)"},
+  skullfig:    {noun:"decorative skull sculpture", bits:"(a single solid sculpted decorative skull with shallow recessed eye sockets, sitting flat on the surface:1.4)",
+                neg:"(real bone:1.3), (skeleton:1.4), (bones:1.3), (candles:1.4), (blood:1.4), (multiple skulls:1.4), (diorama:1.3)"},
+  bustfig:     {noun:"head-and-shoulders bust sculpture", bits:"(a single solid sculpted head-and-shoulders bust on an integrated plinth, clearly a carved sculpture:1.4)",
+                neg:"(lifelike person:1.5), (realistic human skin:1.4), (photograph of a person:1.5), (portrait photo:1.4), (full body:1.3), (multiple busts:1.3)"},
+  chessfig:    {noun:"oversized decorative chess piece", bits:"(a single solid oversized sculptural chess piece on a wide round base:1.4)",
+                neg:"(chessboard:1.5), (checkerboard:1.4), (multiple pieces:1.5), (chess set:1.4), (playing pieces:1.3)"},
+  gargoylefig: {noun:"gargoyle figurine", bits:"(a single solid sculpted crouched gargoyle collectible figurine with folded wings, fused to an integrated stone-slab base:1.4)",
+                neg:"(cathedral:1.4), (building:1.4), (ledge:1.3), (architecture:1.3), (multiple gargoyles:1.4), (spread wings:1.3), (diorama:1.3)"},
+  chibimonfig: {noun:"chibi creature figurine", bits:"(a single solid sculpted chibi monster-companion collectible figurine with an oversized head and big sculpted eyes, on an integrated round display base:1.4)",
+                neg:"(real animal:1.3), (multiple creatures:1.4), (anime screenshot:1.4), (cartoon drawing:1.4), (flat illustration:1.4), (2d art:1.3), (diorama:1.4), (grass:1.3), (landscape:1.3)"},
+  warminifig:  {noun:"grimdark wargame miniature", bits:"(a single solid sculpted heroic-scale wargame miniature with bulky exaggerated armor and oversized shoulder guards, on an integrated round scenic base:1.4)",
+                neg:"(battlefield:1.4), (diorama:1.4), (multiple figures:1.4), (army:1.4), (squad:1.3), (blood:1.4), (gore:1.4), (game box:1.3), (tabletop game:1.3), (lifelike person:1.4)"},
+  darkfantasyfig:{noun:"dark fantasy warrior figurine", bits:"(a single solid sculpted dark-fantasy warrior collectible figurine in ornate weathered gothic armor, on an integrated rocky display base:1.4)",
+                neg:"(lifelike person:1.4), (realistic human skin:1.3), (multiple figures:1.4), (castle:1.4), (ruins:1.4), (fog:1.3), (moon:1.3), (landscape:1.4), (diorama:1.4), (blood:1.4), (gore:1.4)"},
+  seafig:      {noun:"sea creature figurine", bits:"(a single solid sculpted sea-creature collectible figurine with thick fused tentacles and fins, on an integrated display base:1.4)",
+                neg:"(real animal:1.3), (water:1.4), (ocean:1.4), (waves:1.3), (bubbles:1.3), (aquarium:1.3), (seabed:1.3), (multiple creatures:1.4), (diorama:1.4)"},
+  kaijufig:    {noun:"giant monster kaiju figurine", bits:"(a single solid sculpted kaiju giant-monster collectible figurine in a heavy grounded stance, on an integrated display base:1.4)",
+                neg:"(city:1.5), (buildings:1.5), (skyscrapers:1.4), (rubble:1.3), (explosions:1.4), (smoke:1.3), (multiple monsters:1.4), (diorama:1.4), (landscape:1.3)"},
+  insectfig:   {noun:"stylized insect figurine", bits:"(a single solid sculpted stylized insect collectible figurine with chunky thickened legs, on an integrated display base:1.4)",
+                neg:"(real insect:1.4), (thin legs:1.3), (spindly legs:1.3), (leaves:1.3), (flowers:1.3), (grass:1.3), (multiple insects:1.4), (swarm:1.3), (diorama:1.3)"},
+  cryptidfig:  {noun:"cryptid creature figurine", bits:"(a single solid sculpted folklore cryptid collectible figurine in a compact grounded pose, on an integrated display base:1.4)",
+                neg:"(forest:1.4), (trees:1.3), (lake:1.3), (night sky:1.3), (fog:1.3), (photograph of an animal:1.3), (multiple creatures:1.4), (diorama:1.4)"},
+  vinylfig:    {noun:"designer vinyl mascot figurine", bits:"(a single solid sculpted designer art-toy mascot with smooth rounded minimal forms and an oversized head, on an integrated round base:1.4)",
+                neg:"(fur texture:1.3), (real animal:1.3), (complex details:1.2), (multiple toys:1.4), (packaging:1.3), (box:1.3), (diorama:1.3)"},
+  kawaiifoodfig:{noun:"kawaii food character figurine", bits:"(a single solid sculpted kawaii food character with a happy relief face and stubby limbs, on an integrated round base:1.4)",
+                neg:"(real food:1.5), (edible:1.3), (plate:1.4), (table:1.3), (kitchen:1.3), (appetizing photography:1.3), (multiple characters:1.4)"},
+  blobfig:     {noun:"blob creature figurine", bits:"(a single solid sculpted plump blob creature with a simple expressive relief face, on an integrated round base:1.4)",
+                neg:"(liquid:1.3), (slime trail:1.3), (transparent:1.4), (glass:1.3), (multiple blobs:1.4), (puddle:1.3)"},
+  nestingfig:  {noun:"matryoshka-shaped figure", bits:"(a single solid matryoshka-silhouette figure, domed head flowing into a rounded body, costume carved entirely as relief, flat bottom:1.4)",
+                neg:"(open doll:1.4), (two halves:1.4), (seam gap:1.3), (nested set:1.5), (multiple dolls:1.5), (row of dolls:1.4)"},
+  animefig:    {noun:"stylized anime-style hero figurine", bits:"(a single solid sculpted anime-style scale-figure collectible in a dynamic grounded pose, hair swept into thick sculpted masses, on an integrated round base:1.4)",
+                neg:"(lifelike person:1.4), (realistic human skin:1.4), (anime screenshot:1.4), (2d illustration:1.4), (flat drawing:1.3), (multiple figures:1.4), (speed lines:1.3)"},
+  cyberfig:    {noun:"cyberpunk character figurine", bits:"(a single solid sculpted cyberpunk character collectible figurine, implants and cables sculpted as fused relief, on an integrated round base:1.4)",
+                neg:"(lifelike person:1.4), (city:1.4), (neon signs:1.4), (rain:1.3), (street:1.3), (glowing lights:1.3), (multiple figures:1.4), (screen:1.3)"},
+  piratefig:   {noun:"pirate figurine", bits:"(a single solid sculpted pirate collectible figurine in a grounded swaggering stance, on an integrated deck-plank base:1.4)",
+                neg:"(lifelike person:1.4), (ship:1.4), (sea:1.4), (ocean:1.3), (treasure pile:1.3), (map:1.3), (multiple figures:1.4), (diorama:1.4)"},
+  wastelandfig:{noun:"post-apocalyptic wanderer figurine", bits:"(a single solid sculpted post-apocalyptic survivor collectible figurine with layered gear fused as relief, on an integrated cracked-earth base:1.4)",
+                neg:"(lifelike person:1.4), (ruins:1.4), (wasteland:1.4), (desert:1.3), (vehicles:1.3), (explosion:1.3), (multiple figures:1.4), (diorama:1.4), (blood:1.3), (gore:1.3)"},
+  deityfig:    {noun:"mythological deity figurine", bits:"(a single solid sculpted mythological deity statue-style collectible figurine in a majestic grounded pose, on an integrated temple-stone base:1.4)",
+                neg:"(temple:1.4), (columns:1.3), (clouds:1.4), (sky:1.3), (worshippers:1.3), (lifelike person:1.4), (multiple figures:1.4), (architecture:1.3)"},
+  yokaifig:    {noun:"folklore spirit figurine", bits:"(a single solid sculpted folklore spirit collectible figurine in a compact grounded pose, on an integrated shrine-stone base:1.4)",
+                neg:"(shrine building:1.4), (torii gate:1.4), (forest:1.3), (lanterns:1.3), (mist:1.3), (multiple spirits:1.4), (diorama:1.4)"},
+  fairyfig:    {noun:"fairy figurine", bits:"(a single solid sculpted fairy collectible figurine with thick folded sculpted wings, on an integrated mushroom-and-moss base:1.4)",
+                neg:"(thin wings:1.3), (transparent wings:1.4), (spread wings:1.3), (garden:1.4), (flowers:1.3), (forest:1.3), (sparkles:1.3), (glowing dust:1.3), (lifelike person:1.4), (multiple fairies:1.4)"},
+  golemfig:    {noun:"golem figurine", bits:"(a single solid sculpted chunky golem construct collectible figurine standing heavy and grounded, on an integrated display base:1.4)",
+                neg:"(ruins:1.3), (cave:1.3), (mountains:1.3), (multiple golems:1.4), (rubble scene:1.3), (diorama:1.3)"},
+  buddhafig:   {noun:"serene meditation figurine", bits:"(a single solid sculpted serene meditation decor statue in a symmetrical seated pose, on an integrated lotus base:1.4)",
+                neg:"(temple:1.4), (altar:1.3), (incense:1.4), (candles:1.4), (smoke:1.3), (lifelike person:1.4), (multiple figures:1.4), (garden:1.3)"},
+  hindufig:    {noun:"Hindu deity figurine", bits:"(a single solid sculpted ornate Hindu deity collectible figurine with multiple arms in formal temple style, on an integrated carved lotus base:1.4)",
+                neg:"(temple:1.4), (shrine:1.4), (altar:1.4), (worshippers:1.4), (incense:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  egyptfig:    {noun:"ancient Egyptian deity figurine", bits:"(a single solid sculpted ancient Egyptian deity collectible figurine in rigid formal pharaonic style, on an integrated hieroglyph-carved stone base:1.4)",
+                neg:"(pyramid:1.4), (temple columns:1.4), (desert:1.3), (sand:1.3), (mummy:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  chinesefig:  {noun:"Chinese mythical guardian figurine", bits:"(a single solid sculpted ornate Chinese mythical guardian collectible figurine in imperial temple style, on an integrated carved cloud stone base:1.4)",
+                neg:"(temple:1.4), (altar:1.3), (incense:1.4), (pagoda:1.3), (landscape:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  japanesefig: {noun:"Japanese spiritual guardian figurine", bits:"(a single solid sculpted Japanese spiritual guardian collectible figurine in Kamakura temple style, on an integrated carved stone base:1.4)",
+                neg:"(torii:1.4), (shrine:1.4), (temple:1.4), (cherry blossoms:1.3), (landscape:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  mesofig:     {noun:"Mesoamerican deity figurine", bits:"(a single solid sculpted bold geometric Mesoamerican deity collectible figurine in Aztec Maya temple carving style, on an integrated stepped-pyramid stone base:1.4)",
+                neg:"(pyramid:1.4), (jungle:1.4), (ruins:1.3), (sacrifice:1.4), (blood:1.4), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  greekfig:    {noun:"Greek mythical guardian figurine", bits:"(a single solid sculpted classical Greek mythical guardian collectible figurine in marble temple sculpture style, on an integrated Corinthian column base:1.4)",
+                neg:"(temple:1.4), (parthenon:1.4), (columns:1.3), (landscape:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  norsefig:    {noun:"Norse mythical being figurine", bits:"(a single solid sculpted Norse mythical being collectible figurine in Viking-age carved wood and knotwork style, on an integrated rune-stone base:1.4)",
+                neg:"(longship:1.4), (hall:1.4), (battlefield:1.4), (snow landscape:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  celticfig:   {noun:"Celtic mythical spirit figurine", bits:"(a single solid sculpted Celtic mythical spirit collectible figurine with knotwork relief patterns, on an integrated carved stone root base:1.4)",
+                neg:"(standing stones:1.4), (stonehenge:1.4), (forest:1.3), (landscape:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  africanfig:  {noun:"African spiritual being figurine", bits:"(a single solid sculpted bold African spiritual being collectible figurine in traditional West African wood carving style, on an integrated carved base:1.4)",
+                neg:"(village:1.4), (hut:1.4), (savanna:1.3), (landscape:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  polynfig:    {noun:"Polynesian mythical being figurine", bits:"(a single solid sculpted bold Polynesian mythical being collectible figurine in traditional tiki carving style, on an integrated carved volcanic rock base:1.4)",
+                neg:"(island:1.4), (ocean:1.3), (beach:1.3), (palm trees:1.3), (landscape:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  slavicfig:   {noun:"Slavic folklore figurine", bits:"(a single solid sculpted Slavic folklore collectible figurine in Russian lacquer folk art style, on an integrated carved birchwood base:1.4)",
+                neg:"(forest:1.4), (village:1.4), (snow landscape:1.3), (birch trees:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  persianfig:  {noun:"Persian mythical guardian figurine", bits:"(a single solid sculpted ornate Persian mythical guardian collectible figurine in Achaemenid palace relief style, on an integrated carved palace-stone base:1.4)",
+                neg:"(palace:1.4), (columns:1.3), (archways:1.3), (landscape:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  tibetanfig:  {noun:"Tibetan Buddhist sacred figurine", bits:"(a single solid sculpted ornate Tibetan Buddhist sacred collectible figurine in Himalayan bronze style, on an integrated double-lotus throne base:1.4)",
+                neg:"(monastery:1.4), (mountains:1.3), (prayer flags:1.3), (landscape:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  koreanfig:   {noun:"Korean mythical guardian figurine", bits:"(a single solid sculpted Korean mythical guardian collectible figurine in Joseon palace stone carving style, on an integrated carved granite base:1.4)",
+                neg:"(palace:1.4), (temple:1.4), (landscape:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  nativefig:   {noun:"Native American guardian spirit figurine", bits:"(a single solid sculpted bold Native American guardian spirit collectible figurine in formline art style, on an integrated carved cedar base:1.4)",
+                neg:"(totem pole:1.4), (landscape:1.3), (tipi:1.3), (village:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  inuitfig:    {noun:"Arctic spirit being figurine", bits:"(a single solid sculpted smooth Arctic spirit being collectible figurine in Inuit soapstone carving style, on an integrated carved ice-shelf base:1.4)",
+                neg:"(igloo:1.4), (kayak:1.3), (snow landscape:1.3), (tundra:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  vodoufig:    {noun:"Caribbean Vodou loa figurine", bits:"(a single solid sculpted vivid Caribbean Vodou loa collectible figurine in folk-art style, on an integrated carved crossroads base:1.4)",
+                neg:"(graveyard:1.4), (altar:1.4), (ritual:1.3), (voodoo doll:1.4), (pins:1.4), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  seasianfig:  {noun:"Southeast Asian temple guardian figurine", bits:"(a single solid sculpted ornate Southeast Asian temple guardian collectible figurine in Khmer Thai temple style, on an integrated carved naga-balustrade base:1.4)",
+                neg:"(temple:1.4), (ruins:1.3), (jungle:1.3), (landscape:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  shipibofig:  {noun:"Shipibo-Conibo spirit figurine", bits:"(a single solid sculpted Shipibo-Conibo spirit collectible figurine with dense kené geometric line patterns as surface relief, on an integrated carved base:1.4)",
+                neg:"(jungle:1.4), (river:1.3), (village:1.3), (landscape:1.3), (multiple figures:1.4), (real person:1.4), (photo:1.3)"},
+  dmtfig:      {noun:"DMT realm entity figurine", bits:"(a single solid sculpted DMT hyperspace entity collectible figurine covered in fractal geometry and kaleidoscopic tessellation patterns as relief, luminous alien eyes, on an integrated geometric crystalline base:1.4)",
+                neg:"(landscape:1.4), (space:1.3), (galaxy:1.3), (psychedelic background:1.4), (real person:1.4), (human:1.3), (multiple figures:1.4), (drugs:1.5), (pills:1.5), (needles:1.5)"},
+  alienfig:     {noun:"alien being figurine", bits:"(a single solid sculpted extraterrestrial alien being collectible figurine with otherworldly non-human anatomy, large dark eyes, elongated head, on an integrated sci-fi display base:1.4)",
+                neg:"(spacecraft:1.4), (UFO:1.4), (planet:1.3), (stars:1.3), (space background:1.4), (real person:1.4), (human face:1.3), (multiple aliens:1.4), (movie poster:1.4)"},
+  chonkfig:    {noun:"comically round animal figurine", bits:"(a single solid sculpted comically fat ball-shaped animal collectible figurine with tiny fused limbs, on an integrated round base:1.4)",
+                neg:"(real animal:1.4), (fur texture:1.3), (photograph of a live animal:1.4), (slim:1.3), (skinny:1.3), (multiple animals:1.4)"},
+  deathmachinefig:{noun:"dark war machine figurine", bits:"(a single solid sculpted ominous skull-motif war machine collectible figurine planted heavy on an integrated scorched-metal base:1.4)",
+                neg:"(battlefield:1.4), (fire:1.4), (smoke:1.4), (explosions:1.4), (city:1.3), (victims:1.4), (blood:1.4), (gore:1.4), (multiple machines:1.4), (diorama:1.4)"},
+  mechafig:    {noun:"heroic battle mecha figurine", bits:"(a single solid sculpted heroic mecha collectible figurine with crisp layered armor panels sculpted as relief, on an integrated hangar-deck base:1.4)",
+                neg:"(hangar:1.3), (battlefield:1.3), (explosions:1.3), (flying:1.3), (multiple mechas:1.4), (model kit parts:1.4), (sprues:1.3), (diorama:1.4)"},
+  horrorfig:   {noun:"classic horror figurine", bits:"(a single solid sculpted classic-monster collectible figurine in a compact grounded pose, on an integrated graveyard-soil base:1.4)",
+                neg:"(blood:1.5), (gore:1.5), (graveyard scene:1.4), (tombstones:1.3), (fog:1.3), (moon:1.3), (lifelike person:1.4), (multiple monsters:1.4), (diorama:1.4)"},
+  mermaidfig:  {noun:"mermaid figurine", bits:"(a single solid sculpted mermaid collectible figurine with a thick tail curled onto an integrated rock base:1.4)",
+                neg:"(ocean:1.4), (water:1.4), (waves:1.3), (beach:1.3), (underwater:1.4), (lifelike person:1.4), (multiple figures:1.4), (fish:1.3)"},
+  tikifig:     {noun:"carved tiki totem figurine", bits:"(a single solid deep-carved tiki totem column with a bold geometric face, flat stable bottom:1.4)",
+                neg:"(tiki bar:1.4), (torches:1.4), (palm trees:1.4), (beach:1.3), (cocktail:1.3), (multiple totems:1.4), (jungle:1.3)"},
+  holidayfig:  {noun:"holiday figurine", bits:"(a single solid sculpted festive holiday collectible figurine in a compact pose, on an integrated snowy base:1.4)",
+                neg:"(christmas tree:1.4), (fireplace:1.4), (presents pile:1.3), (room interior:1.4), (snow scene:1.3), (garland:1.3), (multiple figures:1.4), (diorama:1.4)"},
+  superfig:    {noun:"armored champion figurine", bits:"(a single solid sculpted original armored champion collectible figurine in layered sci-fi plate armor with panel lines and rivets, bare head with short hair, strong jaw, heavy cloak fused to one shoulder as one thick mass, on an integrated display base:1.4)",
+                neg:"(logo:1.5), (emblem:1.5), (insignia:1.5), (S shield:1.5), (letter on chest:1.5), (chest symbol:1.5), (spandex:1.5), (bodysuit:1.4), (tights:1.4), (mask:1.5), (cowl:1.5), (helmet:1.5), (bat ears:1.5), (spider web:1.5), (batman:1.5), (superman:1.5), (spider-man:1.5), (superhero:1.4), (comic book:1.3), (city skyline:1.4), (buildings:1.3), (sky:1.3), (comic panel:1.4), (2d illustration:1.4), (lifelike person:1.4), (multiple figures:1.4)"},
+  steamfig:    {noun:"steampunk adventurer figurine", bits:"(a single solid sculpted steampunk adventurer collectible figurine with brass gears and goggles sculpted as fused relief, on an integrated riveted-plate base:1.4)",
+                neg:"(airship:1.4), (workshop:1.3), (machinery scene:1.3), (separate gears:1.4), (loose parts:1.3), (lifelike person:1.4), (multiple figures:1.4)"},
+  birdfig:     {noun:"bird figurine", bits:"(a single solid sculpted stylized bird collectible figurine with thickened legs fused to an integrated perch base, wings folded:1.4)",
+                neg:"(real bird:1.4), (feather texture:1.3), (photograph of a live bird:1.4), (tree:1.3), (sky:1.3), (flying:1.4), (spread wings:1.4), (multiple birds:1.4), (nest:1.3)"}
 };
 const SD_STYLE = {
   sacred:  "sacred geometry carved relief, mandala pattern",
@@ -1457,6 +2267,10 @@ const SD_PAL = {obsidian:"matte black", terracotta:"matte terracotta clay", mage
 const SD_VIEW = {"three-quarter":"three-quarter view","front":"front view","slightly-above":"high angle view","eye-level":"eye level view"};
 const SD_NEG_BASE = "(multiple objects:1.4), (duplicate:1.4), (pair of objects:1.3), (group of objects:1.3), (two of the same object:1.3), (three of the same object:1.3), collage, grid, plant, flowers, leaves, soil, fruit, food, eggs, orbs, ball inside, candle, flame, smoke, pedestal, plinth, stand, table, furniture, room interior, outdoor scene, grass, sky, scenery, person, hands, animal, glossy, shiny, chrome, glass, transparent, reflections, flat painted pattern, decal, sticker, text, watermark, logo, blurry, lowres, deformed, cropped, cut off, abstract sculpture, statue, totem pole, monument, blob, floating disconnected pieces, detached ring, hanging, suspended, rope, string, cord, twine, wire, chain, hook, hanger, metal strap, ribbon";
 const SD_NEG_PRINT = "thin fragile parts, spindly filigree, fine lace lattice, wires, springs, moving parts, separate components";
+// Figurines need their own negative base: the homegoods one bans "animal", "statue" and
+// "person" outright, which is exactly what a fox figurine or a bust IS. Scene/duplicate/
+// quality bans carry over; the subject bans are swapped for figurine-shaped ones.
+const SD_NEG_BASE_FIG = "(multiple figures:1.4), (duplicate:1.4), (pair:1.3), (group:1.3), collage, grid, (diorama:1.4), base scenery, rocks, grass, plants, soil, sky, landscape, water, (photograph of a live animal:1.4), (lifelike person:1.4), (realistic human skin:1.3), toy packaging, box, pedestal, plinth column, table, furniture, room interior, outdoor scene, candle, flame, smoke, glossy, shiny, chrome, glass, transparent, reflections, flat painted pattern, decal, sticker, text, watermark, logo, blurry, lowres, deformed, cropped, cut off, floating disconnected pieces, rope, string, cord, wire, chain";
 
 // PRINTABLE is folded into every render unconditionally — Podder only ever generates
 // genuinely 3D-printable designs now (no toggle; the copy-to-Gemini text path is gone).
@@ -1464,6 +2278,7 @@ const PRINTABLE = "It must be a genuinely 3D-PRINTABLE object: ONE single solid,
 
 /* ---------- STATE ---------- */
 let state = {
+  cat: "homegoods",
   obj: "vase",
   shape: "Auto",
   styles: new Set(),
@@ -1515,8 +2330,25 @@ if(__idsBackfilled){ LS_set("podder_favs",favs); LS_set("podder_hist",hist); LS_
 // the picker always reflects the full catalog — a static chip list silently stops growing the
 // moment a new object/style is added to the data, which is exactly what happened once already.
 function buildChips(){
+  // Category tabs — switching one jumps to that category's first object.
+  const cc=$("#catChips");
+  if(cc){ cc.innerHTML="";
+    Object.entries(CATEGORIES).forEach(([key,cat])=>{
+      const c=document.createElement("div"); c.className="chip"+(state.cat===key?" on":"");
+      c.innerHTML=`<span class="em">${cat.emoji}</span>${cat.label}`;
+      c.onclick=()=>{
+        if(state.cat===key) return;
+        state.cat=key;
+        const first=Object.keys(OBJECTS).find(k=>catOf(k)===key);
+        state.obj=first;
+        state.shape=OBJECTS[first].shapes[0].label;
+        buildChips(); buildShapeChips();
+      };
+      cc.appendChild(c);
+    });
+  }
   const oc=$("#objChips"); oc.innerHTML="";
-  Object.entries(OBJECTS).forEach(([key,o])=>{
+  Object.entries(OBJECTS).filter(([key])=>catOf(key)===state.cat).forEach(([key,o])=>{
     const c=document.createElement("div"); c.className="chip"+(state.obj===key?" on":"");
     c.dataset.obj=key; c.innerHTML=`<span class="em">${o.emoji}</span>${o.label}`;
     c.onclick=()=>{
@@ -1623,6 +2455,7 @@ function buildPrompt(){
   const view = VIEWS.find(v=>v.v===$("#view").value) || VIEWS[0];
 
   const objNoun = (o.promptName || o.label).toLowerCase();
+  const isFig = catOf(state.obj)==="figurines" || catOf(state.obj)==="spiritual";
   const isAuto = shapeObj.label==="Auto";
   const formPhrase = isAuto
     ? (state.obj==="birdhouse"
@@ -1674,8 +2507,9 @@ function buildPrompt(){
   // object-critical bans go first and the generic quality list last.
   const sdNegParts=[];
   if(so.neg && !shapeObj.houseLike) sdNegParts.push(so.neg);
-  if(!/face|head|skull/i.test(shapeObj.label)) sdNegParts.push("carved face, human face");
-  sdNegParts.push(SD_NEG_BASE);
+  // Figurines legitimately have faces (characters, busts, skulls) — only homegoods ban them.
+  if(!isFig && !/face|head|skull/i.test(shapeObj.label)) sdNegParts.push("carved face, human face");
+  sdNegParts.push(isFig ? SD_NEG_BASE_FIG : SD_NEG_BASE);
   if(printable) sdNegParts.push(SD_NEG_PRINT);
   const sdNeg = sdNegParts.join(", ");
 
@@ -1687,7 +2521,11 @@ function buildPrompt(){
     // 75-token CLIP window, so reuse the same rich, already-hardened pieces built for `text`
     // above (o.fn, formPhrase, the full style clauses) instead of the terse SD keyword system.
     sd = [
-      `A single ${objNoun}, instantly and unmistakably recognizable as a real, functional ${objNoun} — exactly one object, alone and centered, nothing else in the scene.`,
+      // "functional" steers homegoods toward usable-looking vessels, but reads wrong on a
+      // figurine (nothing functional about a dragon) — figurines lead with "sculpted" instead.
+      isFig
+        ? `A single ${objNoun}, instantly and unmistakably recognizable — exactly one sculpted decorative piece, alone and centered, nothing else in the scene.`
+        : `A single ${objNoun}, instantly and unmistakably recognizable as a real, functional ${objNoun} — exactly one object, alone and centered, nothing else in the scene.`,
       o.fn,
       `Its overall form is ${formPhrase}.`,
       `It is richly decorated with ${clauses.join(", and ")}, applied as ${reliefWord} deep, physically sculpted three-dimensional relief — raised, carved and self-shadowed so the surface itself changes shape, never a flat painted or printed pattern.${jewelryNote}`,
@@ -1835,8 +2673,13 @@ function renderImageInto(wrap, item, imgRef){
   imgSrc(imgRef).then(u=>{ if(!u){ image.onerror(); return; } image.src=u; dl.href=u; });
   // "Apply design to other objects" — img2img this picture into a different object's form.
   const sel = document.createElement("select"); sel.className = "variantSel";
+  // Grouped by category — cross-category applies are allowed on purpose (a vase's glaze DNA
+  // on a dragon is half the fun), the optgroups just keep the long list scannable.
   sel.innerHTML = `<option value="">✨ Apply design to other objects…</option>`
-    + Object.keys(OBJECTS).filter(k=>k!==item.obj).map(k=>`<option value="${k}">${OBJECTS[k].emoji} ${OBJECTS[k].label}</option>`).join("");
+    + Object.entries(CATEGORIES).map(([ck,cat])=>
+        `<optgroup label="${cat.emoji} ${cat.label}">`
+        + Object.keys(OBJECTS).filter(k=>catOf(k)===ck && k!==item.obj).map(k=>`<option value="${k}">${OBJECTS[k].emoji} ${OBJECTS[k].label}</option>`).join("")
+        + `</optgroup>`).join("");
   sel.onchange = ()=>{ const k = sel.value; sel.value = ""; if(k) spawnVariants(item, wrap, k); };
   meta.appendChild(sel);
   if(item.renderMs){ const t=document.createElement("span"); t.className="render-time"; t.textContent=fmtDuration(item.renderMs); meta.appendChild(t); }
@@ -2010,7 +2853,7 @@ async function generate(){
 }
 function surprise(){
   // randomize everything (respecting locks)
-  const keys=Object.keys(OBJECTS);
+  const keys=Object.keys(OBJECTS).filter(k=>catOf(k)===state.cat);   // surprise stays in the active category
   // a locked shape belongs to its object, so it pins the object too
   if(!state.locks.obj && !state.locks.shape) state.obj=pick(keys);
   if(!state.locks.shape) state.shape=pick(OBJECTS[state.obj].shapes).label;
@@ -2108,7 +2951,9 @@ async function rerollFromItem(sourceItem){
   state.styles=new Set(sourceItem.styles||[]);
   state.styleDetail=new Set();
 
-  const objKeys=shuffle(Object.keys(OBJECTS)).slice(0,6);
+  // Reroll across 6 random objects from the SOURCE item's own category — a favorite vase
+  // rerolls into other homegoods, a favorite dragon into other figurines.
+  const objKeys=shuffle(Object.keys(OBJECTS).filter(k=>catOf(k)===catOf(sourceItem.obj))).slice(0,6);
   const group={
     id:Date.now()+"-"+Math.floor(Math.random()*1e6),
     label:(sourceItem.styles||[]).map(s=>STYLES[s]?.label||s).join(" · ")||"surprise mix",
