@@ -2844,7 +2844,7 @@ async function generate(){
   const cards = [...document.querySelectorAll("#output .card")];
   (async()=>{
     for(let i=0;i<cards.length;i++){
-      if(i>0) await new Promise(r=>setTimeout(r,3000));
+      if(i>0) await new Promise(r=>setTimeout(r,500));
       await renderCard(cards[i]._item, cards[i]);
     }
   })();
@@ -3216,7 +3216,7 @@ async function spawnVariants(item, wrap, targetObjKey){
     for(let i=0;i<6;i++){
       const tile = tiles[i];
       const ctl = new AbortController(); inFlightCtls.add(ctl);
-      if(i>0) await new Promise(r=>setTimeout(r,3000));
+      if(i>0) await new Promise(r=>setTimeout(r,500));
       try{
         const j = await apiFetch("/api/generate", {prompt: promptItem.sd, aspect: $("#aspect").value, image: srcData, strength}, ctl.signal);
         const key = genId();
