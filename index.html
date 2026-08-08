@@ -157,6 +157,7 @@
   .pinBox h2{margin:14px 0 4px;font-size:28px}
   .pinBox p{color:var(--muted);font-size:14px;margin:0 0 18px}
   .pinBox form{display:flex;gap:10px}
+  .pinBox form.stack{flex-direction:column}
   .pinBox input{flex:1;padding:12px 14px;border-radius:12px;border:1px solid var(--panel-brd);background:#1a1130;color:var(--ink);
     font-size:20px;letter-spacing:6px;text-align:center;min-width:0}
   .pinBox input.email{font-size:15px;letter-spacing:0}
@@ -500,15 +501,22 @@
     <h2>Podder</h2>
 
     <div id="gateEmailPane">
-      <p>Sign in with your email to start creating.</p>
-      <form id="emailForm">
+      <p id="gateLead">Sign in to start creating.</p>
+      <form id="emailForm" class="stack">
         <input type="email" id="emailInput" class="email" autocomplete="email" placeholder="you@example.com" required />
-        <button class="btn primary" type="submit">Send link</button>
+        <input type="password" id="passInput" class="email" autocomplete="current-password" placeholder="Password" minlength="6" required />
+        <button class="btn primary" type="submit" id="authSubmit">Sign in</button>
       </form>
       <div class="pinErr hidden" id="emailErr"></div>
       <div class="pinOk hidden" id="emailOk"></div>
+      <div class="gateAlt">
+        <span id="modeSwitchText">New here?</span> <a id="toggleAuthMode">Create an account</a>
+      </div>
       <div class="gateNote" id="gateBonus"></div>
-      <div class="gateAlt"><a id="showPinLink">Use access PIN instead</a></div>
+      <div class="gateAlt" style="margin-top:14px">
+        <a id="magicLinkLink">Email me a sign-in link instead</a>
+      </div>
+      <div class="gateAlt"><a id="showPinLink">Use access PIN</a></div>
     </div>
 
     <div id="gatePinPane" class="hidden">
@@ -4213,6 +4221,53 @@ async function getToken(){
   return s.access_token || "";
 }
 
+// Turn a GoTrue error body into something a person can act on.
+function authErr(j, fallback){
+  const msg = j?.msg || j?.error_description || j?.message || j?.error || fallback;
+  if(/invalid login credentials/i.test(msg)) return "Wrong email or password.";
+  if(/user already registered/i.test(msg))   return "That email already has an account — sign in instead.";
+  if(/password should be at least/i.test(msg)) return "Password must be at least 6 characters.";
+  if(/email rate limit|over_email_send_rate_limit/i.test(msg))
+    return "Too many emails sent. Use a password instead — it doesn't need email.";
+  return msg;
+}
+
+// Password sign-in. Preferred over magic links because it sends no email at all, and
+// Supabase's built-in SMTP allows only 2 messages/hour — which would otherwise cap
+// sign-ins at two people per hour.
+async function signInWithPassword(email, password){
+  const cfg = await loadConfig();
+  if(!cfg.ready) throw new Error("Sign-in is not configured yet.");
+  const r = await fetch(`${cfg.supabaseUrl}/auth/v1/token?grant_type=password`,{
+    method:"POST", headers:{"content-type":"application/json", apikey:cfg.anonKey},
+    body:JSON.stringify({email, password})});
+  const j = await r.json().catch(()=>({}));
+  if(!r.ok || !j.access_token) throw new Error(authErr(j,"Could not sign in"));
+  saveSession({access_token:j.access_token, refresh_token:j.refresh_token,
+               expires_at: Date.now() + (j.expires_in||3600)*1000});
+  return true;
+}
+
+// Sign up. If the project has email confirmation switched off, GoTrue returns a session
+// immediately and the user is straight in. If it's on, there's no session and they must
+// confirm by email first — which is reported honestly rather than looking like a failure.
+async function signUpWithPassword(email, password){
+  const cfg = await loadConfig();
+  if(!cfg.ready) throw new Error("Sign-up is not configured yet.");
+  const r = await fetch(`${cfg.supabaseUrl}/auth/v1/signup`,{
+    method:"POST", headers:{"content-type":"application/json", apikey:cfg.anonKey},
+    body:JSON.stringify({email, password})});
+  const j = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(authErr(j,"Could not create the account"));
+
+  if(j.access_token){
+    saveSession({access_token:j.access_token, refresh_token:j.refresh_token,
+                 expires_at: Date.now() + (j.expires_in||3600)*1000});
+    return {signedIn:true};
+  }
+  return {signedIn:false, needsConfirm:true};
+}
+
 async function sendMagicLink(email){
   const cfg = await loadConfig();
   if(!cfg.ready) throw new Error("Sign-in is not configured yet — set SUPABASE_URL and SUPABASE_ANON_KEY.");
@@ -4221,7 +4276,7 @@ async function sendMagicLink(email){
     body:JSON.stringify({email, create_user:true})});
   if(!r.ok){
     const j = await r.json().catch(()=>({}));
-    throw new Error(j.msg || j.error_description || j.error || "Could not send the link");
+    throw new Error(authErr(j,"Could not send the link"));
   }
 }
 
@@ -4869,12 +4924,57 @@ document.querySelectorAll(".lock").forEach(l=>l.onclick=()=>{
 $("#showPinLink").onclick = ()=>{ $("#gateEmailPane").classList.add("hidden"); $("#gatePinPane").classList.remove("hidden"); setTimeout(()=>$("#pinInput").focus(),50); };
 $("#showEmailLink").onclick = ()=>{ $("#gatePinPane").classList.add("hidden"); $("#gateEmailPane").classList.remove("hidden"); setTimeout(()=>$("#emailInput").focus(),50); };
 
+// "signin" | "signup" — the same form serves both; only the submit handler differs.
+let authMode = "signin";
+function setAuthMode(mode){
+  authMode = mode;
+  const up = mode === "signup";
+  $("#gateLead").textContent      = up ? "Create an account to start creating." : "Sign in to start creating.";
+  $("#authSubmit").textContent    = up ? "Create account" : "Sign in";
+  $("#modeSwitchText").textContent= up ? "Already have an account?" : "New here?";
+  $("#toggleAuthMode").textContent= up ? "Sign in" : "Create an account";
+  $("#passInput").setAttribute("autocomplete", up ? "new-password" : "current-password");
+  $("#emailErr").classList.add("hidden"); $("#emailOk").classList.add("hidden");
+}
+$("#toggleAuthMode").onclick = ()=>setAuthMode(authMode === "signin" ? "signup" : "signin");
+
 $("#emailForm").onsubmit = async (e)=>{
   e.preventDefault();
   const email = $("#emailInput").value.trim();
-  if(!email) return;
-  const btn = e.target.querySelector("button"); btn.disabled = true;
+  const pass  = $("#passInput").value;
+  if(!email || !pass) return;
+  const btn = $("#authSubmit"); btn.disabled = true;
   $("#emailErr").classList.add("hidden"); $("#emailOk").classList.add("hidden");
+  try{
+    if(authMode === "signup"){
+      const r = await signUpWithPassword(email, pass);
+      if(r.needsConfirm){
+        $("#emailOk").textContent = `Account created. Check ${email} to confirm before signing in.`;
+        $("#emailOk").classList.remove("hidden");
+        btn.disabled = false; return;
+      }
+    } else {
+      await signInWithPassword(email, pass);
+    }
+    await refreshMe();
+    if(ACCT.email){ $("#passInput").value=""; hidePinGate(); }
+    else throw new Error("Signed in, but the account could not be loaded. Try again.");
+  }catch(err){
+    $("#emailErr").textContent = err.message;
+    $("#emailErr").classList.remove("hidden");
+  }
+  btn.disabled = false;
+};
+
+// Magic link kept as a fallback — useful if someone forgets their password, but it is
+// gated behind an explicit click because the default SMTP allows only 2 emails/hour.
+$("#magicLinkLink").onclick = async ()=>{
+  const email = $("#emailInput").value.trim();
+  $("#emailErr").classList.add("hidden"); $("#emailOk").classList.add("hidden");
+  if(!email){
+    $("#emailErr").textContent = "Enter your email address first.";
+    $("#emailErr").classList.remove("hidden"); $("#emailInput").focus(); return;
+  }
   try{
     await sendMagicLink(email);
     $("#emailOk").textContent = `Check ${email} — the sign-in link is on its way.`;
@@ -4883,7 +4983,6 @@ $("#emailForm").onsubmit = async (e)=>{
     $("#emailErr").textContent = err.message;
     $("#emailErr").classList.remove("hidden");
   }
-  btn.disabled = false;
 };
 
 $("#pinForm").onsubmit = async (e)=>{
