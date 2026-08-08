@@ -1,14 +1,20 @@
 // POST /api/generate
-//   headers: x-podder-pin
+//   headers: Authorization: Bearer <supabase access token>   (or x-podder-pin for the owner)
 //   body: { prompt, aspect?: "1:1"|"2:3"|"3:2", image?: dataURL, strength?: 0..1, quality?: "fast"|"quality" }
-//   ->   { image: dataURL, mock?: true }
+//   ->   { image: dataURL, credits: <new balance>, mock?: true }
 //
 // Runs Flux on Replicate server-side so the API token never reaches the browser.
 // With `image` set it does an img2img edit (Podder's ✎ Edit box); without, plain txt2img.
-// If REPLICATE_API_TOKEN is unset (local preview / fresh deploy) it returns a mock
-// placeholder image so the whole UI can be exercised without spending anything.
+//
+// Billing order is deliberate: debit FIRST, render second, refund on failure. Rendering
+// first would let a client abandon the connection mid-render and never be charged, and
+// concurrent requests could each see a sufficient balance before any of them deducted.
+// The debit is a single guarded UPDATE (see debit_credits in 0001_credits.sql), so
+// parallel renders serialize on the row and the balance can never go negative.
 
 import { pinOk } from './auth.js';
+import { getUser, debit, credit, isInsufficient, missingEnv } from './_lib/server.js';
+import { creditsFor } from './_lib/config.js';
 
 export const maxDuration = 60;
 
@@ -70,16 +76,43 @@ async function replicate(input, token, cfg) {
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
-  if (!pinOk(req.headers['x-podder-pin'])) return res.status(401).json({ error: 'bad_pin' });
 
   const { prompt, aspect = '1:1', image, strength, quality = 'fast' } = req.body || {};
   if (!prompt || typeof prompt !== 'string') return res.status(400).json({ error: 'missing_prompt' });
 
+  // The owner PIN still works and bypasses billing entirely — it is how the account
+  // holder uses their own app without buying credits from themselves.
+  const owner = pinOk(req.headers['x-podder-pin']);
+
+  let user = null;
+  if (!owner) {
+    const missing = missingEnv();
+    if (missing.length) return res.status(500).json({ error: 'server_not_configured', detail: `Missing: ${missing.join(', ')}` });
+    user = await getUser(req);
+    if (!user) return res.status(401).json({ error: 'not_signed_in' });
+  }
+
   const token = (process.env.REPLICATE_API_TOKEN || '')
     .trim().replace(/^["']|["']$/g, '').replace(/^Bearer\s+/i, '').trim();
+
+  // No Replicate token means nothing real is being generated, so nothing is charged.
   if (!token) return res.status(200).json({ image: mockImage(prompt), mock: true });
 
   const cfg = MODELS[quality] || MODELS.fast;
+  const cost = creditsFor(quality);
+  const renderId = crypto.randomUUID();
+
+  let balance = null;
+  if (user) {
+    try {
+      balance = await debit(user.id, cost, `render:${quality}`, `render:${renderId}`);
+    } catch (e) {
+      if (isInsufficient(e)) {
+        return res.status(402).json({ error: 'insufficient_credits', needed: cost });
+      }
+      return res.status(500).json({ error: 'billing_failed', detail: String(e.message || e) });
+    }
+  }
 
   try {
     const input = {
@@ -97,8 +130,25 @@ export default async function handler(req, res) {
     if (!imgResp.ok) throw new Error(`Image fetch failed (${imgResp.status})`);
     const buf = Buffer.from(await imgResp.arrayBuffer());
     const type = imgResp.headers.get('content-type') || 'image/png';
-    return res.status(200).json({ image: `data:${type};base64,${buf.toString('base64')}` });
+    return res.status(200).json({
+      image: `data:${type};base64,${buf.toString('base64')}`,
+      credits: balance,
+    });
   } catch (e) {
-    return res.status(502).json({ error: 'render_failed', detail: String(e.message || e) });
+    // The render failed after the user was charged — put the credits back. If the refund
+    // itself fails the debit is still in the ledger, so it can be reconciled by hand.
+    if (user) {
+      try {
+        balance = await credit(user.id, cost, `refund:${quality}`, `refund:${renderId}`);
+      } catch (re) {
+        console.error('refund failed', { user: user.id, renderId, cost, error: String(re.message || re) });
+      }
+    }
+    return res.status(502).json({
+      error: 'render_failed',
+      detail: String(e.message || e),
+      credits: balance,
+      refunded: !!user,
+    });
   }
 }

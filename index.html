@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="p:domain_verify" content="e86d0fe636427e09e83657a394166076" />
 <title>Podder — trippy 3D-print prompt generator</title>
 <link rel="icon" type="image/x-icon" href="Podder-spin.ico" sizes="32x32 48x48 64x64 256x256" />
 <link rel="icon" type="image/png" sizes="192x192" href="Podder-spin-192.png" />
@@ -149,7 +150,7 @@
     display:flex;align-items:center;justify-content:center;z-index:2}
   .cardModalClose:hover{border-color:var(--accent2)}
 
-  /* --- PIN gate: full-screen lock until /api/auth approves --- */
+  /* --- Auth gate: full-screen lock until a Supabase session exists (or the owner PIN) --- */
   .pinGate{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
   .pinGate.hidden{display:none}
   .pinBox{text-align:center;max-width:340px;width:100%}
@@ -158,7 +159,39 @@
   .pinBox form{display:flex;gap:10px}
   .pinBox input{flex:1;padding:12px 14px;border-radius:12px;border:1px solid var(--panel-brd);background:#1a1130;color:var(--ink);
     font-size:20px;letter-spacing:6px;text-align:center;min-width:0}
+  .pinBox input.email{font-size:15px;letter-spacing:0}
   .pinErr{color:#e07a7a;font-size:13px;margin-top:12px}
+  .pinOk{color:#54d69b;font-size:13px;margin-top:12px}
+  .gateAlt{margin-top:22px;font-size:12.5px;color:var(--muted)}
+  .gateAlt a{color:var(--accent2);cursor:pointer;text-decoration:underline}
+  .gateNote{font-size:12px;color:var(--muted);margin-top:14px;line-height:1.5}
+
+  /* --- Account bar: who you are + what you have left --- */
+  .acctBar{display:flex;align-items:center;gap:10px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+  .creditChip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;
+    background:#1a1130;border:1px solid var(--panel-brd);font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap}
+  .creditChip.low{border-color:#e0a24b;color:#f0c07a}
+  .creditChip.empty{border-color:#e07a7a;color:#f09a9a}
+  .acctEmail{font-size:12px;color:var(--muted);max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .acctBar .btn{padding:6px 12px;font-size:12.5px}
+
+  /* --- Buy credits modal --- */
+  .buyWrap{position:fixed;inset:0;background:rgba(5,2,10,.72);backdrop-filter:blur(3px);z-index:120;
+    display:none;align-items:center;justify-content:center;padding:20px}
+  .buyWrap.show{display:flex}
+  .buyBox{background:var(--bg2);border:1px solid var(--panel-brd);border-radius:18px;padding:24px;
+    max-width:460px;width:100%;max-height:calc(100vh - 60px);overflow-y:auto;position:relative}
+  .buyBox h3{margin:0 0 6px;font-size:20px}
+  .buyBox .sub{color:var(--muted);font-size:13px;margin:0 0 18px}
+  .packRow{display:flex;align-items:center;gap:14px;padding:14px;border-radius:14px;border:1px solid var(--panel-brd);
+    background:#1a1130;margin-bottom:10px;cursor:pointer;transition:border-color .15s}
+  .packRow:hover{border-color:var(--accent2)}
+  .packRow .pk{flex:1;text-align:left}
+  .packRow .pkName{font-weight:700;font-size:15px}
+  .packRow .pkSub{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .packRow .pkPrice{font-size:19px;font-weight:800;color:var(--accent2)}
+  .buyClose{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer}
+  .buyClose:hover{color:var(--ink)}
   /* Spinning swirl shown inside a card while its image is rendering */
   .render-spin{width:56px;height:56px;border-radius:14px;display:block;margin:26px auto 10px;animation:podSpin 2.6s linear infinite}
   @keyframes podSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
@@ -257,6 +290,12 @@
     <div class="logo">🌀</div>
     <div>
       <h1>Podder</h1>
+    </div>
+    <div class="acctBar" id="acctBar" style="display:none">
+      <span class="acctEmail" id="acctEmail"></span>
+      <span class="creditChip" id="creditChip" title="Render credits">✦ <span id="creditCount">—</span></span>
+      <button class="btn primary" id="buyBtn" type="button">Buy credits</button>
+      <button class="btn ghost" id="signOutBtn" type="button">Sign out</button>
     </div>
   </header>
   <p class="tag">Far-out, <b>always-3D-printable</b> design generator. Renders trippy sacred-geometry / drippy / swirly styling straight to an image in the cloud — single isolated object, one solid printable form, no fragile parts, clean studio background — ready for image-to-3D and printing.</p>
@@ -454,17 +493,44 @@
   </footer>
 </div>
 
-<!-- PIN GATE -->
+<!-- AUTH GATE -->
 <div class="pinGate" id="pinGate">
   <div class="pinBox">
     <img src="Podder-192.png" alt="" width="72" height="72" style="border-radius:18px" />
     <h2>Podder</h2>
-    <p>Enter your access PIN to start creating.</p>
-    <form id="pinForm">
-      <input type="password" id="pinInput" inputmode="numeric" autocomplete="off" placeholder="PIN" />
-      <button class="btn primary" type="submit">Unlock</button>
-    </form>
-    <div class="pinErr hidden" id="pinErr">Wrong PIN — try again.</div>
+
+    <div id="gateEmailPane">
+      <p>Sign in with your email to start creating.</p>
+      <form id="emailForm">
+        <input type="email" id="emailInput" class="email" autocomplete="email" placeholder="you@example.com" required />
+        <button class="btn primary" type="submit">Send link</button>
+      </form>
+      <div class="pinErr hidden" id="emailErr"></div>
+      <div class="pinOk hidden" id="emailOk"></div>
+      <div class="gateNote" id="gateBonus"></div>
+      <div class="gateAlt"><a id="showPinLink">Use access PIN instead</a></div>
+    </div>
+
+    <div id="gatePinPane" class="hidden">
+      <p>Owner access — enter your PIN.</p>
+      <form id="pinForm">
+        <input type="password" id="pinInput" inputmode="numeric" autocomplete="off" placeholder="PIN" />
+        <button class="btn primary" type="submit">Unlock</button>
+      </form>
+      <div class="pinErr hidden" id="pinErr">Wrong PIN — try again.</div>
+      <div class="gateAlt"><a id="showEmailLink">Back to email sign-in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- BUY CREDITS -->
+<div class="buyWrap" id="buyWrap">
+  <div class="buyBox">
+    <button class="buyClose" id="buyClose" type="button" aria-label="Close">✕</button>
+    <h3>Buy credits</h3>
+    <p class="sub" id="buySub">Credits never expire.</p>
+    <div id="packList"></div>
+    <div class="gateNote" id="buyCosts"></div>
   </div>
 </div>
 
@@ -4072,11 +4138,15 @@ function onCount(){$("#countVal").textContent=$("#count").value;}
 /* ---------- CLOUD RENDER (serverless API + browser image store) ---------- */
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
-// --- PIN gate ---
+// --- Auth + credits ---------------------------------------------------------
+// Two ways in: a Supabase email session (normal users, billed per render) or the owner
+// PIN (unlimited, unbilled). Talks to Supabase's auth REST endpoints with plain fetch
+// rather than @supabase/supabase-js — Podder ships as one static file with no build step,
+// and a magic-link flow is three endpoints.
+
+const ACCT = { cfg:null, session:null, credits:null, email:null, owner:false };
+
 function getPin(){ return localStorage.getItem("podder_pin") || ""; }
-// "ok" = accepted, "bad" = server explicitly rejected the PIN, "error" = server unreachable.
-// The distinction matters: a stored PIN must only be forgotten on "bad" — dropping it on a
-// transient network blip forces a pointless re-login.
 async function verifyPin(pin){
   try{
     const r = await fetch("/api/auth",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({pin})});
@@ -4084,18 +4154,184 @@ async function verifyPin(pin){
     return r.status===401 ? "bad" : "error";
   }catch(e){ return "error"; }
 }
-function showPinGate(){ $("#pinGate").classList.remove("hidden"); setTimeout(()=>$("#pinInput").focus(),50); }
+
+async function loadConfig(){
+  if(ACCT.cfg) return ACCT.cfg;
+  try{
+    const r = await fetch("/api/config");
+    ACCT.cfg = r.ok ? await r.json() : {ready:false};
+  }catch(e){ ACCT.cfg = {ready:false}; }
+  return ACCT.cfg;
+}
+
+function loadSession(){
+  try{ return JSON.parse(localStorage.getItem("podder_session")||"null"); }catch(e){ return null; }
+}
+function saveSession(s){
+  if(s) localStorage.setItem("podder_session", JSON.stringify(s));
+  else localStorage.removeItem("podder_session");
+  ACCT.session = s;
+}
+
+// Supabase hands the session back in the URL fragment after a magic-link click. Consume it
+// and scrub the hash so the tokens do not linger in the address bar or get shared in a copy-paste.
+function consumeAuthHash(){
+  if(!location.hash || location.hash.indexOf("access_token=")<0) return null;
+  const p = new URLSearchParams(location.hash.slice(1));
+  const access_token = p.get("access_token"), refresh_token = p.get("refresh_token");
+  history.replaceState(null,"",location.pathname+location.search);
+  if(!access_token) return null;
+  const s = { access_token, refresh_token, expires_at: Date.now() + (Number(p.get("expires_in"))||3600)*1000 };
+  saveSession(s);
+  return s;
+}
+
+async function refreshSession(){
+  const s = ACCT.session || loadSession();
+  const cfg = await loadConfig();
+  if(!s?.refresh_token || !cfg.ready) return null;
+  try{
+    const r = await fetch(`${cfg.supabaseUrl}/auth/v1/token?grant_type=refresh_token`,{
+      method:"POST", headers:{"content-type":"application/json", apikey:cfg.anonKey},
+      body:JSON.stringify({refresh_token:s.refresh_token})});
+    if(!r.ok){ saveSession(null); return null; }
+    const j = await r.json();
+    const ns = { access_token:j.access_token, refresh_token:j.refresh_token, expires_at: Date.now()+(j.expires_in||3600)*1000 };
+    saveSession(ns);
+    return ns;
+  }catch(e){ return null; }   // network blip: keep the stored session, try again later
+}
+
+// Refreshes a minute ahead of expiry so a long render never dies on a token that aged out mid-flight.
+async function getToken(){
+  let s = ACCT.session || loadSession();
+  if(!s) return "";
+  if(s.expires_at && s.expires_at - Date.now() < 60_000){
+    s = await refreshSession() || s;
+  }
+  ACCT.session = s;
+  return s.access_token || "";
+}
+
+async function sendMagicLink(email){
+  const cfg = await loadConfig();
+  if(!cfg.ready) throw new Error("Sign-in is not configured yet — set SUPABASE_URL and SUPABASE_ANON_KEY.");
+  const r = await fetch(`${cfg.supabaseUrl}/auth/v1/otp?redirect_to=${encodeURIComponent(location.origin)}`,{
+    method:"POST", headers:{"content-type":"application/json", apikey:cfg.anonKey},
+    body:JSON.stringify({email, create_user:true})});
+  if(!r.ok){
+    const j = await r.json().catch(()=>({}));
+    throw new Error(j.msg || j.error_description || j.error || "Could not send the link");
+  }
+}
+
+function signOut(){
+  saveSession(null);
+  localStorage.removeItem("podder_pin");
+  ACCT.credits=null; ACCT.email=null; ACCT.owner=false;
+  updateAcctBar();
+  showPinGate();
+}
+
+// --- credit display ---
+function updateAcctBar(){
+  const bar=$("#acctBar");
+  if(!bar) return;
+  const signedIn = ACCT.owner || !!(ACCT.session||loadSession());
+  bar.style.display = signedIn ? "" : "none";
+  if(!signedIn) return;
+
+  $("#acctEmail").textContent = ACCT.owner ? "owner" : (ACCT.email||"");
+  const chip=$("#creditChip"), n=$("#creditCount");
+  if(ACCT.owner){
+    n.textContent="∞"; chip.className="creditChip"; $("#buyBtn").style.display="none";
+  }else{
+    const c = ACCT.credits;
+    n.textContent = c===null ? "—" : c;
+    chip.className = "creditChip" + (c===0 ? " empty" : (c!==null && c<=5 ? " low" : ""));
+    $("#buyBtn").style.display="";
+  }
+}
+
+async function refreshMe(){
+  if(ACCT.owner){ updateAcctBar(); return; }
+  const token = await getToken();
+  if(!token) return;
+  try{
+    const r = await fetch("/api/me",{headers:{Authorization:`Bearer ${token}`}});
+    if(!r.ok) return;
+    const j = await r.json();
+    ACCT.credits = j.credits; ACCT.email = j.email;
+    updateAcctBar();
+  }catch(e){ /* the chip just keeps its last value */ }
+}
+
+function showPinGate(){ $("#pinGate").classList.remove("hidden"); setTimeout(()=>$("#emailInput")?.focus(),50); }
 function hidePinGate(){ $("#pinGate").classList.add("hidden"); }
 
-// Every API call carries the verified PIN; a 401 anywhere re-locks the app.
+// Every API call carries either the session token or the owner PIN. A 401 re-locks the app;
+// a 402 means the render was refused for lack of credits, which opens the buy sheet instead.
 async function apiFetch(path, body, signal){
-  const r = await fetch(path,{method:"POST",signal,
-    headers:{"content-type":"application/json","x-podder-pin":getPin()},
-    body:JSON.stringify(body)});
-  if(r.status===401){ localStorage.removeItem("podder_pin"); showPinGate(); throw new Error("PIN required"); }
+  const token = ACCT.owner ? "" : await getToken();
+  const headers = {"content-type":"application/json"};
+  if(token) headers.Authorization = `Bearer ${token}`;
+  if(ACCT.owner || !token) headers["x-podder-pin"] = getPin();
+
+  const r = await fetch(path,{method:"POST",signal,headers,body:JSON.stringify(body)});
+
+  if(r.status===401){
+    const refreshed = await refreshSession();
+    if(!refreshed){ signOut(); throw new Error("Please sign in again"); }
+    throw new Error("Session refreshed — try again");
+  }
   const j = await r.json().catch(()=>({}));
+  if(r.status===402){
+    ACCT.credits = 0; updateAcctBar(); openBuy(`You need ${j.needed||1} credit${(j.needed||1)>1?"s":""} for that render.`);
+    throw new Error("Out of credits");
+  }
   if(!r.ok) throw new Error(j.detail || j.error || ("HTTP "+r.status));
+  if(typeof j.credits === "number"){ ACCT.credits = j.credits; updateAcctBar(); }
   return j;
+}
+
+// --- buy credits ---
+async function openBuy(msg){
+  const cfg = await loadConfig();
+  const wrap=$("#buyWrap");
+  $("#buySub").textContent = msg || "Credits never expire.";
+  const costs = cfg.costs||{fast:1,quality:3};
+  $("#buyCosts").textContent = `Fast render = ${costs.fast} credit${costs.fast>1?"s":""} · Quality render = ${costs.quality} credits`;
+
+  const list=$("#packList"); list.innerHTML="";
+  (cfg.packs||[]).forEach(p=>{
+    const per = (p.amount/100/p.credits);
+    const row=document.createElement("div");
+    row.className="packRow";
+    row.innerHTML=`<div class="pk"><div class="pkName">${p.name}</div>
+      <div class="pkSub">${p.credits} credits · $${per.toFixed(3).replace(/0$/,"")} each</div></div>
+      <div class="pkPrice">$${(p.amount/100).toFixed(2)}</div>`;
+    row.onclick=()=>startCheckout(p.id,row);
+    list.appendChild(row);
+  });
+  wrap.classList.add("show");
+}
+function closeBuy(){ $("#buyWrap").classList.remove("show"); }
+
+async function startCheckout(packId, row){
+  const token = await getToken();
+  if(!token){ toast("Sign in first"); return; }
+  const old = row.style.opacity; row.style.opacity=".5"; row.style.pointerEvents="none";
+  try{
+    const r = await fetch("/api/checkout",{method:"POST",
+      headers:{"content-type":"application/json",Authorization:`Bearer ${token}`},
+      body:JSON.stringify({pack:packId})});
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok || !j.url) throw new Error(j.detail || j.error || "Checkout unavailable");
+    location.href = j.url;
+  }catch(e){
+    toast("Checkout failed: "+e.message);
+    row.style.opacity=old; row.style.pointerEvents="";
+  }
 }
 const blobToDataURL = blob => new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(blob); });
 
@@ -4629,8 +4865,27 @@ document.querySelectorAll(".lock").forEach(l=>l.onclick=()=>{
   const k=l.dataset.lock;state.locks[k]=!state.locks[k];
   l.classList.toggle("on",state.locks[k]);l.textContent=(state.locks[k]?"🔒":"🔓")+" lock";
 });
-// PIN bootstrap: a stored PIN is re-verified silently; otherwise the gate stays up until
-// /api/auth approves. The first batch only generates once the app is actually unlocked.
+// --- Gate wiring ---
+$("#showPinLink").onclick = ()=>{ $("#gateEmailPane").classList.add("hidden"); $("#gatePinPane").classList.remove("hidden"); setTimeout(()=>$("#pinInput").focus(),50); };
+$("#showEmailLink").onclick = ()=>{ $("#gatePinPane").classList.add("hidden"); $("#gateEmailPane").classList.remove("hidden"); setTimeout(()=>$("#emailInput").focus(),50); };
+
+$("#emailForm").onsubmit = async (e)=>{
+  e.preventDefault();
+  const email = $("#emailInput").value.trim();
+  if(!email) return;
+  const btn = e.target.querySelector("button"); btn.disabled = true;
+  $("#emailErr").classList.add("hidden"); $("#emailOk").classList.add("hidden");
+  try{
+    await sendMagicLink(email);
+    $("#emailOk").textContent = `Check ${email} — the sign-in link is on its way.`;
+    $("#emailOk").classList.remove("hidden");
+  }catch(err){
+    $("#emailErr").textContent = err.message;
+    $("#emailErr").classList.remove("hidden");
+  }
+  btn.disabled = false;
+};
+
 $("#pinForm").onsubmit = async (e)=>{
   e.preventDefault();
   const pin = $("#pinInput").value.trim();
@@ -4640,21 +4895,80 @@ $("#pinForm").onsubmit = async (e)=>{
   btn.disabled = false;
   if(ok){
     localStorage.setItem("podder_pin", pin);
+    ACCT.owner = true;
     $("#pinErr").classList.add("hidden"); $("#pinInput").value = "";
-    hidePinGate();
-    // user clicks Generate manually
+    hidePinGate(); updateAcctBar();
   } else {
     $("#pinErr").classList.remove("hidden"); $("#pinInput").select();
   }
 };
+
+$("#buyBtn").onclick = ()=>openBuy();
+$("#buyClose").onclick = closeBuy;
+$("#buyWrap").onclick = (e)=>{ if(e.target.id==="buyWrap") closeBuy(); };
+$("#signOutBtn").onclick = signOut;
+document.addEventListener("keydown",(e)=>{ if(e.key==="Escape" && $("#buyWrap").classList.contains("show")) closeBuy(); });
+
+// Boot: a magic-link return lands with tokens in the hash; otherwise a stored session or
+// the owner PIN unlocks silently. The gate only stays up when none of those pan out.
 (async ()=>{
   pruneImageStore();
-  const v = getPin() ? await verifyPin(getPin()) : "bad";
-  if(v === "ok"){
-    hidePinGate();
+  const cfg = await loadConfig();
+  if(cfg.signupBonus) $("#gateBonus").textContent = `New accounts start with ${cfg.signupBonus} free credits.`;
+  if(!cfg.ready){
+    $("#gateEmailPane").classList.add("hidden");
+    $("#gatePinPane").classList.remove("hidden");
+  }
+
+  consumeAuthHash();
+
+  if(ACCT.session || loadSession()){
+    await refreshMe();
+    if(ACCT.email){ hidePinGate(); }
+    else { saveSession(null); showPinGate(); }
+  } else if(getPin() && (await verifyPin(getPin())) === "ok"){
+    ACCT.owner = true; hidePinGate(); updateAcctBar();
   } else {
-    if(v === "bad") localStorage.removeItem("podder_pin");   // keep the PIN on transient errors
     showPinGate();
+  }
+
+  // Back from Stripe. Rather than waiting on the webhook, claim the session directly —
+  // the server re-verifies it with Stripe and credits idempotently, so this is safe even
+  // when the webhook has already landed. Falls back to polling if the claim is unavailable.
+  const params = new URLSearchParams(location.search);
+  if(params.get("purchase") === "success"){
+    const sid = params.get("session_id");
+    history.replaceState(null,"",location.pathname);
+    toast("💜 Payment received — topping up…");
+
+    let done = false;
+    if(sid){
+      const token = await getToken();
+      for(let i=0;i<3 && !done;i++){
+        try{
+          const r = await fetch("/api/claim",{method:"POST",
+            headers:{"content-type":"application/json",Authorization:`Bearer ${token}`},
+            body:JSON.stringify({session_id:sid})});
+          const j = await r.json().catch(()=>({}));
+          if(typeof j.credits === "number"){ ACCT.credits=j.credits; updateAcctBar(); }
+          if(j.ok){ done = true; break; }
+          if(r.status !== 503) break;          // terminal reason — stop retrying
+        }catch(e){ /* fall through to the retry / polling path */ }
+        await new Promise(r=>setTimeout(r,1500));
+      }
+    }
+    if(!done){
+      for(let i=0;i<6;i++){
+        const before = ACCT.credits;
+        await refreshMe();
+        if(ACCT.credits !== before && ACCT.credits > 0){ done = true; break; }
+        await new Promise(r=>setTimeout(r,1500));
+      }
+    }
+    toast(done ? `✦ ${ACCT.credits} credits ready` : "Payment received — refresh if your balance looks stale");
+  } else if(params.get("purchase") === "cancelled"){
+    history.replaceState(null,"",location.pathname);
+    toast("Checkout cancelled");
   }
 })();
 </script>

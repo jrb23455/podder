@@ -8,16 +8,44 @@
 
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+// .env.local (gitignored) so Supabase/Stripe/Replicate keys can be exercised locally
+// without exporting them into the shell every time. Loaded before the API modules read
+// process.env at import time.
+{
+  const envPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '.env.local');
+  if (existsSync(envPath)) {
+    for (const line of readFileSync(envPath, 'utf8').split('\n')) {
+      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/i);
+      if (m) process.env[m[1]] ??= m[2].replace(/^["']|["']$/g, '');
+    }
+  }
+}
 import authHandler from './api/auth.js';
 import generateHandler from './api/generate.js';
+import configHandler from './api/config.js';
+import meHandler from './api/me.js';
+import checkoutHandler from './api/checkout.js';
+import webhookHandler from './api/stripe-webhook.js';
+import claimHandler from './api/claim.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = 8299;
 process.env.PODDER_PIN ||= '2323';
 
-const ROUTES = { '/api/auth': authHandler, '/api/generate': generateHandler };
+const ROUTES = {
+  '/api/auth': authHandler,
+  '/api/generate': generateHandler,
+  '/api/config': configHandler,
+  '/api/me': meHandler,
+  '/api/checkout': checkoutHandler,
+  '/api/stripe-webhook': webhookHandler,
+  '/api/claim': claimHandler,
+};
+const RAW_ROUTES = new Set(['/api/stripe-webhook']);
 const TYPES = { '.html': 'text/html; charset=utf-8', '.png': 'image/png', '.ico': 'image/x-icon',
   '.json': 'application/json', '.svg': 'image/svg+xml', '.js': 'text/javascript', '.css': 'text/css' };
 
@@ -31,6 +59,14 @@ const server = http.createServer(async (req, res) => {
   const p = req.url.split('?')[0];
 
   if (ROUTES[p]) {
+    // The Stripe webhook verifies a signature over the exact bytes, so it reads the stream
+    // itself (mirroring `bodyParser: false` on Vercel). Consuming it here would hang it.
+    if (RAW_ROUTES.has(p)) {
+      vercelify(req, res, undefined);
+      try { await ROUTES[p](req, res); }
+      catch (e) { if (!res.writableEnded) res.status(500).json({ error: String(e.message || e) }); }
+      return;
+    }
     let raw = '';
     for await (const c of req) raw += c;
     let body = {};
