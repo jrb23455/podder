@@ -4916,8 +4916,17 @@ document.addEventListener("keydown",(e)=>{ if(e.key==="Escape" && $("#buyWrap").
   const cfg = await loadConfig();
   if(cfg.signupBonus) $("#gateBonus").textContent = `New accounts start with ${cfg.signupBonus} free credits.`;
   if(!cfg.ready){
+    // Sign-in cannot work, so don't offer it — fall back to the owner PIN and say what is
+    // wrong. Only variable names are shown, never values.
     $("#gateEmailPane").classList.add("hidden");
     $("#gatePinPane").classList.remove("hidden");
+    if(cfg.problems?.length){
+      const n=document.createElement("div");
+      n.className="gateNote";
+      n.textContent="Sign-in unavailable — server config: "+cfg.problems.join("; ");
+      $("#gatePinPane").appendChild(n);
+      console.warn("Podder config problems:", cfg.problems);
+    }
   }
 
   consumeAuthHash();

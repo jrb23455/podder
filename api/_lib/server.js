@@ -10,9 +10,25 @@
 const SUPABASE_URL = () => (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
 const SERVICE_KEY  = () => process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
+// Reports env vars that are absent OR obviously wrong. The "obviously wrong" half exists
+// because pasting a variable's NAME into its VALUE box is an easy slip that otherwise
+// sails through every presence check and only surfaces as a confusing 401 much later.
 export function missingEnv() {
-  const need = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
-  return need.filter(k => !process.env[k]);
+  const bad = [];
+  const url = process.env.SUPABASE_URL || '';
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+  if (!url) bad.push('SUPABASE_URL');
+  else if (!/^https:\/\/[^\s/]+\.supabase\.(co|in)$/.test(url.replace(/\/+$/, ''))) {
+    bad.push('SUPABASE_URL (not a valid Supabase URL — expected https://<ref>.supabase.co)');
+  }
+
+  if (!key) bad.push('SUPABASE_SERVICE_ROLE_KEY');
+  else if (!key.startsWith('eyJ') && !key.startsWith('sb_secret_')) {
+    bad.push('SUPABASE_SERVICE_ROLE_KEY (does not look like a service-role key)');
+  }
+
+  return bad;
 }
 
 // ---------------------------------------------------------------------------
