@@ -158,6 +158,9 @@
   .pinBox p{color:var(--muted);font-size:14px;margin:0 0 18px}
   .pinBox form{display:flex;gap:10px}
   .pinBox form.stack{flex-direction:column}
+  /* Says what costs money, at the place where money gets spent. */
+  .cost-note{width:100%;margin-top:8px;font-size:12.5px;color:var(--muted);line-height:1.5}
+  .cost-note b{color:var(--ink);font-weight:600}
   .pinBox input{flex:1;padding:12px 14px;border-radius:12px;border:1px solid var(--panel-brd);background:#1a1130;color:var(--ink);
     font-size:20px;letter-spacing:6px;text-align:center;min-width:0}
   .pinBox input.email{font-size:15px;letter-spacing:0}
@@ -400,12 +403,13 @@
         <button class="btn ghost" id="surpriseBtn">🎲 Surprise me</button>
         <button class="btn ghost" id="randomizeBtn" title="Each render slot gets its own random object, shape &amp; style from this category">🎲 Randomize all</button>
         <button class="btn ghost" id="stopAllBtn" title="Stop every render currently in progress">⏹ Stop all</button>
-        <label class="quality-toggle" title="Fast: klein 4B (~$0.01, <1s) — Quality: pro (~$0.05, ~5s)">
+        <label class="quality-toggle" id="qualityLabel" title="Fast: quicker, costs less. Quality: slower, sharper detail.">
           <span id="qtLabel" class="qt-label">⚡ Fast</span>
           <input type="checkbox" id="qualityToggle" />
           <span class="qt-track"><span class="qt-thumb"></span></span>
         </label>
       </div>
+      <div id="costNote" class="cost-note"></div>
     </div>
 
     <div class="out" id="output"></div>
@@ -5136,6 +5140,16 @@ document.addEventListener("keydown",(e)=>{ if(e.key==="Escape" && $("#buyWrap").
 (async ()=>{
   pruneImageStore();
   const cfg = await loadConfig();
+  // State plainly what is free and what is not. This is the whole of the "tutorial" —
+  // Podder is a guided picker with no wrong inputs, so the only thing a newcomer can
+  // genuinely be caught out by is not knowing a render costs something.
+  const cn = $("#costNote");
+  if(cn && cfg.costs){
+    const f = cfg.costs.fast, q = cfg.costs.quality;
+    cn.innerHTML = `Browsing, picking and generating prompts is <b>free</b> — you only spend credits when you hit Render. `
+      + `⚡ Fast = ${f} credit${f>1?"s":""} · ✦ Quality = ${q} credits.`;
+  }
+
   // While launch slots remain, lead with them — the scarcity is the reason to sign up now.
   if(cfg.promo?.remaining > 0){
     const n = cfg.promo.remaining;
