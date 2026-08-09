@@ -47,7 +47,7 @@ export async function getUser(req) {
     });
     if (!r.ok) return null;
     const u = await r.json();
-    return u?.id ? { id: u.id, email: u.email || null } : null;
+    return u?.id ? { id: u.id, email: u.email || null, anonymous: !!u.is_anonymous } : null;
   } catch {
     return null;
   }

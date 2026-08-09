@@ -296,6 +296,7 @@
       <span class="acctEmail" id="acctEmail"></span>
       <span class="creditChip" id="creditChip" title="Render credits">✦ <span id="creditCount">—</span></span>
       <button class="btn primary" id="buyBtn" type="button">Buy credits</button>
+      <button class="btn primary" id="signInBtn" type="button" style="display:none">Sign in</button>
       <button class="btn ghost" id="signOutBtn" type="button">Sign out</button>
     </div>
   </header>
@@ -3938,6 +3939,13 @@ async function generate(){
   for(let i=0;i<n;i++) out.push(buildPrompt());
   render(out, $("#output"), {emptyMsg:"Hit Generate."});
   const cards = [...document.querySelectorAll("#output .card")];
+
+  // Don't auto-render for a visitor with no session yet. Their trial is 5 renders; spending
+  // three of them on a batch they didn't ask for — or popping a login wall the instant they
+  // press Generate — is exactly the friction this flow exists to remove. Let them browse the
+  // cards and click Render on the one they actually want, which is what starts the trial.
+  if(!(ACCT.owner || ACCT.loaded)) return;
+
   const batch = new AbortController(); inFlightCtls.add(batch);
   (async()=>{
     for(let i=0;i<cards.length;i++){
@@ -4279,6 +4287,42 @@ async function signUpWithPassword(email, password){
   return {signedIn:false, needsConfirm:true};
 }
 
+// Anonymous trial. Creates a real Supabase user with no email, which drops straight into
+// the existing credit system — no separate guest plumbing. Called lazily on the first
+// render attempt, never on page load, so a visitor who only browses costs nothing and
+// leaves no row behind.
+async function startAnonSession(){
+  const cfg = await loadConfig();
+  if(!cfg.ready) return false;
+  try{
+    const r = await fetch(`${cfg.supabaseUrl}/auth/v1/signup`,{
+      method:"POST", headers:{"content-type":"application/json", apikey:cfg.anonKey},
+      body:"{}"});
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok || !j.access_token) return false;      // e.g. anonymous sign-ins disabled
+    saveSession({access_token:j.access_token, refresh_token:j.refresh_token,
+                 expires_at: Date.now() + (j.expires_in||3600)*1000});
+    ACCT.anon = true;
+    await refreshMe();
+    return true;
+  }catch(e){ return false; }
+}
+
+// Attach an email + password to the CURRENT session rather than creating a new user, so a
+// trial visitor keeps their credits and history when they convert. The database grants the
+// real signup bonus on top (see handle_user_upgrade in 0004_anonymous_trial.sql).
+async function upgradeAnonAccount(email, password){
+  const cfg = await loadConfig();
+  const token = await getToken();
+  const r = await fetch(`${cfg.supabaseUrl}/auth/v1/user`,{
+    method:"PUT", headers:{"content-type":"application/json", apikey:cfg.anonKey, Authorization:`Bearer ${token}`},
+    body:JSON.stringify({email, password})});
+  const j = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(authErr(j,"Could not create the account"));
+  ACCT.anon = false;
+  return { needsConfirm: !j.email_confirmed_at && !j.confirmed_at };
+}
+
 async function sendMagicLink(email){
   const cfg = await loadConfig();
   if(!cfg.ready) throw new Error("Sign-in is not configured yet — set SUPABASE_URL and SUPABASE_ANON_KEY.");
@@ -4303,19 +4347,46 @@ function signOut(){
 function updateAcctBar(){
   const bar=$("#acctBar");
   if(!bar) return;
-  const signedIn = ACCT.owner || !!(ACCT.session||loadSession());
-  bar.style.display = signedIn ? "" : "none";
-  if(!signedIn) return;
+  bar.style.display = "";                       // always visible now — it carries the sign-in CTA too
+  const hasSession = ACCT.owner || ACCT.loaded;
 
-  $("#acctEmail").textContent = ACCT.owner ? "owner" : (ACCT.email||"");
   const chip=$("#creditChip"), n=$("#creditCount");
+  const signInBtn=$("#signInBtn"), buyBtn=$("#buyBtn"), outBtn=$("#signOutBtn");
+
+  // Browsing with no session at all: invite sign-in, hide everything account-shaped.
+  if(!hasSession){
+    $("#acctEmail").textContent = "";
+    chip.style.display = "none";
+    buyBtn.style.display = "none";
+    outBtn.style.display = "none";
+    signInBtn.style.display = "";
+    return;
+  }
+
+  chip.style.display = "";
+  signInBtn.style.display = "none";
+  outBtn.style.display = "";
+
   if(ACCT.owner){
-    n.textContent="∞"; chip.className="creditChip"; $("#buyBtn").style.display="none";
+    $("#acctEmail").textContent = "owner";
+    n.textContent="∞"; chip.className="creditChip";
+    buyBtn.style.display="none";
+    return;
+  }
+
+  const c = ACCT.credits;
+  n.textContent = c===null ? "—" : c;
+  chip.className = "creditChip" + (c===0 ? " empty" : (c!==null && c<=5 ? " low" : ""));
+
+  // Anonymous trial: the call to action is "keep your work", not "buy more".
+  if(ACCT.anon){
+    $("#acctEmail").textContent = "trial";
+    buyBtn.textContent = "Save my work";
+    buyBtn.style.display = "";
   }else{
-    const c = ACCT.credits;
-    n.textContent = c===null ? "—" : c;
-    chip.className = "creditChip" + (c===0 ? " empty" : (c!==null && c<=5 ? " low" : ""));
-    $("#buyBtn").style.display="";
+    $("#acctEmail").textContent = ACCT.email||"";
+    buyBtn.textContent = "Buy credits";
+    buyBtn.style.display = "";
   }
 }
 
@@ -4328,12 +4399,26 @@ async function refreshMe(){
     if(!r.ok) return;
     const j = await r.json();
     ACCT.credits = j.credits; ACCT.email = j.email;
+    ACCT.anon = !!j.anonymous;
+    ACCT.loaded = true;          // anonymous users have no email, so presence of one can't mean "signed in"
     updateAcctBar();
   }catch(e){ /* the chip just keeps its last value */ }
 }
 
 function showPinGate(){ $("#pinGate").classList.remove("hidden"); setTimeout(()=>$("#emailInput")?.focus(),50); }
 function hidePinGate(){ $("#pinGate").classList.add("hidden"); }
+
+// Called before anything that costs credits. A visitor with no session silently gets an
+// anonymous trial rather than a login wall — the account prompt is deferred until the
+// trial runs out, which is the point at which signing up actually buys them something.
+// Returns false only if no session could be established at all.
+async function ensureRenderable(){
+  if(ACCT.owner || ACCT.loaded) return true;
+  if(ACCT.session || loadSession()){ await refreshMe(); if(ACCT.loaded) return true; }
+  if(await startAnonSession()) return true;
+  showPinGate();                       // anonymous sign-ins off, or Supabase unreachable
+  return false;
+}
 
 // Every API call carries either the session token or the owner PIN. A 401 re-locks the app;
 // a 402 means the render was refused for lack of credits, which opens the buy sheet instead.
@@ -4352,7 +4437,18 @@ async function apiFetch(path, body, signal){
   }
   const j = await r.json().catch(()=>({}));
   if(r.status===402){
-    ACCT.credits = 0; updateAcctBar(); openBuy(`You need ${j.needed||1} credit${(j.needed||1)>1?"s":""} for that render.`);
+    ACCT.credits = 0; updateAcctBar();
+    if(ACCT.anon){
+      // A trial visitor should be asked to sign up, not to pay — the free signup bonus is
+      // larger than the trial, so an account is strictly the better next step for them.
+      const cfg = await loadConfig();
+      const reward = cfg.promo?.remaining > 0 ? cfg.promo.credits : cfg.signupBonus;
+      setAuthMode("signup");
+      $("#gateLead").textContent = `Trial used up — create an account for ${reward.toLocaleString()} more credits.`;
+      showPinGate();
+    } else {
+      openBuy(`You need ${j.needed||1} credit${(j.needed||1)>1?"s":""} for that render.`);
+    }
     throw new Error("Out of credits");
   }
   if(!r.ok) throw new Error(j.detail || j.error || ("HTTP "+r.status));
@@ -4579,6 +4675,8 @@ function downloadName(item, comfyFilename){
 }
 async function renderCard(item, card, revealAfter, startAfter){
   const btn = card.querySelector(".render"), wrap = card.querySelector(".render-wrap");
+  // First render of the visit is where an anonymous trial gets created — never on page load.
+  if(!(await ensureRenderable())) return;
   btn.disabled = true; btn.textContent = "⏳ …";
   wrap.innerHTML = `<div style="text-align:center"><img class="render-spin" src="Podder-192.png" alt="" /><div class="render-status">Rendering in the cloud…</div></div>`;
   const status = wrap.querySelector(".render-status");
@@ -4958,7 +5056,11 @@ $("#emailForm").onsubmit = async (e)=>{
   $("#emailErr").classList.add("hidden"); $("#emailOk").classList.add("hidden");
   try{
     if(authMode === "signup"){
-      const r = await signUpWithPassword(email, pass);
+      // On a trial, attach credentials to the EXISTING user so their credits, favourites
+      // and history survive the conversion. Creating a fresh account would orphan all of it.
+      const r = ACCT.anon
+        ? await upgradeAnonAccount(email, pass)
+        : await signUpWithPassword(email, pass);
       if(r.needsConfirm){
         $("#emailOk").textContent = `Account created. Check ${email} to confirm before signing in.`;
         $("#emailOk").classList.remove("hidden");
@@ -5013,7 +5115,17 @@ $("#pinForm").onsubmit = async (e)=>{
   }
 };
 
-$("#buyBtn").onclick = ()=>openBuy();
+// On a trial the primary button is "Save my work", which means create an account, not buy.
+$("#buyBtn").onclick = ()=>{
+  if(ACCT.anon){ setAuthMode("signup"); showPinGate(); return; }
+  openBuy();
+};
+$("#signInBtn").onclick = ()=>{ setAuthMode("signin"); showPinGate(); };
+// The gate is no longer a wall — clicking the backdrop or pressing Escape returns to browsing.
+$("#pinGate").onclick = (e)=>{ if(e.target.id==="pinGate") hidePinGate(); };
+document.addEventListener("keydown",(e)=>{
+  if(e.key==="Escape" && !$("#pinGate").classList.contains("hidden")) hidePinGate();
+});
 $("#buyClose").onclick = closeBuy;
 $("#buyWrap").onclick = (e)=>{ if(e.target.id==="buyWrap") closeBuy(); };
 $("#signOutBtn").onclick = signOut;
@@ -5048,15 +5160,18 @@ document.addEventListener("keydown",(e)=>{ if(e.key==="Escape" && $("#buyWrap").
 
   consumeAuthHash();
 
+  // The app is browsable without an account. Building prompts is entirely client-side and
+  // costs nothing, so gating it only turned away people who wanted to look first. The gate
+  // now appears on demand — from the Sign in button, or if a trial cannot be started.
+  hidePinGate();
+
   if(ACCT.session || loadSession()){
     await refreshMe();
-    if(ACCT.email){ hidePinGate(); }
-    else { saveSession(null); showPinGate(); }
+    if(!ACCT.loaded) saveSession(null);      // stale or revoked token — drop it, stay browsable
   } else if(getPin() && (await verifyPin(getPin())) === "ok"){
-    ACCT.owner = true; hidePinGate(); updateAcctBar();
-  } else {
-    showPinGate();
+    ACCT.owner = true;
   }
+  updateAcctBar();
 
   // Back from Stripe. Rather than waiting on the webhook, claim the session directly —
   // the server re-verifies it with Stripe and credits idempotently, so this is safe even
