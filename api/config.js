@@ -6,9 +6,9 @@
 // so preview and production deploys point at different projects without a code change.
 
 import { CREDIT_COST, PACKS, SIGNUP_BONUS } from './_lib/config.js';
-import { missingEnv } from './_lib/server.js';
+import { missingEnv, selectOne } from './_lib/server.js';
 
-export default function handler(req, res) {
+export default async function handler(req, res) {
   const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
   const anonKey = process.env.SUPABASE_ANON_KEY || '';
 
@@ -21,12 +21,23 @@ export default function handler(req, res) {
     problems.push('SUPABASE_ANON_KEY (does not look like an anon/publishable key)');
   }
 
+  // Launch promo counter, for the scarcity line on the sign-up screen. Best-effort: if the
+  // table is missing or unreachable the page still renders, it just doesn't advertise it.
+  let promo = null;
+  if (problems.length === 0) {
+    try {
+      const row = await selectOne('promos', 'name=eq.launch&select=credits,remaining');
+      if (row && row.remaining > 0) promo = { credits: row.credits, remaining: row.remaining };
+    } catch { /* counter is decoration, never a blocker */ }
+  }
+
   res.setHeader('Cache-Control', 'no-store');
   return res.status(200).json({
     supabaseUrl,
     anonKey,
     ready: problems.length === 0,
     problems,
+    promo,
     signupBonus: SIGNUP_BONUS,
     costs: CREDIT_COST,
     packs: Object.entries(PACKS).map(([id, p]) => ({

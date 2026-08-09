@@ -5013,7 +5013,14 @@ document.addEventListener("keydown",(e)=>{ if(e.key==="Escape" && $("#buyWrap").
 (async ()=>{
   pruneImageStore();
   const cfg = await loadConfig();
-  if(cfg.signupBonus) $("#gateBonus").textContent = `New accounts start with ${cfg.signupBonus} free credits.`;
+  // While launch slots remain, lead with them — the scarcity is the reason to sign up now.
+  if(cfg.promo?.remaining > 0){
+    const n = cfg.promo.remaining;
+    $("#gateBonus").innerHTML = `<b>🚀 Launch offer — ${cfg.promo.credits.toLocaleString()} free credits</b><br>`
+      + `only ${n} ${n===1?"spot":"spots"} left, then new accounts get ${cfg.signupBonus}.`;
+  } else if(cfg.signupBonus){
+    $("#gateBonus").textContent = `New accounts start with ${cfg.signupBonus} free credits.`;
+  }
   if(!cfg.ready){
     // Sign-in cannot work, so don't offer it — fall back to the owner PIN and say what is
     // wrong. Only variable names are shown, never values.
