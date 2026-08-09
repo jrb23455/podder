@@ -20,7 +20,10 @@ export const PACKS = {
   studio:   { credits: 700, amount: 4000, name: 'Studio pack',   blurb: '700 credits' },
 };
 
-export const SIGNUP_BONUS = 8;   // mirrors handle_new_user() in 0001_credits.sql
+// Mirrors handle_new_user() — currently set by 0002_signup_bonus_25.sql. The database
+// grants the credits; this constant only advertises them, so the two must move together.
+// Keep it below PACKS.starter.credits or the cheapest paid tier becomes unsellable.
+export const SIGNUP_BONUS = 25;
 
 export function creditsFor(quality) {
   return CREDIT_COST[quality] ?? CREDIT_COST.fast;
