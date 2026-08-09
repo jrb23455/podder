@@ -12,6 +12,16 @@ export const CREDIT_COST = {
   quality: 3,
 };
 
+// Stripe Managed Payments is enabled by default on this account and rejects inline
+// price_data without a tax code. txcd_10105001 is "AIaaS - Cloud Based - Personal Use":
+// access to AI tools (image generators) hosted on the provider's servers, used via a
+// browser, for personal rather than commercial use — which is what Podder credits are.
+//
+// This choice drives how sales tax / VAT is calculated on every sale. If most buyers turn
+// out to be businesses reselling prints, txcd_10105002 (Business Use) is the correct code.
+// Worth confirming against your own tax situation; full list at docs.stripe.com/tax/tax-codes.
+export const TAX_CODE = 'txcd_10105001';
+
 // Stripe charges 2.9% + $0.30, which is 18% of a $2 sale but only 3.6% of a $40 one —
 // hence a $5 floor rather than the $2 pack that looked attractive on paper.
 export const PACKS = {

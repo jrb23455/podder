@@ -7,7 +7,7 @@
 // are created inline via price_data, so there is nothing to keep in sync in the dashboard.
 
 import { getUser, stripe, missingEnv } from './_lib/server.js';
-import { PACKS } from './_lib/config.js';
+import { PACKS, TAX_CODE } from './_lib/config.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
@@ -42,7 +42,9 @@ export default async function handler(req, res) {
         price_data: {
           currency: 'usd',
           unit_amount: pack.amount,
-          product_data: { name: `Podder — ${pack.name}`, description: pack.blurb },
+          // tax_code is mandatory here: Managed Payments is on by default for this
+          // account and rejects inline products without one.
+          product_data: { name: `Podder — ${pack.name}`, description: pack.blurb, tax_code: TAX_CODE },
         },
       }],
       // Stripe substitutes the real id here. The client posts it to /api/claim on return,
