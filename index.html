@@ -180,6 +180,19 @@
   .acctBar .btn{padding:6px 12px;font-size:12.5px}
 
   /* --- Buy credits modal --- */
+  /* Gallery */
+  .galleryWrap{display:flex;flex-direction:column;gap:28px;padding-bottom:32px}
+  .galleryGroup{}
+  .galleryGroupLabel{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--panel-brd)}
+  .galleryGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:8px}
+  .galleryThumb{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:zoom-in;
+    transition:transform .15s,box-shadow .15s;background:var(--bg2)}
+  .galleryThumb:hover{transform:scale(1.03);box-shadow:0 4px 20px #0006}
+  #galleryLightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;
+    cursor:zoom-out;align-items:center;justify-content:center}
+  #galleryLightbox.open{display:flex}
+
   .buyWrap{position:fixed;inset:0;background:rgba(5,2,10,.72);backdrop-filter:blur(3px);z-index:120;
     display:none;align-items:center;justify-content:center;padding:20px}
   .buyWrap.show{display:flex}
@@ -311,6 +324,7 @@
     <div class="tab" data-tab="fav">★ Favorites <span class="count-badge" id="favCount">0</span></div>
     <div class="tab" data-tab="hist">↺ History <span class="count-badge" id="histCount">0</span></div>
     <div class="tab" data-tab="rerolls">🎲 Rerolls <span class="count-badge" id="rerollCount">0</span></div>
+    <div class="tab" data-tab="gallery">🖼 Gallery</div>
     <div class="tab" data-tab="price">💲 Pricing</div>
   </div>
 
@@ -433,6 +447,271 @@
   <div id="tab-rerolls" class="hidden">
     <p class="tag">Each set below is 6 random objects rendered in the same style DNA as the favorite you rerolled from. Reroll again for a fresh set of 6 — old sets stay put until you delete them.</p>
     <div id="rerollsList"></div>
+  </div>
+
+  <!-- GALLERY TAB -->
+  <div id="tab-gallery" class="hidden">
+    <p class="tag" style="margin-bottom:16px">Examples rendered by Podder — every image is a real output, not touched up. Click any to enlarge.</p>
+
+    <div class="galleryWrap">
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Vase</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/Vase_ClassicUrn_vaporwave_pastel_00004_.png" loading="lazy" alt="Vase — Classic Urn, vaporwave, pastel">
+          <img class="galleryThumb" src="gallery/Vase_ClassicUrn_vaporwave_pastel_00005_.png" loading="lazy" alt="Vase — Classic Urn, vaporwave, pastel">
+          <img class="galleryThumb" src="gallery/Vase_Amphora_honeycomb_pastel_00004_.png" loading="lazy" alt="Vase — Amphora, honeycomb, pastel">
+          <img class="galleryThumb" src="gallery/Vase_origami_art_edit_00002_.png" loading="lazy" alt="Vase — origami, art">
+          <img class="galleryThumb" src="gallery/Vase_origami_art_edit_00005_.png" loading="lazy" alt="Vase — origami, art">
+          <img class="galleryThumb" src="gallery/Vase_baroque-egyptian-lunar_pastel_00001_.png" loading="lazy" alt="Vase — baroque, Egyptian, lunar, pastel">
+          <img class="galleryThumb" src="gallery/Vase_botanical_pastel_00001_.png" loading="lazy" alt="Vase — botanical, pastel">
+          <img class="galleryThumb" src="gallery/Vase_volcanic_pastel_00001_.png" loading="lazy" alt="Vase — volcanic, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Chalice / Goblet</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/ChaliceGoblet_drippy-origami_pastel_00003_.png" loading="lazy" alt="Chalice/Goblet — drippy origami, pastel">
+          <img class="galleryThumb" src="gallery/ChaliceGoblet_drippy-origami_pastel_00004_.png" loading="lazy" alt="Chalice/Goblet — drippy origami, pastel">
+          <img class="galleryThumb" src="gallery/ChaliceGoblet_trippy_pastel_00014_.png" loading="lazy" alt="Chalice/Goblet — trippy, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Bookend</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/Bookend_alien-trippy-honeycomb_pastel_edit_00002_.png" loading="lazy" alt="Bookend — alien, trippy, honeycomb, pastel">
+          <img class="galleryThumb" src="gallery/Bookend_alien-trippy-honeycomb_pastel_edit_00004_.png" loading="lazy" alt="Bookend — alien, trippy, honeycomb, pastel">
+          <img class="galleryThumb" src="gallery/Bookend_alien-trippy-honeycomb_pastel_edit_00006_.png" loading="lazy" alt="Bookend — alien, trippy, honeycomb, pastel">
+          <img class="galleryThumb" src="gallery/Bookend_Cube_drippy-zen-pixelvoxel_pastel_00001_.png" loading="lazy" alt="Bookend — Cube, drippy, zen, pixel voxel, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Incense Holder</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/IncenseHolder_Lotus_origami-zen_magenta_00002_.png" loading="lazy" alt="Incense Holder — Lotus, origami, zen, magenta">
+          <img class="galleryThumb" src="gallery/IncenseHolder_Lotus_zen-origami_magenta_00001_.png" loading="lazy" alt="Incense Holder — Lotus, zen, origami, magenta">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Picture Frame</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/PictureFrame_origami-trippy_pastel_00002_.png" loading="lazy" alt="Picture Frame — origami, trippy, pastel">
+          <img class="galleryThumb" src="gallery/PictureFrame_origami-trippy_pastel_00005_.png" loading="lazy" alt="Picture Frame — origami, trippy, pastel">
+          <img class="galleryThumb" src="gallery/PictureFrame_trippy-origami_pastel_00001_.png" loading="lazy" alt="Picture Frame — trippy, origami, pastel">
+          <img class="galleryThumb" src="gallery/PictureFrame_trippy-origami_pastel_00006_.png" loading="lazy" alt="Picture Frame — trippy, origami, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Bird Feeder</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/BirdFeeder_FlyingSaucer_trippy_sunset_00003_.png" loading="lazy" alt="Bird Feeder — Flying Saucer, trippy, sunset">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Birdhouse</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/Birdhouse_ClassicHouse_trippy-origami_pastel_00006_.png" loading="lazy" alt="Birdhouse — Classic House, trippy, origami, pastel">
+          <img class="galleryThumb" src="gallery/Birdhouse_trippy-origami_sunset_00003_.png" loading="lazy" alt="Birdhouse — trippy, origami, sunset">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Coaster</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/Coaster_Freeform_coralreef-voronoi_magenta_edit_00002_.png" loading="lazy" alt="Coaster — Freeform, coral reef, voronoi, magenta">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Garden Mushroom</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/GardenMushroom_crochet-drippy_pastel_00001_.png" loading="lazy" alt="Garden Mushroom — crochet, drippy, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Kawaii Food</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/KawaiiFood_drippy_marble_00004_.png" loading="lazy" alt="Kawaii Food — drippy, marble">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Bird</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/Bird_Peacock_sacred-trippy_pastel_00002_.png" loading="lazy" alt="Bird — Peacock, sacred, trippy, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Chonky Animal</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/ChonkyAnimal_PlumpPenguin_mossy_obsidian_00002_.png" loading="lazy" alt="Chonky Animal — Plump Penguin, mossy, obsidian">
+          <img class="galleryThumb" src="gallery/ChonkyAnimal_baroque-opart-scaled_magenta_00001_.png" loading="lazy" alt="Chonky Animal — baroque, op-art, magenta">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Character</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/Character_crystal_marble_00002_.png" loading="lazy" alt="Character — crystal, marble">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Cyberpunk</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/Cyberpunk_HeavyMerc_lunar-mosaic_terracotta_00001_.png" loading="lazy" alt="Cyberpunk — Heavy Merc, lunar, mosaic, terracotta">
+          <img class="galleryThumb" src="gallery/Cyberpunk_HeavyMerc_mosaic-lunar_terracotta_00002_.png" loading="lazy" alt="Cyberpunk — Heavy Merc, mosaic, lunar, terracotta">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Death Machine</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/DeathMachine_ReaperEngine_alien-botanical-voronoi_magenta_00001_.png" loading="lazy" alt="Death Machine — Reaper Engine, alien, botanical, voronoi, magenta">
+          <img class="galleryThumb" src="gallery/DeathMachine_ReaperEngine_honeycomb-mosaic_pastel_00001_.png" loading="lazy" alt="Death Machine — Reaper Engine, honeycomb, mosaic, pastel">
+          <img class="galleryThumb" src="gallery/DeathMachine_WarAltar_origami_obsidian_00001_.png" loading="lazy" alt="Death Machine — War Altar, origami, obsidian">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Horror Icon</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/HorrorIcon_GrimReaper_trippy_bone_00005_.png" loading="lazy" alt="Horror Icon — Grim Reaper, trippy, bone">
+          <img class="galleryThumb" src="gallery/HorrorIcon_PlagueDoctor_trippy_obsidian_00001_.png" loading="lazy" alt="Horror Icon — Plague Doctor, trippy, obsidian">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Alien</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/Alien_mosaic-origami_pastel_00002_.png" loading="lazy" alt="Alien — mosaic, origami, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Chinese Guardian</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/ChineseGuardian_XuanWu_origami_art_00003_.png" loading="lazy" alt="Chinese Guardian — Xuan Wu, origami, art">
+          <img class="galleryThumb" src="gallery/ChineseGuardian_origami_art_00003_.png" loading="lazy" alt="Chinese Guardian — origami, art">
+          <img class="galleryThumb" src="gallery/ChineseGuardian_circuitboard_pastel_00001_.png" loading="lazy" alt="Chinese Guardian — circuit board, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Hindu Deity</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/HinduDeity_swirly-crystal_pastel_00001_.png" loading="lazy" alt="Hindu Deity — swirly, crystal, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Egyptian God</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/EgyptianGod_Osiris_feathered-wave_art_00001_.png" loading="lazy" alt="Egyptian God — Osiris, feathered, wave, art">
+          <img class="galleryThumb" src="gallery/Deity_JackalGod_origami-volcanic_pastel_00003_.png" loading="lazy" alt="Deity — Jackal God, origami, volcanic, pastel">
+          <img class="galleryThumb" src="gallery/Deity_JackalGod_volcanic-origami_pastel_00001_.png" loading="lazy" alt="Deity — Jackal God, volcanic, origami, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Japanese Spirit</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/JapaneseSpirit_FudoMyoo_lunar-alien_obsidian_00002_.png" loading="lazy" alt="Japanese Spirit — Fudo Myoo, lunar, alien, obsidian">
+          <img class="galleryThumb" src="gallery/JapaneseSpirit_mossy_pastel_00001_.png" loading="lazy" alt="Japanese Spirit — mossy, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Greek Guardian</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/GreekGuardian_thornedvine_pastel_00001_.png" loading="lazy" alt="Greek Guardian — thorned vine, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Norse Being</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/NorseBeing_drippy-volcanic-thornedvine_pastel_00001_.png" loading="lazy" alt="Norse Being — drippy, volcanic, thorned vine, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Mesoamerican God</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/MesoamericanGod_organic_pastel_00001_.png" loading="lazy" alt="Mesoamerican God — organic, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Polynesian Being</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/PolynesianBeing_cyberpunk_pastel_00001_.png" loading="lazy" alt="Polynesian Being — cyberpunk, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Slavic Folklore</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/SlavicFolklore_circuitboard-egyptian_pastel_00001_.png" loading="lazy" alt="Slavic Folklore — circuit board, Egyptian, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Caribbean Spirit</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/CaribbeanSpirit_swirly-volcanic-mosaic_pastel_00001_.png" loading="lazy" alt="Caribbean Spirit — swirly, volcanic, mosaic, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Meditation</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/Meditation_zen_pastel_00001_.png" loading="lazy" alt="Meditation — zen, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Tibetan Buddhist</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/TibetanBuddhist_egyptian-origami-cosmic_pastel_00001_.png" loading="lazy" alt="Tibetan Buddhist — Egyptian, origami, cosmic, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">DMT Realm</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/DMTRealm_LivingMandala_surprise_pastel_00001_.png" loading="lazy" alt="DMT Realm — Living Mandala, pastel">
+          <img class="galleryThumb" src="gallery/DMTRealm_MachineElf_surprise_pastel_00003_.png" loading="lazy" alt="DMT Realm — Machine Elf, pastel">
+          <img class="galleryThumb" src="gallery/DMTRealm_MachineElf_surprise_pastel_00006_.png" loading="lazy" alt="DMT Realm — Machine Elf, pastel">
+          <img class="galleryThumb" src="gallery/DMTRealm_cyberpunk_pastel_00001_.png" loading="lazy" alt="DMT Realm — cyberpunk, pastel">
+        </div>
+      </div>
+
+      <div class="galleryGroup">
+        <div class="galleryGroupLabel">Shipibo Conibo</div>
+        <div class="galleryGrid">
+          <img class="galleryThumb" src="gallery/ShipiboConibo_IcarosSinger_mosaic-origami_pastel_00001_.png" loading="lazy" alt="Shipibo Conibo — Icaros Singer, mosaic, origami, pastel">
+          <img class="galleryThumb" src="gallery/ShipiboConibo_IcarosSinger_mosaic-origami_pastel_00003_.png" loading="lazy" alt="Shipibo Conibo — Icaros Singer, mosaic, origami, pastel">
+          <img class="galleryThumb" src="gallery/ShipiboConibo_MeranonCloudSpirit_mosaic-origami_pastel_00003_.png" loading="lazy" alt="Shipibo Conibo — Meranon Cloud Spirit, mosaic, origami, pastel">
+          <img class="galleryThumb" src="gallery/ShipiboConibo_Shapeshifter_mosaic-origami_pastel_00003_.png" loading="lazy" alt="Shipibo Conibo — Shapeshifter, mosaic, origami, pastel">
+          <img class="galleryThumb" src="gallery/ShipiboConibo_ToeSpirit_surprise_art_00002_.png" loading="lazy" alt="Shipibo Conibo — Toe Spirit, art">
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Lightbox -->
+    <div id="galleryLightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;cursor:zoom-out;align-items:center;justify-content:center">
+      <img id="galleryLightboxImg" src="" alt="" style="max-width:90vw;max-height:90vh;border-radius:8px;box-shadow:0 8px 40px #0008;object-fit:contain">
+    </div>
   </div>
 
   <!-- PRICING TAB -->
@@ -5156,6 +5435,18 @@ $("#buyClose").onclick = closeBuy;
 $("#buyWrap").onclick = (e)=>{ if(e.target.id==="buyWrap") closeBuy(); };
 $("#signOutBtn").onclick = signOut;
 document.addEventListener("keydown",(e)=>{ if(e.key==="Escape" && $("#buyWrap").classList.contains("show")) closeBuy(); });
+
+// Gallery lightbox
+(()=>{
+  const lb = $("#galleryLightbox"), img = $("#galleryLightboxImg");
+  function open(src,alt){ img.src=src; img.alt=alt||""; lb.classList.add("open"); }
+  function close(){ lb.classList.remove("open"); img.src=""; }
+  document.addEventListener("click", e=>{
+    if(e.target.classList.contains("galleryThumb")) open(e.target.src, e.target.alt);
+    else if(e.target.id==="galleryLightbox"||e.target.id==="galleryLightboxImg") close();
+  });
+  document.addEventListener("keydown", e=>{ if(e.key==="Escape") close(); });
+})();
 
 // Admin panel (owner only)
 function openAdmin(){ $("#adminWrap").classList.add("show"); $("#adminEmail").focus(); }
