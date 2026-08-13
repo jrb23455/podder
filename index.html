@@ -4411,7 +4411,7 @@ async function editImage(item, wrap, box, instruction, strength){
   try{
     const srcData = await blobToDataURL(await (await fetch(img.src)).blob());
     const positive = (item.sd || item.text) + ". " + instruction + ".";
-    const j = await apiFetch("/api/generate", {prompt: positive, aspect: $("#aspect").value, image: srcData, strength, quality: getQuality()}, ctl.signal);
+    const j = await apiFetch("/api/generate", {prompt: positive, aspect: $("#aspect").value, image: srcData, strength, quality: getQuality()}, ctl.signal, 1);
     const key = genId();
     await idbPut(key, await (await fetch(j.image)).blob());
     const imgRef = {idb:key};
@@ -4933,7 +4933,7 @@ async function ensureRenderable(){
 
 // Every API call carries either the session token or the owner PIN. A 401 re-locks the app;
 // a 402 means the render was refused for lack of credits, which opens the buy sheet instead.
-async function apiFetch(path, body, signal){
+async function apiFetch(path, body, signal, retries=0){
   const token = ACCT.owner ? "" : await getToken();
   const headers = {"content-type":"application/json"};
   if(token) headers.Authorization = `Bearer ${token}`;
@@ -4962,7 +4962,14 @@ async function apiFetch(path, body, signal){
     }
     throw new Error("Out of credits");
   }
-  if(!r.ok) throw new Error(j.detail || j.error || ("HTTP "+r.status));
+  if(!r.ok){
+    // Reflect any refund that came back with the error (e.g. after a render timeout).
+    if(typeof j.credits === "number"){ ACCT.credits = j.credits; updateAcctBar(); }
+    const msg = j.detail || j.error || ("HTTP "+r.status);
+    // Auto-retry once on cold-start timeouts — credits were already refunded server-side.
+    if(retries > 0 && /timed out/i.test(msg)) return apiFetch(path, body, signal, retries-1);
+    throw new Error(msg);
+  }
   if(typeof j.credits === "number"){ ACCT.credits = j.credits; updateAcctBar(); }
   return j;
 }
@@ -5197,7 +5204,7 @@ async function renderCard(item, card, revealAfter, startAfter){
   try{
     if(startAfter) await startAfter.catch(()=>{});
     const positive = item.sd || item.text;                    // compact prompt; old saved items fall back
-    const j = await apiFetch("/api/generate", {prompt: positive, aspect: $("#aspect").value, quality: getQuality()}, ctl.signal);
+    const j = await apiFetch("/api/generate", {prompt: positive, aspect: $("#aspect").value, quality: getQuality()}, ctl.signal, 1);
     // Every render gets its own image-store key — a re-render must never overwrite the bytes an
     // older history row points at (history is a log of pictures, not of prompts).
     const key = genId();
@@ -5311,7 +5318,7 @@ async function spawnVariants(item, wrap, targetObjKey){
         const promptItem = buildVariantPrompt();
         const body = {prompt: promptItem.sd, aspect: $("#aspect").value, quality: getQuality()};
         if(srcData){ body.image=srcData; body.strength=0.78; }
-        const j = await apiFetch("/api/generate", body, ctl.signal);
+        const j = await apiFetch("/api/generate", body, ctl.signal, 1);
         const key = genId();
         await idbPut(key, await (await fetch(j.image)).blob());
         const vItem = {...(cross?promptItem:item), id:genId(), parentId:item.id, variant:true,
