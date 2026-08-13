@@ -4423,7 +4423,13 @@ async function editImage(item, wrap, box, instruction, strength){
   const tick = setInterval(()=>{ status.textContent = "Editing… "+Math.round((Date.now()-t0)/1000)+"s"; }, 1000);
   try{
     const srcData = await blobToDataURL(await (await fetch(img.src)).blob());
-    const positive = (item.sd || item.text) + ". " + instruction + ".";
+    // Build an instruction-first prompt rather than appending after the full original.
+    // The source image already shows what the object looks like — prepending the full
+    // weighted SD prompt fights the edit (e.g. "open gap visible at one end:1.5" blocks
+    // "close the gap"). Lead with the instruction; use just the noun for object identity.
+    const objKey = item.obj || '';
+    const noun = (SD_OBJ[objKey] || {}).noun || (OBJECTS[objKey] || {}).promptName || item.label || 'decorative object';
+    const positive = `${instruction}. A single ${noun}, isolated on a plain seamless light-grey studio surface, matte non-reflective surface, professional product photography, sharp focus, 4k.`;
     const j = await apiFetch("/api/generate", {prompt: positive, aspect: $("#aspect").value, image: srcData, strength, quality: getQuality()}, ctl.signal, 1);
     const key = genId();
     await idbPut(key, await (await fetch(j.image)).blob());

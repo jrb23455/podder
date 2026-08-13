@@ -115,14 +115,21 @@ export default async function handler(req, res) {
   }
 
   try {
+    const isEdit = !!image;
     const input = {
       prompt,
       aspect_ratio: ['1:1', '2:3', '3:2'].includes(aspect) ? aspect : '1:1',
       output_format: 'png',
-      go_fast: cfg.goFast,
+      // go_fast cuts sampling steps; edits need the full pass to follow the instruction.
+      go_fast: isEdit ? false : cfg.goFast,
     };
-    if (image) {
+    if (isEdit) {
       input[cfg.imgField] = cfg.imgField === 'images' ? [image] : image;
+      // prompt_strength: 0 = copy image exactly, 1 = ignore image entirely. Default ~0.8
+      // if omitted, which is usually too high for subtle edits. Pass whatever the UI chose.
+      if (typeof strength === 'number' && strength > 0 && strength <= 1) {
+        input.prompt_strength = strength;
+      }
     }
     const imgUrl = await replicate(input, token, cfg);
 
