@@ -300,6 +300,7 @@
       <span class="creditChip" id="creditChip" title="Render credits">✦ <span id="creditCount">—</span></span>
       <button class="btn primary" id="buyBtn" type="button">Buy credits</button>
       <button class="btn primary" id="signInBtn" type="button" style="display:none">Sign in</button>
+      <button class="btn ghost" id="adminBtn" type="button" style="display:none">Admin</button>
       <button class="btn ghost" id="signOutBtn" type="button">Sign out</button>
     </div>
   </header>
@@ -544,6 +545,24 @@
     <p class="sub" id="buySub">Credits never expire.</p>
     <div id="packList"></div>
     <div class="gateNote" id="buyCosts"></div>
+  </div>
+</div>
+
+<!-- Admin grant modal (owner only) -->
+<div class="buyWrap" id="adminWrap">
+  <div class="buyBox">
+    <button class="buyClose" id="adminClose" type="button" aria-label="Close">✕</button>
+    <h3>Grant credits</h3>
+    <p class="sub">Add or remove credits from any account.</p>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+      <input id="adminEmail" type="email" placeholder="user@example.com" style="padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--fg);font-size:14px;width:100%;box-sizing:border-box">
+      <div style="display:flex;gap:8px">
+        <input id="adminCredits" type="number" placeholder="Credits (e.g. 100)" style="flex:1;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--fg);font-size:14px">
+        <input id="adminReason" type="text" placeholder="Reason" value="admin_grant" style="flex:1;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--fg);font-size:14px">
+      </div>
+      <button class="btn primary" id="adminGrantBtn" type="button" style="width:100%">Grant</button>
+      <div id="adminResult" style="font-size:13px;min-height:18px;text-align:center"></div>
+    </div>
   </div>
 </div>
 
@@ -4363,6 +4382,7 @@ function updateAcctBar(){
     chip.style.display = "none";
     buyBtn.style.display = "none";
     outBtn.style.display = "none";
+    $("#adminBtn").style.display = "none";
     signInBtn.style.display = "";
     return;
   }
@@ -4375,8 +4395,10 @@ function updateAcctBar(){
     $("#acctEmail").textContent = "owner";
     n.textContent="∞"; chip.className="creditChip";
     buyBtn.style.display="none";
+    $("#adminBtn").style.display="";
     return;
   }
+  $("#adminBtn").style.display="none";
 
   const c = ACCT.credits;
   n.textContent = c===null ? "—" : c;
@@ -5134,6 +5156,33 @@ $("#buyClose").onclick = closeBuy;
 $("#buyWrap").onclick = (e)=>{ if(e.target.id==="buyWrap") closeBuy(); };
 $("#signOutBtn").onclick = signOut;
 document.addEventListener("keydown",(e)=>{ if(e.key==="Escape" && $("#buyWrap").classList.contains("show")) closeBuy(); });
+
+// Admin panel (owner only)
+function openAdmin(){ $("#adminWrap").classList.add("show"); $("#adminEmail").focus(); }
+function closeAdmin(){ $("#adminWrap").classList.remove("show"); $("#adminResult").textContent=""; }
+$("#adminClose").onclick = closeAdmin;
+$("#adminWrap").onclick = (e)=>{ if(e.target.id==="adminWrap") closeAdmin(); };
+document.addEventListener("keydown",(e)=>{ if(e.key==="Escape" && $("#adminWrap").classList.contains("show")) closeAdmin(); });
+$("#adminBtn").onclick = openAdmin;
+$("#adminGrantBtn").onclick = async ()=>{
+  const email   = $("#adminEmail").value.trim();
+  const credits = parseInt($("#adminCredits").value, 10);
+  const reason  = $("#adminReason").value.trim() || "admin_grant";
+  const result  = $("#adminResult");
+  if(!email || !credits){ result.style.color="var(--err,#f66)"; result.textContent="Email and credits required."; return; }
+  result.style.color="var(--fg)"; result.textContent="Granting…";
+  try{
+    const r = await fetch("/api/admin/grant",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","x-podder-pin":getPin()},
+      body:JSON.stringify({email,credits,reason}),
+    });
+    const j = await r.json();
+    if(!r.ok){ result.style.color="var(--err,#f66)"; result.textContent=j.error+(j.detail?" — "+j.detail:""); return; }
+    result.style.color="var(--accent,#7cf)"; result.textContent=`Done — ${email} now has ${j.balance} credits.`;
+    $("#adminCredits").value=""; $("#adminReason").value="admin_grant";
+  }catch(e){ result.style.color="var(--err,#f66)"; result.textContent=String(e.message||e); }
+};
 
 // Boot: a magic-link return lands with tokens in the hash; otherwise a stored session or
 // the owner PIN unlocks silently. The gate only stays up when none of those pan out.

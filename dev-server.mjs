@@ -31,6 +31,7 @@ import meHandler from './api/me.js';
 import checkoutHandler from './api/checkout.js';
 import webhookHandler from './api/stripe-webhook.js';
 import claimHandler from './api/claim.js';
+import adminGrantHandler from './api/admin/grant.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = 8299;
@@ -44,6 +45,7 @@ const ROUTES = {
   '/api/checkout': checkoutHandler,
   '/api/stripe-webhook': webhookHandler,
   '/api/claim': claimHandler,
+  '/api/admin/grant': adminGrantHandler,
 };
 const RAW_ROUTES = new Set(['/api/stripe-webhook']);
 const TYPES = { '.html': 'text/html; charset=utf-8', '.png': 'image/png', '.ico': 'image/x-icon',
