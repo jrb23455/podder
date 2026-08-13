@@ -25,15 +25,15 @@ export const TAX_CODE = 'txcd_10105001';
 // Stripe charges 2.9% + $0.30, which is 18% of a $2 sale but only 3.6% of a $40 one —
 // hence a $5 floor rather than the $2 pack that looked attractive on paper.
 export const PACKS = {
-  starter:  { credits: 60,  amount: 500,  name: 'Starter pack',  blurb: '60 credits'  },
-  standard: { credits: 220, amount: 1500, name: 'Standard pack', blurb: '220 credits' },
-  studio:   { credits: 700, amount: 4000, name: 'Studio pack',   blurb: '700 credits' },
+  starter:  { credits: 150,  amount: 500,  name: 'Starter pack',  blurb: '150 credits'  },
+  standard: { credits: 500,  amount: 1500, name: 'Standard pack', blurb: '500 credits'  },
+  studio:   { credits: 1500, amount: 4000, name: 'Studio pack',   blurb: '1,500 credits' },
 };
 
-// Mirrors handle_new_user() — currently set by 0002_signup_bonus_25.sql. The database
+// Mirrors handle_new_user() — currently set by 0005_signup_bonus_50.sql. The database
 // grants the credits; this constant only advertises them, so the two must move together.
 // Keep it below PACKS.starter.credits or the cheapest paid tier becomes unsellable.
-export const SIGNUP_BONUS = 25;
+export const SIGNUP_BONUS = 50;
 
 export function creditsFor(quality) {
   return CREDIT_COST[quality] ?? CREDIT_COST.fast;
