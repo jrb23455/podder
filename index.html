@@ -368,9 +368,9 @@
 
       <div class="controls-grid">
         <div class="row" style="margin-bottom:0">
-          <div class="label">Weirdness <span class="rangeval" id="wildVal">balanced</span> <span class="lock" data-lock="wild" title="Keep this weirdness when you hit Surprise me">🔓 lock</span></div>
+          <div class="label">Weirdness <span class="rangeval" id="wildVal">bold</span> <span class="lock" data-lock="wild" title="Keep this weirdness when you hit Surprise me">🔓 lock</span></div>
           <div style="display:flex;gap:10px;align-items:center">
-            <input type="range" id="wild" min="1" max="3" step="1" value="2" style="flex:1" />
+            <input type="range" id="wild" min="1" max="5" step="1" value="3" style="flex:1" />
             <button type="button" class="tbtn" id="overdriveBtn" title="Pushes color, pattern density and visual intensity to a heady psychedelic extreme — without adding literal imagery. Same object, different plane of existence.">⚡ Overdrive</button>
           </div>
         </div>
@@ -4072,7 +4072,7 @@ let state = {
   shape: "Auto",
   styles: new Set(),
   styleDetail: new Set(),   // entries like "sacred::Mandala"
-  overdrive: false,         // ⚡ appends "MAKE IT ULTRA WEIRD" to the end of every prompt
+  overdrive: false,         // ⚡ pins weirdness to max and appends the psychedelic-intensity tail
   locks: {obj:false, style:false, pal:false, shape:false, wild:false}
 };
 
@@ -4206,7 +4206,8 @@ function buildPrompt(){
   // wildness only ever changes HOW densely/deeply that same fixed motif set gets described. This
   // also fixes the earlier "kept alone" bug: wildness used to scale clause count (3/6/12), which
   // for a no-selection surprise render meant cramming in up to 12 unrelated style categories.
-  const clauseTarget = wild>=3 ? 5 : wild===2 ? 3 : 2;
+  const wl = wildLevel(wild);                    // per-level strings + clause count (see WILD)
+  const clauseTarget = wl.clauses;
   // choose styles — empty selection = surprise mix, but capped to a SMALL coherent set (same
   // 1-3 convention the Surprise-me button uses), not every category in the whole catalog. The
   // clause-pulling loop below advances through styleKeys unconditionally each iteration, so
@@ -4260,12 +4261,8 @@ function buildPrompt(){
   // get combined (see clauseTarget above) — every level reads as bold (old max is the new floor),
   // and each step up makes the SAME motifs repeat, layer and carve deeper rather than introducing
   // more unrelated decoration. Shared across the compact SD and Flux prompts.
-  const wildNote = wild>=3
-    ? "The decoration is pushed to a hallucinatory, psychedelic extreme — every square millimeter is saturated with layered, overlapping, fractal-dense ornament piled three or four layers deep, motifs nesting inside motifs, spiraling into themselves, carved so deep the surface is more texture than form. The effect should feel overwhelming, almost alive, like staring into a fever dream. The object is barely containable under all the ornamentation."
-    : wild===2
-    ? "The decoration is rich and elaborate — motifs repeat and layer across the surface with confident density, carved noticeably deep, doubling up where space allows. The effect should feel lush and maximalist, clearly more ornate than a simple clean pass."
-    : "The decoration is clean and restrained — each motif appears once, lightly carved with shallow relief. Large areas of smooth, undecorated surface are visible between the sparse ornamental accents. The object's form dominates; the styling is a subtle accent, not the main event.";
-  const reliefWord = wild>=3 ? "hallucinatory, fractal-dense, overwhelmingly layered, carved to extreme depth" : wild===2 ? "rich, elaborate, deeply carved" : "subtle, lightly carved, sparse";
+  const wildNote = wl.note;
+  const reliefWord = wl.relief;
   // Ring holders need OPEN prongs to slide a ring onto — decorating the whole form (the default
   // for every other object) fills the gaps between prongs with relief pattern and fuses them into
   // a solid mesh/canopy, which is useless for actually hanging a ring. Confine the decoration to
@@ -4322,11 +4319,7 @@ function buildPrompt(){
       `Its overall form is ${formPhrase}.`,
       clauses.length===0
         ? "The surface is clean and undecorated — smooth, bare, and minimal, letting the form speak entirely for itself."
-        : wild>=3
-        ? `It is overwhelmingly decorated with ${clauses.join(", and ")}, applied as ${reliefWord} physically sculpted three-dimensional relief — layers upon layers of ornament piled on top of each other, carved so deep the surface is more relief than flat, dripping with psychedelic density.${jewelryNote}`
-        : wild===2
-        ? `It is richly decorated with ${clauses.join(", and ")}, applied as ${reliefWord} physically sculpted three-dimensional relief — raised, carved and self-shadowed so the surface itself changes shape, never a flat painted or printed pattern.${jewelryNote}`
-        : `It is lightly decorated with ${clauses.join(", and ")}, applied as ${reliefWord} physically sculpted three-dimensional relief — shallow, elegant accents with plenty of smooth bare surface between them.${jewelryNote}`,
+        : `${wl.lead} ${clauses.join(", and ")}, applied as ${reliefWord} physically sculpted three-dimensional relief ${wl.tail}${jewelryNote}`,
       printable ? PRINTABLE : "",
       wildNote,
       `Photographed ${view.t}, sitting directly on a plain seamless light-grey studio surface with no pedestal, stand or platform beneath it, and no other objects, furniture or scenery anywhere in frame.`,
@@ -4696,7 +4689,7 @@ function surprise(){
     $("#palette").value=pick(opts);
   }
   $("#view").value = pick(VIEWS).v;
-  if(!state.locks.wild){ $("#wild").value = 1+Math.floor(Math.random()*3); onWild(); }
+  if(!state.locks.wild){ $("#wild").value = randWild(); onWild(); }
   buildChips(); buildShapeChips(); buildStyleDetail();
   generate();
 }
@@ -4721,7 +4714,7 @@ async function randomizeAll(){
     const pOpts=["random",...PALETTES.map(p=>p.v)];
     $("#palette").value=pick(pOpts);
     $("#view").value=pick(VIEWS).v;
-    $("#wild").value=1+Math.floor(Math.random()*3);
+    $("#wild").value=randWild();
     out.push(buildPrompt());
   }
   state.obj=sObj;state.shape=sShape;state.styles=sStyles;state.styleDetail=sDetail;
@@ -4872,10 +4865,52 @@ function renderRerollsTab(){
 /* ---------- MISC ---------- */
 let toastTimer;
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),1600);}
-const WILD = {1:"subtle", 2:"bold", 3:"psychedelic"};
+// Weirdness levels. Everything a level changes lives on the level itself, so the slider is
+// widened or retuned by editing this table alone — the three call sites in buildPrompt read
+// from here rather than each carrying their own if-ladder (which is how the old 3-level
+// version drifted out of step with its own comments).
+//
+// `clauses` is how many distinct style motifs get pulled onto the object; it never changes
+// WHICH styles are used, only how many clauses describe them. `lead`/`tail` wrap that clause
+// list in the prompt, `relief` is the carving adjective, `note` is the standalone density
+// sentence appended near the end. Level 5 is what ⚡ Overdrive slams the slider to.
+const WILD = {
+  1: {label:"minimal", clauses:1,
+      relief:"minimal, whisper-light, barely carved",
+      lead:"It is barely decorated with",
+      tail:"— a single whisper of ornament on an otherwise bare surface, the vast majority of the form left completely smooth.",
+      note:"The decoration is almost absent — one restrained motif, shallowly carved, on a surface that is otherwise entirely smooth and bare. The form alone carries the piece; the ornament is a faint accent you only notice on a second look."},
+  2: {label:"subtle", clauses:2,
+      relief:"subtle, lightly carved, sparse",
+      lead:"It is lightly decorated with",
+      tail:"— shallow, elegant accents with plenty of smooth bare surface between them.",
+      note:"The decoration is clean and restrained — each motif appears once, lightly carved with shallow relief. Large areas of smooth, undecorated surface are visible between the sparse ornamental accents. The object's form dominates; the styling is a subtle accent, not the main event."},
+  3: {label:"bold", clauses:3,
+      relief:"rich, elaborate, deeply carved",
+      lead:"It is richly decorated with",
+      tail:"— raised, carved and self-shadowed so the surface itself changes shape, never a flat painted or printed pattern.",
+      note:"The decoration is rich and elaborate — motifs repeat and layer across the surface with confident density, carved noticeably deep, doubling up where space allows. The effect should feel lush and maximalist, clearly more ornate than a simple clean pass."},
+  4: {label:"intense", clauses:4,
+      relief:"dense, heavily layered, boldly carved",
+      lead:"It is densely decorated with",
+      tail:"— ornament stacked two and three layers deep across nearly the whole surface, carved hard enough to throw real shadow into itself, only small pockets of bare material left.",
+      note:"The decoration is dense and insistent — motifs repeat, overlap and stack across almost the entire surface, carved deep enough to cast real shadows into themselves. Only small pockets of bare material survive between them. The effect is heavy and maximalist, well past merely ornate, though the object's underlying shape stays readable."},
+  5: {label:"psychedelic", clauses:5,
+      relief:"hallucinatory, fractal-dense, overwhelmingly layered, carved to extreme depth",
+      lead:"It is overwhelmingly decorated with",
+      tail:"— layers upon layers of ornament piled on top of each other, carved so deep the surface is more relief than flat, dripping with psychedelic density.",
+      note:"The decoration is pushed to a hallucinatory, psychedelic extreme — every square millimeter is saturated with layered, overlapping, fractal-dense ornament piled three or four layers deep, motifs nesting inside motifs, spiraling into themselves, carved so deep the surface is more texture than form. The effect should feel overwhelming, almost alive, like staring into a fever dream. The object is barely containable under all the ornamentation."},
+};
+const wildLevel = v => WILD[v] || WILD[3];
+// Reads the range off the input rather than hardcoding it, so widening the slider can never
+// again leave Randomize picking from a stale narrower range.
+function randWild(){
+  const w=$("#wild"), lo=+w.min||1, hi=+w.max||5;
+  return lo + Math.floor(Math.random()*(hi-lo+1));
+}
 function onWild(){
   const w=$("#wild");
-  $("#wildVal").textContent=WILD[w.value];
+  $("#wildVal").textContent=wildLevel(w.value).label;
   if(state.overdrive && +w.value < +w.max){
     state.overdrive=false;
     $("#overdriveBtn").classList.remove("on");
@@ -5758,6 +5793,7 @@ $("#qualityToggle").onchange=()=>{
 function getQuality(){ return $("#qualityToggle").checked ? "quality" : "fast"; }
 $("#count").oninput=onCount;
 $("#wild").oninput=onWild;
+onWild();   // sync the label to the slider's initial value — otherwise it shows stale markup text
 $("#overdriveBtn").onclick=()=>{
   state.overdrive=!state.overdrive;
   $("#overdriveBtn").classList.toggle("on",state.overdrive);
