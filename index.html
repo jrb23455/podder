@@ -4689,7 +4689,14 @@ function renderRerollsTab(){
 let toastTimer;
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),1600);}
 const WILD = {1:"subtle", 2:"bold", 3:"psychedelic"};
-function onWild(){$("#wildVal").textContent=WILD[$("#wild").value];}
+function onWild(){
+  const w=$("#wild");
+  $("#wildVal").textContent=WILD[w.value];
+  if(state.overdrive && +w.value < +w.max){
+    state.overdrive=false;
+    $("#overdriveBtn").classList.remove("on");
+  }
+}
 function onCount(){$("#countVal").textContent=$("#count").value;}
 
 /* ---------- CLOUD RENDER (serverless API + browser image store) ---------- */
