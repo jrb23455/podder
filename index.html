@@ -867,6 +867,7 @@ const CATEGORIES = {
   figurines: {emoji:"🐉", label:"Figurines"},
   spiritual: {emoji:"🕉️", label:"Spiritual"},
   jewelry:   {emoji:"💍", label:"Jewelry"},
+  geometry:  {emoji:"🔷", label:"Geometry"},
 };
 
 const OBJECTS = {
@@ -2993,12 +2994,12 @@ const OBJECTS = {
     ]},
 
   ring: {emoji:"💍", label:"Statement ring", promptName:"chunky statement ring", cat:"jewelry",
-    fn:"A single solid decorative statement ring — one thick sculptural ring designed to sit on a finger. The band is wide, heavy and sturdy. The top face (bezel) is large, bold and prominent. Everything is solid — no thin wire sections, no fragile thin prongs, no stone settings with thin claws. All decorative elements are fused to the thick band as one continuous solid mass. Just the ring alone, resting on its side on a flat surface — no hand, no finger, not being worn.",
+    fn:"A single solid decorative statement ring — a circular band with a finger-sized hole through the center, designed to sit on a finger. The band is wide, heavy and sturdy. The top face (bezel) is large, bold and prominent. The finger hole is clearly visible through the band. Everything is solid — no thin wire sections, no fragile prongs. Just the ring alone, standing upright on its band edge on a flat surface — no hand, no finger, not being worn. It is a ring, not a sphere or ball.",
     shapes:[
-      {label:"Auto",         prompt:"driven entirely by the chosen style — a wild sculptural statement ring with a surprising bezel silhouette, thick band, resting on its side"},
-      {label:"Dome",         prompt:"HIGH DOME — a smooth continuous dome rising from the band, the bezel face curving in an unbroken hemisphere over the wide thick band"},
-      {label:"Signet flat",  prompt:"FLAT SIGNET — a wide flat rectangular bezel face sitting squarely on top of a thick tapered band, the top face perfectly flat and broad like a seal stamp"},
-      {label:"Cathedral",    prompt:"TALL CATHEDRAL — side walls rising tall on both sides of the bezel forming pointed arch shapes, the band sweeping dramatically upward into tall flanking buttresses"},
+      {label:"Auto",         prompt:"driven entirely by the chosen style — a wild sculptural statement ring, circular band with visible finger hole, bold bezel on top, standing upright on its edge"},
+      {label:"Dome",         prompt:"DOME BEZEL — a chunky ring band standing upright, the bezel face on top rising into a rounded dome shape — the dome sits ON the flat-bottomed band, finger hole clearly visible through the circular band below"},
+      {label:"Signet flat",  prompt:"FLAT SIGNET — a chunky ring band standing upright, wide flat rectangular bezel face on top, perfectly flat and broad like a seal stamp, finger hole clearly visible through the band below"},
+      {label:"Cathedral",    prompt:"TALL CATHEDRAL — a chunky ring band standing upright, side walls rising tall on both sides forming pointed arch shapes, finger hole visible through the band center"},
       {label:"Wrap sculptural",prompt:"SCULPTURAL WRAP — the decorative surface flows continuously from the bezel face all the way around the outside of the band in one unbroken sculptural skin, no seam"},
       {label:"Cluster",      prompt:"CLUSTER TOP — a wide irregular cluster of chunky rounded bumps fused together covering the entire bezel top, each bump a different size, no individual settings"},
       {label:"Wide band",    prompt:"WIDE FLAT BAND — an unusually wide ring that is more band than bezel, the top face low and flat, all decoration distributed evenly across the full band width"},
@@ -3160,6 +3161,60 @@ const OBJECTS = {
       {label:"Round disc",     prompt:"ROUND DISC — a large circular buckle face, perfectly round, bold decoration covering the full disc, flat back"},
       {label:"Longhorn",       prompt:"LONGHORN — a buckle face shaped like a wide steer skull with sweeping horn tips extending far on both sides, Western motif, flat back"},
       {label:"Freeform",       prompt:"FREEFORM — an irregular organic outline buckle face, no geometric regularity, surprising silhouette, bold decorated surface, flat back"},
+    ]},
+
+  /* ---- GEOMETRY ---- */
+  geosphere: {emoji:"🌐", label:"Sphere", promptName:"decorative geometric sphere", cat:"geometry",
+    fn:"A single solid decorative sphere — a perfect ball with ornamental surface detail. The sphere sits directly on the flat surface. It is a ball, not a vase or container. All decoration is on the exterior surface.",
+    shapes:[
+      {label:"Auto",           prompt:"driven entirely by the chosen style — a wild decorative sphere with a surprising surface pattern, sitting on a flat surface"},
+      {label:"Solid smooth",   prompt:"SOLID SMOOTH SPHERE — a perfectly round ball, the surface entirely smooth and unbroken, decoration applied as surface relief only"},
+      {label:"Lattice cutout", prompt:"OPEN LATTICE SPHERE — a sphere whose surface is an open geometric lattice of thick struts, large cutout voids between the struts revealing the hollow interior, structurally robust framework"},
+      {label:"Faceted low-poly",prompt:"FACETED LOW-POLY SPHERE — a sphere approximated by many large flat triangular or pentagonal facets, the edges between facets crisp and visible, a geodesic low-poly look"},
+      {label:"Banded rings",   prompt:"BANDED SPHERE — a smooth sphere wrapped in a series of bold raised horizontal rings or latitude bands of varying widths, stacked like Saturn's rings"},
+      {label:"Spiky",          prompt:"SPIKY SPHERE — a sphere covered in bold thick conical spikes radiating outward from the surface in all directions, each spike sturdy and blunt-tipped"},
+      {label:"Cracked plates",  prompt:"TECTONIC SPHERE — a sphere whose surface is divided into large irregular raised plate sections with deep carved grooves between them, like tectonic plates on a planet"},
+    ]},
+
+  torus: {emoji:"🍩", label:"Torus", promptName:"decorative torus ring", cat:"geometry",
+    fn:"A single solid decorative torus — a donut shape, a circular tube bent into a ring. The hole through the center is large and clearly visible. It sits flat on the surface with the hole visible from above. All decoration is on the outer tube surface.",
+    shapes:[
+      {label:"Auto",           prompt:"driven entirely by the chosen style — a wild decorative torus donut with a surprising surface pattern, hole clearly visible, sitting flat"},
+      {label:"Smooth round",   prompt:"SMOOTH ROUND TORUS — a classic donut form, circular cross-section tube bent into a ring, smooth unbroken outer surface, large central hole"},
+      {label:"Faceted",        prompt:"FACETED TORUS — the tube surface cut into many flat angular facets running around both the major and minor circles, a geometric donut form"},
+      {label:"Ribbed",         prompt:"RIBBED TORUS — the tube wrapped with bold parallel ribs running around the minor circumference, like a ribbed cable bent into a ring"},
+      {label:"Twisted",        prompt:"TWISTED TORUS — the tube body twists along its length as it bends around the ring, completing one full twist around the major circumference"},
+      {label:"Knotted",        prompt:"KNOTTED TORUS — the tube loops through itself in a trefoil or overhand knot before joining back, a topological knot form sitting flat"},
+    ]},
+
+  icosahedron: {emoji:"🎲", label:"Polyhedron", promptName:"decorative geometric polyhedron", cat:"geometry",
+    fn:"A single solid decorative geometric polyhedron — a Platonic or Archimedean solid with flat faces, straight edges, and decorated surfaces. It rests on one flat face. All faces are solid and thick.",
+    shapes:[
+      {label:"Auto",           prompt:"driven entirely by the chosen style — a wild decorative polyhedron with a surprising number of faces and bold surface decoration, resting on a face"},
+      {label:"Icosahedron",    prompt:"ICOSAHEDRON — a 20-faced solid, all faces equilateral triangles, resting stably on one triangular face, decoration on every face"},
+      {label:"Dodecahedron",   prompt:"DODECAHEDRON — a 12-faced solid, all faces regular pentagons, resting on one pentagonal face, each face decorated with crisp relief"},
+      {label:"Cube",           prompt:"CUBE — a perfect cube resting on one square face, all six faces equal, each face boldly decorated with different relief patterns"},
+      {label:"Octahedron",     prompt:"OCTAHEDRON — an 8-faced solid, two square pyramids base-to-base, resting on one triangular face, crisp edges, decorated faces"},
+      {label:"Truncated icosahedron",prompt:"SOCCER BALL SOLID — a truncated icosahedron (soccer ball geometry), alternating hexagonal and pentagonal faces, each face decorated differently, resting on a hexagonal face"},
+      {label:"Rhombic",        prompt:"RHOMBIC TRIACONTAHEDRON — a 30-faced solid with all diamond-shaped rhombus faces, a rounded angular form, resting on one face, each rhombus face decorated"},
+    ]},
+
+  gyroscope: {emoji:"⚙️", label:"Gyroscope", promptName:"decorative gyroscope ring sculpture", cat:"geometry",
+    fn:"A single decorative gyroscope sculpture — concentric rings nested inside each other at different angles, like an armillary sphere or gyroscope. Each ring is a solid sturdy band. The rings are connected at pivot points. The whole assembly sits on a base or balanced point.",
+    shapes:[
+      {label:"Auto",           prompt:"driven entirely by the chosen style — a wild decorative gyroscope with surprising ring proportions and bold surface detail, balanced on a point"},
+      {label:"Three rings",    prompt:"THREE-RING GYROSCOPE — three concentric rings nested at 90-degree angles to each other, each ring a solid decorated band, connected at four pivot points, sitting balanced"},
+      {label:"Armillary sphere",prompt:"ARMILLARY SPHERE — multiple rings of varying widths representing celestial circles, nested concentrically, a small sphere at the center, the whole assembly on a short pedestal base"},
+      {label:"Double ring",    prompt:"DOUBLE RING — two large rings nested at a perpendicular angle, each ring a wide decorated band, connected at two points, the pair sitting on an axis point"},
+    ]},
+
+  mobius: {emoji:"♾️", label:"Möbius strip", promptName:"decorative Möbius strip", cat:"geometry",
+    fn:"A single decorative Möbius strip — a flat band with a half-twist, forming a one-sided surface that loops back on itself. The band is wide and thick enough to be sturdy. The twist is clearly visible. The whole piece sits on the surface at its natural resting angle.",
+    shapes:[
+      {label:"Auto",           prompt:"driven entirely by the chosen style — a wild decorative Möbius strip with bold surface detail and a clear visible half-twist"},
+      {label:"Classic",        prompt:"CLASSIC MÖBIUS — a wide flat band with one clear half-twist, the band surface continuous and unbroken, the twist prominent and clear"},
+      {label:"Triangular",     prompt:"TRIANGULAR MÖBIUS — the strip has a triangular cross-section rather than flat, the three faces spiraling through the single half-twist"},
+      {label:"Wide sculptural", prompt:"WIDE SCULPTURAL MÖBIUS — an unusually wide Möbius band, the surface decorated with deep relief, the half-twist making the decoration visibly rotate as the band curves"},
     ]},
 };
 // Category of an object key. Original objects predate categories and carry no `cat` field,
@@ -3633,8 +3688,8 @@ const SD_OBJ = {
   /* ---- JEWELRY ---- */
   pendant:     {noun:"pendant medallion", bits:"(a single solid pendant medallion resting alone on a flat surface, thick solid bail loop at the top, no chain threaded through it:1.5), macro studio shot, small wearable charm scale",
                 neg:"(necklace:1.5), (chain:1.5), (cord:1.4), (string:1.4), (ribbon:1.4), (rope:1.3), (wire:1.4), (person:1.5), (neck:1.5), (human:1.4), (model:1.4), worn, (hand:1.4), (finger:1.3), (multiple pendants:1.4), (earring:1.3), (ring:1.3), (bracelet:1.3)"},
-  ring:        {noun:"chunky statement ring", bits:"(a single solid chunky statement ring resting on its side on a flat surface, thick wide band, bold prominent bezel face, all one continuous solid mass:1.5), macro studio shot, small wearable scale",
-                neg:"(finger:1.5), (hand:1.5), (person:1.5), (human:1.4), (model:1.4), worn, (thin wire band:1.4), (thin prongs:1.4), (stone setting:1.3), (gemstone:1.3), (gem:1.3), (multiple rings:1.4), (pair:1.3), (necklace:1.3), (bracelet:1.3), (earring:1.3)"},
+  ring:        {noun:"chunky statement ring", bits:"(a single chunky statement ring standing upright on its band edge on a flat surface, a clear finger-sized circular hole through the center of the band, bold decorated bezel face on top, thick wide solid band — a finger ring not a sphere:1.5), macro studio shot, ring jewelry scale",
+                neg:"(sphere:1.5), (ball:1.5), (orb:1.5), (bead:1.5), (globe:1.5), (ornament:1.4), (bauble:1.4), (hollow ball:1.5), (finger:1.5), (hand:1.5), (person:1.5), (human:1.4), (model:1.4), worn, (thin wire band:1.4), (thin prongs:1.4), (gemstone:1.3), (multiple rings:1.4), (necklace:1.3), (bracelet:1.3), (earring:1.3)"},
   cuff:        {noun:"wide rigid cuff bracelet", bits:"(a single solid wide rigid cuff bracelet resting flat on a surface, open gap at the back, thick walls, bold sculptural exterior:1.5), macro studio shot, wrist cuff scale",
                 neg:"(wrist:1.5), (arm:1.5), (hand:1.5), (person:1.5), (human:1.4), (model:1.4), worn, (thin bracelet:1.4), (bangle:1.3), (thin walls:1.4), (wire:1.4), (chain:1.4), (necklace:1.3), (ring:1.3), (earring:1.3), (multiple cuffs:1.4)"},
   earring:     {noun:"single decorative earring", bits:"(a single decorative earring resting alone on a flat surface, thick solid post or hook mount at the top, bold face, just one piece:1.5), macro studio shot, small earring scale",
@@ -3650,6 +3705,19 @@ const SD_OBJ = {
   crown:       {noun:"decorative full crown", bits:"(a single decorative crown sitting upright on its circular base on a flat surface, a complete closed circular headband with bold peaks or spires rising straight up from the rim, thick solid walls throughout, hollow inside, no head inside it:1.5), macro studio shot",
                 neg:"(head:1.5), (hair:1.5), (person:1.5), (human:1.4), (model:1.4), (wearing:1.5), (on head:1.5), (open arc:1.4), (tiara:1.3), (thin wire:1.4), (thin spires:1.4), (architecture:1.3), (building:1.3), (castle:1.3), (chess king:1.3), (chess piece:1.3), (tree canopy:1.3), (bangle:1.3), (ring:1.3), (multiple:1.4), (necklace:1.3)"},
   beltbuckle:  {noun:"decorative belt buckle face", bits:"(a single decorative belt buckle face plate lying face-up alone on a flat surface, bold decorated front, flat back, no belt attached:1.5), macro studio shot",
+                neg:"(belt:1.5), (leather:1.5), (strap:1.4), (clothing:1.4), (person:1.5), (human:1.4), (model:1.4), worn, (picture frame:1.4), (mirror:1.4), (wall art:1.3), (thin prongs:1.4), (wire:1.4), (multiple buckles:1.4), (necklace:1.3), (ring:1.3)"},
+
+  /* ---- GEOMETRY ---- */
+  geosphere:   {noun:"decorative geometric sphere", bits:"(a single decorative sphere sitting on a flat surface, a perfect ball with ornamental surface detail:1.5), macro studio shot",
+                neg:"(vase:1.4), (cup:1.4), (container:1.4), (opening:1.3), (hollow top:1.3), (person:1.4), (multiple spheres:1.4), (ring:1.3), (torus:1.3)"},
+  torus:       {noun:"decorative torus donut ring", bits:"(a single decorative torus — a donut-shaped ring sitting flat on a surface, large circular hole clearly visible through the center, thick tube surface:1.5), macro studio shot",
+                neg:"(solid sphere:1.4), (ball:1.4), (no hole:1.3), (vase:1.4), (ring:1.3), (bracelet:1.3), (bangle:1.3), (person:1.4), (multiple:1.4)"},
+  icosahedron: {noun:"decorative geometric polyhedron", bits:"(a single decorative geometric polyhedron resting on one flat face on a surface, multiple flat faces with sharp crisp edges, bold relief decoration on each face:1.5), macro studio shot",
+                neg:"(sphere:1.3), (ball:1.3), (smooth round:1.3), (person:1.4), (multiple:1.4), (vase:1.4), (melting:1.3)"},
+  gyroscope:   {noun:"decorative gyroscope ring sculpture", bits:"(a single decorative gyroscope sculpture — concentric nested rings at different angles, each ring a solid band, connected at pivot points, sitting balanced on a surface:1.5), macro studio shot",
+                neg:"(solid sphere:1.3), (person:1.4), (multiple:1.4), (clock:1.3), (wheel:1.3), (bicycle:1.3), (broken:1.3)"},
+  mobius:      {noun:"decorative Möbius strip", bits:"(a single decorative Möbius strip — a flat band with a clear visible half-twist looping back on itself, sitting at its natural resting angle on a surface:1.5), macro studio shot",
+                neg:"(sphere:1.4), (ring:1.3), (torus:1.3), (simple loop:1.4), (no twist:1.4), (person:1.4), (multiple:1.4), (broken:1.3)"},
                 neg:"(belt:1.5), (leather:1.5), (strap:1.4), (clothing:1.4), (person:1.5), (human:1.4), (model:1.4), worn, (picture frame:1.4), (mirror:1.4), (wall art:1.3), (thin prongs:1.4), (wire:1.4), (multiple buckles:1.4), (necklace:1.3), (ring:1.3)"},
   choker:      {noun:"choker torc necklace", bits:"(a single solid choker torc — ONE continuous 270-degree arc, one unbroken piece, small front gap only, the two decorative terminals close together nearly touching, thick solid band throughout, resting alone on a flat surface:1.5), macro studio shot, necklace scale",
                 neg:"(two pieces:1.5), (two halves:1.5), (split in half:1.5), (two separate:1.5), (pair:1.5), (symmetrical halves:1.5), (mirrored pieces:1.5), (closed ring:1.5), (complete circle:1.5), (bangle:1.5), (bracelet:1.4), (large gap:1.4), (wide gap:1.4), (neck:1.5), (throat:1.5), (person:1.5), (human:1.4), (model:1.4), worn, (thin chain:1.4), (wire:1.4), (ring:1.4)"},
