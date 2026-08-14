@@ -151,9 +151,9 @@
   .cardModalClose:hover{border-color:var(--accent2)}
 
   /* --- Auth gate: full-screen lock until a Supabase session exists (or the owner PIN) --- */
-  .pinGate{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+  .pinGate{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding:20px}
   .pinGate.hidden{display:none}
-  .pinBox{text-align:center;max-width:340px;width:100%}
+  .pinBox{text-align:center;max-width:340px;width:100%;margin:auto}
   .pinBox h2{margin:14px 0 4px;font-size:28px}
   .pinBox p{color:var(--muted);font-size:14px;margin:0 0 18px}
   .pinBox form{display:flex;gap:10px}
@@ -3026,7 +3026,7 @@ const OBJECTS = {
       {label:"Teardrop drop",prompt:"TEARDROP DROP — a classic teardrop drop hanging from a thick curved hook at the top, the teardrop face large and bold, wider at the bottom"},
       {label:"Geometric drop",prompt:"GEOMETRIC DROP — a flat geometric shape — triangle, hexagon or diamond — hanging from a thick hook, face bold and angular"},
       {label:"Long dangle",  prompt:"LONG DANGLE — a long slim vertical drop at least three times taller than wide, hanging from a thick hook, bold enough to read along its length"},
-      {label:"Hoop statement",prompt:"THICK HOOP — a chunky open ring hoop form, the circular band very thick and wide, bold enough to be sculptural rather than just a thin circle"},
+      {label:"Hoop statement",prompt:"THICK HOOP EARRING — a chunky open hoop earring, small earring scale (roughly coin-sized), the circular band very thick and wide, resting on a flat surface with the thick hook visible at the top — an earring not a bangle not a ring"},
       {label:"Sculptural cluster",prompt:"CLUSTER — an irregular sculptural cluster of chunky fused forms hanging from a thick hook, lumpy and asymmetric, all pieces fused solid into one mass"},
     ]},
 
@@ -3068,7 +3068,7 @@ const OBJECTS = {
       {label:"Oval",           prompt:"OVAL FORM — the bangle follows an oval rather than circular path, slightly wider than deep, sitting naturally at an angle, even band thickness"},
     ]},
 
-  tiara: {emoji:"✨", label:"Tiara", promptName:"decorative tiara headpiece", cat:"jewelry",
+  tiara: {emoji:"🌙", label:"Tiara", promptName:"decorative tiara headpiece", cat:"jewelry",
     fn:"A single decorative tiara — an open semicircular arc that crosses the front of the head. The base is a gently curved strip. Decorative peaks, flowers or points rise upward from the top edge. The two ends simply stop — no clasp. Just the tiara alone, resting on its two curved ends on a flat surface — no head beneath it, not being worn.",
     shapes:[
       {label:"Auto",          prompt:"driven entirely by the chosen style — a wild sculptural open tiara arc with bold peaks and a dramatic silhouette, resting on its two curved tips"},
@@ -3086,7 +3086,7 @@ const OBJECTS = {
       {label:"Auto",           prompt:"driven entirely by the chosen style — a wild sculptural full crown sitting upright, circular base band with bold peaks rising from the rim, surprising and regal"},
       {label:"Five-point",     prompt:"FIVE-POINT KING CROWN — a full circular band with exactly five bold peaks rising from the rim: one tall center peak, two medium flanking peaks, two shorter end peaks, the classic monarch silhouette"},
       {label:"Gothic spires",  prompt:"GOTHIC SPIRE CROWN — a full circular band edged with many tall sharp tapering spires packed densely all the way around the rim, taller in front and shorter toward the back, a dense ring of cathedral spires"},
-      {label:"Imperial dome",  prompt:"DOME CROWN — a full closed crown with a solid hemispherical dome rising from a wide decorated brim band, the dome tall and unbroken, a complete enclosed royal orb viewed slightly from the front"},
+      {label:"Imperial dome",  prompt:"DOME CROWN — a full closed crown where the top of the crown has a rounded dome shape — but the whole piece is a HOLLOW CROWN not a ball, the circular base band is open at the bottom, no head inside, viewed from a slight angle so both the decorated brim band AND the rounded top are visible, not a sphere, not an orb"},
       {label:"Floral band",    prompt:"FLORAL RING CROWN — a full circular band where the top rim blooms all the way around into a continuous ring of large stylized flowers, each bloom thick and chunky, petals fused solid"},
       {label:"Mural crown",    prompt:"BATTLEMENT CROWN — a full circular band with a crenellated top edge all the way around, evenly-spaced square merlons and gaps forming a low castle-wall silhouette atop the band, a mural crown form"},
       {label:"Tall spire",     prompt:"SINGLE TALL SPIRE CROWN — a full circular band with one enormous single spire rising dramatically from the front center, vastly taller than the otherwise low smooth band, a lone dramatic peak"},
@@ -3124,7 +3124,7 @@ const OBJECTS = {
       {label:"Shield",        prompt:"SHIELD — a bold shield-shaped fob, wide at the top pointed at the bottom, thick solid ring loop at the top center"},
       {label:"Geometric",     prompt:"GEOMETRIC — a bold geometric shape fob — hexagon, diamond or octagon — thick solid ring loop at one flat edge"},
       {label:"Skull",         prompt:"SKULL — a chunky decorative skull fob, stylized face on the front, thick solid ring loop emerging from the top of the skull"},
-      {label:"Animal",        prompt:"ANIMAL SHAPE — a chunky stylized animal silhouette fob, compact and bold, thick solid ring loop at the top"},
+      {label:"Animal",        prompt:"ANIMAL SILHOUETTE — a chunky stylized animal keychain fob — cat, dog, bird, or bear — simplified into a compact bold solid silhouette shape, all limbs fused to the body, thick solid ring loop at the top"},
       {label:"Freeform",      prompt:"FREEFORM — an irregular organic blob silhouette fob, no symmetry, bold surface, thick solid ring loop at the highest point"},
     ]},
 
@@ -3702,8 +3702,8 @@ const SD_OBJ = {
                 neg:"(wrist:1.5), (arm:1.5), (hand:1.5), (person:1.5), (human:1.4), (model:1.4), worn, (open gap:1.4), (cuff:1.3), (thin walls:1.4), (wire:1.4), (chain:1.4), (necklace:1.3), (ring:1.3), (earring:1.3), (multiple bangles:1.4), (picture frame:1.4), (mirror frame:1.4), (portal:1.3)"},
   tiara:       {noun:"decorative tiara headpiece", bits:"(a single decorative tiara resting on its two curved ends on a flat surface, an open semicircular arc with upward decorative peaks along the top edge, thick solid band, both ends open with no clasp, no head beneath it:1.5), macro studio shot",
                 neg:"(head:1.5), (hair:1.5), (person:1.5), (human:1.4), (model:1.4), (wearing:1.5), (on head:1.5), (full circle crown:1.4), (closed ring:1.4), (thin wire:1.4), (thin spires:1.4), (architecture:1.3), (building:1.3), (chess piece:1.3), (multiple:1.4), (necklace:1.3), (ring:1.3)"},
-  crown:       {noun:"decorative full crown", bits:"(a single decorative crown sitting upright on its circular base on a flat surface, a complete closed circular headband with bold peaks or spires rising straight up from the rim, thick solid walls throughout, hollow inside, no head inside it:1.5), macro studio shot",
-                neg:"(head:1.5), (hair:1.5), (person:1.5), (human:1.4), (model:1.4), (wearing:1.5), (on head:1.5), (open arc:1.4), (tiara:1.3), (thin wire:1.4), (thin spires:1.4), (architecture:1.3), (building:1.3), (castle:1.3), (chess king:1.3), (chess piece:1.3), (tree canopy:1.3), (bangle:1.3), (ring:1.3), (multiple:1.4), (necklace:1.3)"},
+  crown:       {noun:"decorative full crown", bits:"(a single decorative crown sitting upright on its circular base on a flat surface, a complete closed circular headband with bold peaks or spires rising straight up from the rim, thick solid walls throughout, hollow open inside at the base, clearly a crown not a ball:1.5), macro studio shot",
+                neg:"(sphere:1.5), (ball:1.5), (orb:1.5), (globe:1.5), (head:1.5), (hair:1.5), (person:1.5), (human:1.4), (model:1.4), (wearing:1.5), (on head:1.5), (open arc:1.4), (tiara:1.3), (thin wire:1.4), (thin spires:1.4), (architecture:1.3), (building:1.3), (castle:1.3), (chess king:1.3), (chess piece:1.3), (tree canopy:1.3), (bangle:1.3), (ring:1.3), (multiple:1.4), (necklace:1.3)"},
   beltbuckle:  {noun:"decorative belt buckle face", bits:"(a single decorative belt buckle face plate lying face-up alone on a flat surface, bold decorated front, flat back, no belt attached:1.5), macro studio shot",
                 neg:"(belt:1.5), (leather:1.5), (strap:1.4), (clothing:1.4), (person:1.5), (human:1.4), (model:1.4), worn, (picture frame:1.4), (mirror:1.4), (wall art:1.3), (thin prongs:1.4), (wire:1.4), (multiple buckles:1.4), (necklace:1.3), (ring:1.3)"},
 
@@ -5013,7 +5013,21 @@ async function refreshMe(){
   }catch(e){ /* the chip just keeps its last value */ }
 }
 
-function showPinGate(){ $("#pinGate").classList.remove("hidden"); setTimeout(()=>$("#emailInput")?.focus(),50); }
+function showPinGate(){
+  // Always reset to email pane when cfg is ready so "Use access PIN" is always findable.
+  // When cfg is not ready email login doesn't work — keep PIN pane visible instead.
+  const ready = ACCT.cfg?.ready !== false;
+  if(ready){
+    $("#gateEmailPane").classList.remove("hidden");
+    $("#gatePinPane").classList.add("hidden");
+  } else {
+    $("#gateEmailPane").classList.add("hidden");
+    $("#gatePinPane").classList.remove("hidden");
+  }
+  $("#pinGate").classList.remove("hidden");
+  const onPin = !$("#gatePinPane").classList.contains("hidden");
+  setTimeout(()=>(onPin?$("#pinInput"):$("#emailInput"))?.focus(),50);
+}
 function hidePinGate(){ $("#pinGate").classList.add("hidden"); }
 
 // Called before anything that costs credits. A visitor with no session silently gets an
@@ -5718,14 +5732,15 @@ $("#pinForm").onsubmit = async (e)=>{
   const pin = $("#pinInput").value.trim();
   if(!pin) return;
   const btn = e.target.querySelector("button"); btn.disabled = true;
-  const ok = (await verifyPin(pin)) === "ok";
+  const result = await verifyPin(pin);
   btn.disabled = false;
-  if(ok){
+  if(result === "ok"){
     localStorage.setItem("podder_pin", pin);
     ACCT.owner = true;
     $("#pinErr").classList.add("hidden"); $("#pinInput").value = "";
     hidePinGate(); updateAcctBar();
   } else {
+    $("#pinErr").textContent = result === "error" ? "Server error — is PODDER_PIN set in Vercel?" : "Wrong PIN — try again.";
     $("#pinErr").classList.remove("hidden"); $("#pinInput").select();
   }
 };
