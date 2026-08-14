@@ -371,7 +371,7 @@
           <div class="label">Weirdness <span class="rangeval" id="wildVal">balanced</span> <span class="lock" data-lock="wild" title="Keep this weirdness when you hit Surprise me">🔓 lock</span></div>
           <div style="display:flex;gap:10px;align-items:center">
             <input type="range" id="wild" min="1" max="3" step="1" value="2" style="flex:1" />
-            <button type="button" class="tbtn" id="overdriveBtn" title="Heady psychedelic overdrive — alien eyes, mushroom gills, DMT entities, bioluminescent tendrils, UV neon. Overrides the surface aesthetic entirely.">⚡ Overdrive</button>
+            <button type="button" class="tbtn" id="overdriveBtn" title="Pushes color, pattern density and visual intensity to a heady psychedelic extreme — without adding literal imagery. Same object, different plane of existence.">⚡ Overdrive</button>
           </div>
         </div>
         <div class="row" style="margin-bottom:0">
@@ -4160,9 +4160,10 @@ function buildPrompt(){
       + `${SD_PAL[pal.v]||"matte finish"}, ${SD_VIEW[view.v]||""}, `+tail)
       .replace(/\s{2,}/g," ").replace(/,\s*,/g,", ");
   }
-  // ⚡ Overdrive — heady psychedelic glass-art mode. Overrides the surface aesthetic entirely
-  // with alien organic biology and DMT-realm imagery, regardless of chosen style.
-  if(state.overdrive) sd = sd + " HEADY PSYCHEDELIC OVERDRIVE: The surface erupts with dense alien organic biology — compound insect eyes clustered in writhing fields, psilocybin mushroom caps and packed gill structures bursting from every face, bioluminescent tendrils and branching mycelium threading through the relief, DMT-realm entities and fractal faces half-dissolved into the material. Sacred geometry warps and bleeds into living flesh — the Fibonacci spirals breathe, the mandalas pulse like pupils. The object itself appears to be slowly melting and alive, its edges softening into tendrils. Palette overrides to electric UV-reactive neon: hot acid pink, alien bioluminescent green, deep cosmic violet, electric cyan — colors that seem to glow from within, like heady borosilicate glass held up to a black light. This is a psychedelic artifact dredged from inside a DMT trip, made physically solid.";
+  // ⚡ Overdrive — pushes the rendering to psychedelic intensity without adding literal imagery.
+  // The object stays what it is; the colors, surface energy and visual density get pushed
+  // to a heady extreme — everything vibrating, electric, and alive.
+  if(state.overdrive) sd = sd + " Push the rendering to maximum psychedelic intensity. Colors shift to electric neon that appears to glow from within — acid brights, iridescent shifts, colors that seem to change as you look at them. Every pattern and motif on the surface repeats and folds fractally into itself, layer on layer, until the detail feels infinite and overwhelming — like staring into it too long would pull you in. The whole surface has a sense of motion and inner light, as if the geometry itself is breathing. The visual effect should feel like heady glass art held up to light — not by adding any new subject matter, but by pushing the existing forms, colors and ornament to a hallucinogenic visual extreme.";
 
   return {
     id: genId(),
@@ -5556,7 +5557,7 @@ $("#overdriveBtn").onclick=()=>{
   $("#overdriveBtn").classList.toggle("on",state.overdrive);
   // Overdrive means "as weird as it goes" — slam the weirdness slider to max along with it.
   if(state.overdrive){ const w=$("#wild"); w.value=w.max; onWild(); }
-  toast(state.overdrive ? "⚡ Overdrive ON — heady psychedelic mode: alien biology, DMT entities, UV neon" : "Overdrive off");
+  toast(state.overdrive ? "⚡ Overdrive ON — electric colors, infinite fractal depth, everything alive" : "Overdrive off");
 };
 $("#clearHist").onclick=()=>{if(confirm("Clear all history?")){hist=[];LS_set("podder_hist",hist);refreshCounts();showTab("hist");}};
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>showTab(t.dataset.tab));
