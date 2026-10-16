@@ -14,12 +14,24 @@ export const CREDIT_COST = {
 
 // What a downloadable 3D mesh costs (api/model3d.js -> Tripo image-to-3D + STL convert).
 //
-// PROVISIONAL — tune this once you can see your real Tripo spend. A mesh is a different order
-// of cost from an image: Flux fast is ~$0.014, while Tripo bills per generation (3.1 = 40 of
-// their credits, P1 = 60, P2 = 200). At the Starter pack's $0.033/credit, 25 credits is ~$0.83
-// of revenue per mesh. Confirm that clears the Tripo charge with margin before launching, and
-// remember the 50-credit signup bonus would otherwise hand out two free meshes.
-export const MODEL3D_COST = 25;
+// MEASURED 2026-10-16 against a live Tripo account: 30 credits to generate + 5 to convert to
+// STL = 35 Tripo credits at $0.01 each = $0.35, plus ~$0.014 for the Flux image the mesh is
+// built from. Call it $0.364 of hard cost per mesh — roughly 26x what a fast image costs, so
+// meshes cannot be priced off the same intuition as renders.
+//
+// Margin per mesh, net of Stripe (Starter nets $0.0304/credit, Studio only $0.0257):
+//   25 credits -> 52% Starter / 43% Studio   (too thin on the big pack)
+//   40 credits -> 70% Starter / 65% Studio   <- chosen
+//   50 credits -> 76% Starter / 72% Studio
+// 40 keeps the buyer around $1.20 for a bespoke printable STL, which is still far below the
+// alternatives (commissioning a modeller, or a $20/mo Tripo seat).
+//
+// NOTE the interaction with SIGNUP_BONUS below: at 25 this silently handed every new account
+// TWO free meshes ($0.73 of real cost each signup). At 40 it is exactly one. Keeping one free
+// mesh is defensible as customer acquisition — the STL download is the moment someone believes
+// the product — but it should be a decision, not an accident. Raise this above SIGNUP_BONUS to
+// require a purchase before any mesh.
+export const MODEL3D_COST = 40;
 
 // Stripe Managed Payments is enabled by default on this account and rejects inline
 // price_data without a tax code. txcd_10105001 is "AIaaS - Cloud Based - Personal Use":
