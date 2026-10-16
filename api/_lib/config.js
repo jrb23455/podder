@@ -12,6 +12,15 @@ export const CREDIT_COST = {
   quality: 3,
 };
 
+// What a downloadable 3D mesh costs (api/model3d.js -> Tripo image-to-3D + STL convert).
+//
+// PROVISIONAL — tune this once you can see your real Tripo spend. A mesh is a different order
+// of cost from an image: Flux fast is ~$0.014, while Tripo bills per generation (3.1 = 40 of
+// their credits, P1 = 60, P2 = 200). At the Starter pack's $0.033/credit, 25 credits is ~$0.83
+// of revenue per mesh. Confirm that clears the Tripo charge with margin before launching, and
+// remember the 50-credit signup bonus would otherwise hand out two free meshes.
+export const MODEL3D_COST = 25;
+
 // Stripe Managed Payments is enabled by default on this account and rejects inline
 // price_data without a tax code. txcd_10105001 is "AIaaS - Cloud Based - Personal Use":
 // access to AI tools (image generators) hosted on the provider's servers, used via a

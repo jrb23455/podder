@@ -5,7 +5,7 @@
 // instead of hardcoding it keeps environment config out of the 650KB static index.html,
 // so preview and production deploys point at different projects without a code change.
 
-import { CREDIT_COST, PACKS, SIGNUP_BONUS } from './_lib/config.js';
+import { CREDIT_COST, PACKS, SIGNUP_BONUS, MODEL3D_COST } from './_lib/config.js';
 import { missingEnv, selectOne } from './_lib/server.js';
 
 export default async function handler(req, res) {
@@ -40,6 +40,9 @@ export default async function handler(req, res) {
     promo,
     signupBonus: SIGNUP_BONUS,
     costs: CREDIT_COST,
+    // 3D export is advertised only when a Tripo key is actually present, so the UI never
+    // offers a download button that would 500 on click.
+    model3d: { enabled: !!(process.env.TRIPO_API_KEY || '').trim(), cost: MODEL3D_COST },
     packs: Object.entries(PACKS).map(([id, p]) => ({
       id, credits: p.credits, amount: p.amount, name: p.name, blurb: p.blurb,
     })),
