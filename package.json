@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Podder — trippy, always-3D-printable design generator. Cloud renders via Replicate Flux.",
   "scripts": {
-    "dev": "node dev-server.mjs"
+    "dev": "node dev-server.mjs",
+    "preflight": "node scripts/preflight.mjs"
   }
 }
