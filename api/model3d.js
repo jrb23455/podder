@@ -97,6 +97,18 @@ export default async function handler(req, res) {
 
   // ---- poll (no side effects, so it is safe to hammer) ----
   if (req.method === 'GET') {
+    // Owner-only balance readout, so mesh cost can be measured rather than guessed at from
+    // vendor comparison blogs (which disagree wildly). Gated behind the PIN because it exposes
+    // account spend.
+    if (req.query.balance !== undefined) {
+      if (!pinOk(req.headers['x-podder-pin'])) return res.status(401).json({ error: 'owner_only' });
+      try {
+        return res.status(200).json(await tripo('/user/balance', token));
+      } catch (e) {
+        return res.status(502).json({ error: 'tripo_failed', detail: String(e.message || e) });
+      }
+    }
+
     const id = String(req.query.task || '').trim();
     if (!id) return res.status(400).json({ error: 'missing_task' });
     try {
@@ -160,10 +172,18 @@ export default async function handler(req, res) {
     }
 
     try {
+      // texture/pbr OFF by default: the deliverable is an STL, and STL stores geometry only —
+      // it cannot carry colour or materials, so every credit spent texturing is thrown away at
+      // the convert step. Tripo returns the untextured result as base_model instead of
+      // pbr_model, which readTask() already handles. Set TRIPO_TEXTURE=1 to turn it back on
+      // (only worth it if GLB with materials ever becomes a deliverable in its own right).
+      const wantTexture = process.env.TRIPO_TEXTURE === '1';
       const d = await createTask({
         type: 'image_to_model',
         ...(GEN_MODEL && GEN_MODEL !== 'none' ? { model_version: GEN_MODEL } : {}),
         file: { type: ext, file_token: fileToken },
+        texture: wantTexture,
+        pbr: wantTexture,
       }, token);
       return res.status(200).json({ taskId: d.task_id || d.taskId, credits: balance });
     } catch (e) {
