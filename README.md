@@ -1,8 +1,8 @@
 # Podder (Web)
 
-Far-out, **always-3D-printable** design generator. Picks an object (vase, planter, birdhouse, 35 in all), layers on trippy style DNA (sacred geometry, drippy, voronoi, …), and renders it in the cloud with Flux — single isolated object, one solid printable form, clean studio background, ready for image-to-3D (e.g. meshy.ai) and printing.
+**Design generator for 3D printing.** Pick an object — 124 across home goods, figurines, spiritual, jewelry and geometry — layer on a style, and render it in the cloud with Flux. Printability is built into every prompt: a single isolated object, one solid form, no fragile parts, clean studio background, ready for image-to-3D and printing.
 
-The app is a single static page plus two serverless functions. No build step, no npm dependencies.
+The app is a single static page plus a handful of serverless functions. No build step, no npm dependencies.
 
 ```
 index.html        the whole app (UI + prompt engine)

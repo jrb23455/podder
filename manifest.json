@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Podder",
   "short_name": "Podder",
-  "description": "Trippy 3D-print design prompt generator with local ComfyUI + Ollama rendering.",
+  "description": "Design generator for 3D printing. Every render is a single solid printable form, ready for image-to-3D.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
