@@ -4414,8 +4414,8 @@ function buildCard(item, opts={}){
     </div>
     <div class="tools">
       <div class="tbtn fav ${isFav?'on':''}">${isFav?'★ Saved':'☆ Favorite'}</div>
-      <div class="tbtn render" title="${item.renderImg?'Render 6 similar designs under this picture':'Generate the image'}">${item.renderImg?'🔄 Similar ×6':'🖼 Render'}</div>
-      ${opts.showReroll?'<div class="tbtn reroll" title="Render 6 random objects in this same style">🎲 Reroll ×6</div>':''}
+      <div class="tbtn render" title="${item.renderImg?`Render 6 similar designs under this picture — ${priceLabel(6)}`:`Generate the image — ${priceLabel(1)}`}">${item.renderImg?`🔄 Similar ×6${costSuffix(6)}`:`🖼 Render${costSuffix(1)}`}</div>
+      ${opts.showReroll?`<div class="tbtn reroll" title="Render 6 random objects in this same style — ${priceLabel(6)}">🎲 Reroll ×6${costSuffix(6)}</div>`:''}
       ${opts.showRemove?'<div class="tbtn remove">✕ Remove</div>':''}
     </div>
     <div class="render-wrap">${item.renderImg?'':'<div class="render-status">Click 🖼 Render to generate this design.</div>'}</div>`;
@@ -4428,10 +4428,16 @@ function buildCard(item, opts={}){
   card.querySelector(".render").onclick=()=>{
     // Once a picture exists, the button becomes "similar ×6" — img2img variations anchored to
     // the actual pixels. Before that, it's a plain first render.
-    if(item.renderImg) spawnVariants(item, card.querySelector(".render-wrap"));
+    if(item.renderImg){
+      if(!confirmSpend(6, "Render 6 similar designs from this picture?")) return;
+      spawnVariants(item, card.querySelector(".render-wrap"));
+    }
     else renderCard(item, card);
   };
-  if(opts.showReroll) card.querySelector(".reroll").onclick=()=>rerollFromItem(item);
+  if(opts.showReroll) card.querySelector(".reroll").onclick=()=>{
+    if(!confirmSpend(6, "Reroll — render 6 random objects in this same style?")) return;
+    rerollFromItem(item);
+  };
   if(opts.showRemove) card.querySelector(".remove").onclick=()=>{opts.onRemove(item);};
   card._item=item;
   // Restore a previously-saved picture immediately — no re-render click needed.
@@ -4526,7 +4532,12 @@ function renderImageInto(wrap, item, imgRef){
         `<optgroup label="${cat.emoji} ${cat.label}">`
         + Object.keys(OBJECTS).filter(k=>catOf(k)===ck && k!==item.obj).map(k=>`<option value="${k}">${OBJECTS[k].emoji} ${OBJECTS[k].label}</option>`).join("")
         + `</optgroup>`).join("");
-  sel.onchange = ()=>{ const k = sel.value; sel.value = ""; if(k) spawnVariants(item, wrap, k); };
+  sel.onchange = ()=>{
+    const k = sel.value; sel.value = "";
+    if(!k) return;
+    if(!confirmSpend(6, `Apply this design to 6 ${OBJECTS[k].label} renders?`)) return;
+    spawnVariants(item, wrap, k);
+  };
   meta.appendChild(sel);
   if(item.renderMs){ const t=document.createElement("span"); t.className="render-time"; t.textContent=fmtDuration(item.renderMs); meta.appendChild(t); }
   wrap.appendChild(meta);
@@ -4706,22 +4717,18 @@ async function generate(){
   render(out, $("#output"), {emptyMsg:"Hit Generate."});
   const cards = [...document.querySelectorAll("#output .card")];
 
-  // Don't auto-render for a visitor with no session yet. Their trial is 5 renders; spending
-  // three of them on a batch they didn't ask for — or popping a login wall the instant they
-  // press Generate — is exactly the friction this flow exists to remove. Let them browse the
-  // cards and click Render on the one they actually want, which is what starts the trial.
-  if(!(ACCT.owner || ACCT.loaded)) return;
-
-  const batch = new AbortController(); inFlightCtls.add(batch);
-  (async()=>{
-    for(let i=0;i<cards.length;i++){
-      if(batch.signal.aborted) break;
-      if(i>0) await new Promise(r=>setTimeout(r,500));
-      if(batch.signal.aborted) break;
-      await renderCard(cards[i]._item, cards[i]);
-    }
-    inFlightCtls.delete(batch);
-  })();
+  // NOTHING IS RENDERED HERE — Generate only builds prompt cards, and each card is rendered
+  // when its own Render button is clicked.
+  //
+  // This used to auto-render every card for signed-in users, which quietly spent `count`
+  // credits (3 by default, 9 on Quality) the instant someone pressed Generate. That was
+  // harmless when Podder only ran against a local GPU, but on the hosted paid version it
+  // billed for work nobody asked for — and it directly contradicted the line this very panel
+  // shows: "generating prompts is free — you only spend credits when you hit Render".
+  // Auto-render was already skipped for signed-out visitors to protect their trial; the same
+  // reasoning applies to everyone once credits are real money, so it now applies to everyone.
+  // Owner PIN sessions are unbilled but follow the same path, so what the owner sees while
+  // testing is what a paying user gets.
   // History is populated when a render actually finishes (see renderCard) — it's a log of
   // the last 300 PICTURES, not a log of prompts that may never have been rendered.
 }
@@ -4781,6 +4788,13 @@ async function randomizeAll(){
   $("#view").value=sView;$("#palette").value=sPal;$("#wild").value=sWild;onWild();
   render(out,$("#output"),{emptyMsg:"Hit Generate."});
   const cards=[...document.querySelectorAll("#output .card")];
+  // Randomize All auto-rendered every card too — the same silent spend as Generate, and worse
+  // because the whole point is to fire off a batch. Now it only rolls the prompts; the user
+  // picks which ones are worth rendering. Confirm covers the deliberate "render them all" case.
+  if(!confirmSpend(cards.length, `Render all ${cards.length} randomized designs now?`)){
+    toast(`🎲 ${cards.length} random designs — click 🖼 Render on the ones you want`);
+    return;
+  }
   const batch=new AbortController();inFlightCtls.add(batch);
   (async()=>{
     for(let i=0;i<cards.length;i++){
@@ -5984,6 +5998,26 @@ $("#qualityToggle").onchange=()=>{
   $("#qtLabel").textContent=q?"🎯 Quality":"⚡ Fast";
 };
 function getQuality(){ return $("#qualityToggle").checked ? "quality" : "fast"; }
+
+/* ---------- SPEND VISIBILITY ----------
+   Every action that renders costs real credits, and several of them render SIX images at
+   once. Podder grew up against a free local GPU where that was invisible; on the hosted
+   version it is money. So: show the price on the control before it is clicked, and confirm
+   anything that spends more than a single render. Owner PIN sessions are unbilled, so they
+   get neither the price chrome nor the confirmations — the owner sees a clean UI and paying
+   users see the cost. */
+function billed(){ return !ACCT.owner; }
+function creditsForN(n){ return n * (ACCT.cfg?.costs?.[getQuality()] ?? 1); }
+function priceLabel(n){ const c = creditsForN(n); return `${c} credit${c===1?'':'s'}`; }
+function costSuffix(n){ return billed() ? ` · ${creditsForN(n)}` : ''; }
+function confirmSpend(n, what){
+  if(!billed()) return true;
+  const c = creditsForN(n);
+  const have = typeof ACCT.credits === "number" ? ACCT.credits : null;
+  if(have !== null && have < c){ openBuy(`That needs ${c} credits — you have ${have}.`); return false; }
+  return confirm(`${what}\n\nRenders ${n} image${n===1?'':'s'} for ${c} credit${c===1?'':'s'}.`
+    + (have !== null ? `\nYou have ${have}.` : ""));
+}
 // --- Shape & style disclosure ---------------------------------------------------------
 // Collapsed by default so Generate sits near the top of the panel instead of below ~45 chips.
 // The summary line means collapsing never hides a choice, and anything non-default springs
