@@ -1170,8 +1170,13 @@ const OBJECTS = {
       {label:"Hook",prompt:"a curved hook-like post, its top curving outward into a distinct cradle arm to drape a watch over"},
       {label:"Branch",prompt:"a branching twig-like post, its top curving outward into a distinct cradle arm to drape a watch over"}
     ]},
-  budvase:{emoji:"🌱", label:"Bud vase", promptName:"slender empty ceramic vessel with a narrow neck",
-    fn:"It is a small single-stem bud vase, shown EMPTY — a slender miniature vessel with a narrow open mouth, a hollow interior and a solid stable flat base. Nothing is in it and nothing rises out of it: no flowers, no stems, no leaves, no sprigs. The mouth is a bare dark opening with the plain background visible straight through it. The vase is photographed on its own as an empty object for sale.",
+  budvase:{emoji:"🌱", label:"Bud vase", promptName:"slender narrow-necked ceramic vessel",
+    // Deliberately never says flower/stem/bud. Diffusion has no negation: writing "no flowers"
+    // puts flowers in the prompt, which is what an earlier attempt here did — it listed four
+    // flower words trying to banish them and rendered a bigger bouquet. Same rule as the
+    // SD_OBJ note above ("pencil holder" draws pencils). Phrased like `vase`, which renders
+    // reliably empty precisely because it never mentions contents at all.
+    fn:"The vessel is slender and tall with a narrow neck and a small open mouth at the top, hollow inside, on a solid stable flat base. The interior is completely bare.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
       {label:"Tall column",prompt:"a tall, slender, gently tapering miniature column"},
