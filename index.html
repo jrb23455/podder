@@ -92,6 +92,24 @@
   .chip.sd{font-size:12.5px;padding:6px 11px;font-weight:500}
   .chip.sd.on{border-color:var(--gold);background:rgba(255,206,84,.14);color:#fff;box-shadow:0 0 12px rgba(255,206,84,.16)}
 
+  /* The object list is 35-39 chips in the big categories and on its own filled the viewport,
+     so it scrolls in place rather than pushing everything below it off-screen. Search above
+     it is the fast path when you know what you want. */
+  #objChips{max-height:190px;overflow-y:auto;padding-right:4px}
+  #objChips::-webkit-scrollbar{width:8px}
+  #objChips::-webkit-scrollbar-thumb{background:#3a2a5a;border-radius:4px}
+
+  /* Shape & style disclosure */
+  #refineToggle{display:flex;align-items:center;gap:8px;width:100%;margin:0 0 14px;padding:9px 12px;
+    border-radius:10px;border:1px solid var(--panel-brd);background:#1a0f2e;color:var(--ink);
+    font:inherit;font-size:13px;cursor:pointer;text-align:left}
+  #refineToggle:hover{border-color:var(--accent3)}
+  #refineSummary{flex:1;color:#6f5f8f;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #refineCaret{color:#6f5f8f;transition:transform .18s}
+  #refineToggle[aria-expanded="true"] #refineCaret{transform:rotate(180deg)}
+  #refineWrap{display:none}
+  #refineWrap.open{display:block}
+
   .controls-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
   @media(max-width:620px){.controls-grid{grid-template-columns:1fr}}
   input[type=range]{width:100%;accent-color:var(--accent)}
@@ -358,19 +376,31 @@
         <div class="chips" id="objChips"></div>
       </div>
 
-      <div class="row">
-        <div class="label">Shape <span style="text-transform:none;letter-spacing:0;color:#6f5f8f">— fine-tune the silhouette</span> <span class="lock" data-lock="shape" title="Keep this shape when you regenerate">🔓 lock</span></div>
-        <div class="chips" id="shapeChips"></div>
-      </div>
+      <!-- Shape + style live behind a disclosure. They are the two biggest chip rows (~45
+           buttons between them) and pushed Generate far below the fold; the common path is
+           category -> object -> Generate. The summary keeps the current choices visible so
+           collapsing never hides state, and the panel auto-opens if anything is non-default. -->
+      <button type="button" id="refineToggle" aria-expanded="false" aria-controls="refineWrap">
+        <span>⚙ Shape &amp; style</span>
+        <span id="refineSummary"></span>
+        <span id="refineCaret">▾</span>
+      </button>
 
-      <div class="row">
-        <div class="label">Style DNA <span style="text-transform:none;letter-spacing:0;color:#6f5f8f">— pick any mix, or leave empty for surprise</span> <span class="lock" data-lock="style" title="Keep the same styles when you regenerate">🔓 lock</span></div>
-        <div class="chips" id="styleChips"></div>
-      </div>
+      <div id="refineWrap">
+        <div class="row">
+          <div class="label">Shape <span style="text-transform:none;letter-spacing:0;color:#6f5f8f">— fine-tune the silhouette</span> <span class="lock" data-lock="shape" title="Keep this shape when you regenerate">🔓 lock</span></div>
+          <div class="chips" id="shapeChips"></div>
+        </div>
 
-      <div class="row" id="styleDetailRow" style="display:none">
-        <div class="label">Style detail <span style="text-transform:none;letter-spacing:0;color:#6f5f8f">— pick exact motifs, or leave all on for variety</span></div>
-        <div id="styleDetail"></div>
+        <div class="row">
+          <div class="label">Style DNA <span style="text-transform:none;letter-spacing:0;color:#6f5f8f">— pick any mix, or leave empty for surprise</span> <span class="lock" data-lock="style" title="Keep the same styles when you regenerate">🔓 lock</span></div>
+          <div class="chips" id="styleChips"></div>
+        </div>
+
+        <div class="row" id="styleDetailRow" style="display:none">
+          <div class="label">Style detail <span style="text-transform:none;letter-spacing:0;color:#6f5f8f">— pick exact motifs, or leave all on for variety</span></div>
+          <div id="styleDetail"></div>
+        </div>
       </div>
 
       <div class="controls-grid">
@@ -4477,6 +4507,15 @@ function renderImageInto(wrap, item, imgRef){
   const sv3d=document.createElement("button"); sv3d.className="btn ghost"; sv3d.style.cssText="font-size:12px;padding:3px 8px;margin-left:6px";
   sv3d.textContent="📁 Save to 3D Printing"; sv3d.onclick=()=>saveToDesktop(item,imgRef,sv3d);
   meta.appendChild(sv3d);
+  // Image -> printable STL, in-app. Only offered when the server actually holds a Tripo key,
+  // so the button can never appear and then 500 on click.
+  if(ACCT.cfg?.model3d?.enabled){
+    const mk=document.createElement("button"); mk.className="btn ghost";
+    mk.style.cssText="font-size:12px;padding:3px 8px;margin-left:6px";
+    mk.textContent=`🧊 Make 3D — ${ACCT.cfg.model3d.cost} cr`;
+    mk.onclick=()=>makeModel3D(item, imgRef, mk, meta);
+    meta.appendChild(mk);
+  }
   imgSrc(imgRef).then(u=>{ if(!u){ image.onerror(); return; } image.src=u; dl.href=u; });
   // "Apply design to other objects" — img2img this picture into a different object's form.
   const sel = document.createElement("select"); sel.className = "variantSel";
@@ -4542,6 +4581,15 @@ function renderEditResultInto(wrap, item, imgRef){
   const sv3d=document.createElement("button"); sv3d.className="btn ghost"; sv3d.style.cssText="font-size:12px;padding:3px 8px;margin-left:6px";
   sv3d.textContent="📁 Save to 3D Printing"; sv3d.onclick=()=>saveToDesktop(item,imgRef,sv3d);
   meta.appendChild(sv3d);
+  // Image -> printable STL, in-app. Only offered when the server actually holds a Tripo key,
+  // so the button can never appear and then 500 on click.
+  if(ACCT.cfg?.model3d?.enabled){
+    const mk=document.createElement("button"); mk.className="btn ghost";
+    mk.style.cssText="font-size:12px;padding:3px 8px;margin-left:6px";
+    mk.textContent=`🧊 Make 3D — ${ACCT.cfg.model3d.cost} cr`;
+    mk.onclick=()=>makeModel3D(item, imgRef, mk, meta);
+    meta.appendChild(mk);
+  }
   imgSrc(imgRef).then(u=>{ if(u){ image.src=u; dl.href=u; } });
   meta.appendChild(buildFavBtn(item));
   if(item.renderMs){ const t=document.createElement("span"); t.className="render-time"; t.textContent=fmtDuration(item.renderMs); meta.appendChild(t); }
@@ -5176,6 +5224,123 @@ async function refreshMe(){
   }catch(e){ /* the chip just keeps its last value */ }
 }
 
+/* ---------- IMAGE -> PRINTABLE STL (Tripo, via /api/model3d) ----------
+   Three phases because Tripo generation takes ~75s and a Vercel function caps at 60s, so a
+   single create-and-wait request is impossible: create -> poll -> convert -> poll. Tripo
+   returns GLB from every generation endpoint; STL only exists as a separate convert task.
+   Billing is server-side (debit on create); if a task fails we ask the server to refund, which
+   is keyed on the task id so a retry cannot double-credit. */
+function authHeaders(extra){
+  // Same rule as apiFetch: session token when signed in, owner PIN otherwise.
+  const h = Object.assign({}, extra||{});
+  const token = ACCT.owner ? "" : (ACCT.session?.access_token || "");
+  if(token) h.Authorization = `Bearer ${token}`;
+  if(ACCT.owner || !token) h["x-podder-pin"] = getPin();
+  return h;
+}
+
+async function makeModel3D(item, imgRef, btn, meta){
+  const cost = ACCT.cfg?.model3d?.cost ?? 40;
+  const image = await imgSrc(imgRef);
+  if(!image){ toast("That image isn't in this browser any more — re-render it first."); return; }
+  if(!(await ensureRenderable())) return;
+
+  btn.disabled = true;
+  const status = document.createElement("span");
+  status.className = "render-time";
+  status.style.cssText = "margin-left:8px;color:var(--accent2)";
+  meta.appendChild(status);
+  const say = t => { status.textContent = t; };
+
+  // Poll a Tripo task to completion. GET is side-effect free, so retrying is harmless.
+  const waitFor = async (taskId, label) => {
+    for(let i=0; i<200; i++){
+      await sleep(2500);
+      const r = await fetch(`/api/model3d?task=${encodeURIComponent(taskId)}`, {headers: authHeaders()});
+      const j = await r.json().catch(()=>({}));
+      if(j.status === "success") return j;
+      if(j.status === "failed" || j.status === "banned" || j.status === "expired"){
+        const e = new Error(j.error || "Tripo could not build this one"); e.taskId = taskId; throw e;
+      }
+      say(`${label}${typeof j.progress === "number" ? " " + j.progress + "%" : "…"}`);
+    }
+    const e = new Error("timed out waiting for Tripo"); e.taskId = taskId; throw e;
+  };
+
+  let created = null;
+  try{
+    say("uploading…");
+    const r = await fetch("/api/model3d", {
+      method:"POST", headers: authHeaders({"content-type":"application/json"}),
+      body: JSON.stringify({ image })
+    });
+    const j = await r.json().catch(()=>({}));
+
+    if(r.status === 401){
+      // Mirror apiFetch: try a silent refresh first, only sign out if that fails too.
+      const refreshed = await refreshSession();
+      if(!refreshed) signOut();
+      throw new Error(refreshed ? "Session refreshed — try again" : "Please sign in again");
+    }
+    if(r.status === 402){ openBuy(`A 3D model costs ${cost} credits.`); throw new Error("Not enough credits"); }
+    if(!r.ok || !j.taskId) throw new Error(j.detail || j.error || `HTTP ${r.status}`);
+
+    created = j.taskId;
+    if(typeof j.credits === "number"){ ACCT.credits = j.credits; updateAcctBar(); }
+
+    say("building mesh…");
+    await waitFor(created, "building mesh");
+
+    say("converting to STL…");
+    const c = await fetch("/api/model3d", {
+      method:"POST", headers: authHeaders({"content-type":"application/json"}),
+      body: JSON.stringify({ convert: created })
+    });
+    const cj = await c.json().catch(()=>({}));
+    if(!c.ok || !cj.taskId) throw new Error(cj.detail || cj.error || "STL conversion failed to start");
+    const done = await waitFor(cj.taskId, "converting");
+
+    const url = done.stl || done.glb;
+    if(!url) throw new Error("Tripo returned no file");
+
+    // Tripo normalises meshes to a unit cube, so the raw file slices at ~1mm. Say so plainly
+    // rather than letting someone discover it on the print bed.
+    status.remove();
+    btn.remove();
+    const a = document.createElement("a");
+    a.className = "btn primary";
+    a.style.cssText = "font-size:12px;padding:3px 8px;margin-left:6px;text-decoration:none";
+    a.href = url; a.target = "_blank"; a.rel = "noopener";
+    a.download = downloadName(item, "x.png").replace(/\.png$/i, ".stl");
+    a.textContent = "⬇ Download STL";
+    meta.appendChild(a);
+    const note = document.createElement("span");
+    note.className = "render-time";
+    note.style.cssText = "margin-left:8px;color:#6f5f8f";
+    note.textContent = "scale to taste in your slicer — it arrives unit-sized";
+    meta.appendChild(note);
+    toast("🧊 3D model ready — download the STL");
+
+  }catch(err){
+    // Refund only a task Tripo actually created and then failed; the server re-checks with
+    // Tripo before crediting, so this cannot be used to mint credits.
+    if(created){
+      try{
+        const rr = await fetch("/api/model3d", {
+          method:"POST", headers: authHeaders({"content-type":"application/json"}),
+          body: JSON.stringify({ refund: created })
+        });
+        const rj = await rr.json().catch(()=>({}));
+        if(typeof rj.credits === "number"){ ACCT.credits = rj.credits; updateAcctBar(); }
+      }catch(e){ /* server logs it; the ledger still has the debit to reconcile */ }
+    }
+    status.remove();
+    btn.disabled = false;
+    btn.textContent = `🧊 Make 3D — ${cost} cr`;
+    toast("3D failed: " + (err.message || err));
+  }
+}
+
 function showPinGate(){
   // Always reset to email pane when cfg is ready so "Use access PIN" is always findable.
   // When cfg is not ready email login doesn't work — keep PIN pane visible instead.
@@ -5803,6 +5968,32 @@ $("#qualityToggle").onchange=()=>{
   $("#qtLabel").textContent=q?"🎯 Quality":"⚡ Fast";
 };
 function getQuality(){ return $("#qualityToggle").checked ? "quality" : "fast"; }
+// --- Shape & style disclosure ---------------------------------------------------------
+// Collapsed by default so Generate sits near the top of the panel instead of below ~45 chips.
+// The summary line means collapsing never hides a choice, and anything non-default springs
+// the panel open on load so a locked-in style is never silently out of sight.
+function refineSummaryText(){
+  const shape = (state.shape && state.shape !== "Auto") ? state.shape : "Auto shape";
+  const n = state.styles.size;
+  const styles = n === 0 ? "surprise style"
+    : n === 1 ? (STYLES[[...state.styles][0]]?.label || "1 style")
+    : n + " styles";
+  return shape + " · " + styles;
+}
+function updateRefineSummary(){ const el = $("#refineSummary"); if(el) el.textContent = refineSummaryText(); }
+function setRefineOpen(open){
+  $("#refineWrap").classList.toggle("open", open);
+  $("#refineToggle").setAttribute("aria-expanded", open ? "true" : "false");
+}
+$("#refineToggle").onclick = ()=> setRefineOpen(!$("#refineWrap").classList.contains("open"));
+// Chips are redrawn in several places; rather than hook each one, refresh the summary after
+// any click that could have changed object/shape/style.
+document.addEventListener("click", e=>{
+  if(e.target.closest("#refineWrap, #objChips, #catChips, #searchResults")) setTimeout(updateRefineSummary, 0);
+});
+updateRefineSummary();
+if(state.styles.size || (state.shape && state.shape !== "Auto")) setRefineOpen(true);
+
 $("#count").oninput=onCount;
 $("#wild").oninput=onWild;
 onWild();   // sync the label to the slider's initial value — otherwise it shows stale markup text
