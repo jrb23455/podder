@@ -5241,9 +5241,25 @@ function authHeaders(extra){
 
 async function makeModel3D(item, imgRef, btn, meta){
   const cost = ACCT.cfg?.model3d?.cost ?? 40;
-  const image = await imgSrc(imgRef);
-  if(!image){ toast("That image isn't in this browser any more — re-render it first."); return; }
+  const src = await imgSrc(imgRef);
+  if(!src){ toast("That image isn't in this browser any more — re-render it first."); return; }
   if(!(await ensureRenderable())) return;
+
+  // imgSrc hands back a blob: object URL for anything already in the local image store, but
+  // the API needs an inline data URL. (A freshly returned render is a data URL and a stored
+  // one is not, so testing only the fresh path hides this.) Same-origin blob, so fetch is fine.
+  let image = src;
+  if(!/^data:/i.test(image)){
+    try{
+      const blob = await (await fetch(src)).blob();
+      image = await new Promise((res, rej)=>{
+        const fr = new FileReader();
+        fr.onload = ()=>res(fr.result);
+        fr.onerror = ()=>rej(new Error("could not read the stored image"));
+        fr.readAsDataURL(blob);
+      });
+    }catch(e){ toast("Couldn't read that image: " + (e.message || e)); return; }
+  }
 
   btn.disabled = true;
   const status = document.createElement("span");
