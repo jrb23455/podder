@@ -51,9 +51,23 @@ export const PACKS = {
   studio:   { credits: 1500, amount: 4000, name: 'Studio pack',   blurb: '1,500 credits' },
 };
 
-// Mirrors handle_new_user() — currently set by 0005_signup_bonus_50.sql. The database
-// grants the credits; this constant only advertises them, so the two must move together.
-// Keep it below PACKS.starter.credits or the cheapest paid tier becomes unsellable.
+// What a REAL (email-bearing) account is granted. The database actually grants it; this
+// constant only advertises it on the sign-up screen, so the two must move together — see
+// handle_new_user and handle_user_upgrade, currently set by 0007.
+//
+// There are two different numbers, deliberately (0007_split_anon_trial_from_signup_bonus):
+//   anonymous trial  10 credits  — no email, costs us nothing to create, so it buys a look
+//   real signup      50 credits  — this constant, what the gate promises
+//   anon -> converts 60 total    — rewards trying first without paying two full bonuses
+// Before 0007 every anonymous session was handed the full 50 and then 50 again on conversion,
+// so a converting visitor got 100 while the gate said 50, and a visitor who never left an
+// email still walked away with 50 free renders.
+//
+// Sizing: 50 credits is 50 fast renders OR exactly one 3D mesh. Keeping one free mesh is
+// deliberate — the STL download is the moment the product becomes believable — but it is the
+// single most expensive thing a free account can do (~$0.36 vs ~$0.014 for a render), so check
+// MODEL3D_COST above before raising this. Keep it below PACKS.starter.credits or the cheapest
+// paid tier becomes unsellable.
 export const SIGNUP_BONUS = 50;
 
 export function creditsFor(quality) {
