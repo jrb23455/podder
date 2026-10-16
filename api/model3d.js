@@ -24,7 +24,12 @@ export const maxDuration = 60;
 // /v2/openapi surface and a newer versioned one; the paths below are the v2 shape. They are
 // isolated here so correcting them is a one-line change rather than a rewrite.
 const TRIPO_BASE = process.env.TRIPO_API_BASE || 'https://api.tripo3d.ai/v2/openapi';
-const GEN_MODEL  = process.env.TRIPO_MODEL   || 'v3.1-20250625';   // cheapest tier that does quad remesh
+
+// Known-valid values on the v2 task endpoint: v2.5-20250123, v2.0-20240919, v1.4-20240625.
+// A v3.x string here fails with "The version value is invalid" — v3 is a different surface
+// (/v3/generation/image-to-model, no `type` field), not just a newer version tag on v2.
+// Set TRIPO_MODEL to "none" to omit the field entirely and take Tripo's own default.
+const GEN_MODEL = (process.env.TRIPO_MODEL ?? 'v2.5-20250123').trim();
 
 const authHeader = token => ({ Authorization: `Bearer ${token}` });
 
@@ -157,7 +162,7 @@ export default async function handler(req, res) {
     try {
       const d = await createTask({
         type: 'image_to_model',
-        model_version: GEN_MODEL,
+        ...(GEN_MODEL && GEN_MODEL !== 'none' ? { model_version: GEN_MODEL } : {}),
         file: { type: ext, file_token: fileToken },
       }, token);
       return res.status(200).json({ taskId: d.task_id || d.taskId, credits: balance });
