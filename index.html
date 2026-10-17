@@ -1043,8 +1043,10 @@ const OBJECTS = {
     ]},
   // promptName avoids the word "ring": as "a clearly recognizable ring holder shape" Flux drew
   // the ring itself — a hollow hoop or tube with a big hole through it, sitting on a dish.
-  jewelry:   {emoji:"💍", label:"Ring holder", promptName:"jewelry display spire on a little dish",
-    fn:"It is a small tabletop jewelry display: a solid, slender, tapering spire — or a few slim upright prongs — rising from the center of a shallow round catch dish, on a stable flat bottom. The spire is solid all the way through and narrows to a rounded point at the top, like a classic jewelry cone. It is shown completely bare — nothing on it.",
+  // Keep fn SHAPE-NEUTRAL: it is sent with every shape, so naming a spire/cone here turned
+  // Hand, Tree, Antler etc. all into the same cone. The cone default lives in formPhrase (Auto).
+  jewelry:   {emoji:"💍", label:"Ring holder", promptName:"jewelry display stand",
+    fn:"It is a small tabletop jewelry display stand: a solid sculpted upright form rising from the center of a shallow round catch dish, on a stable flat bottom. It is shown completely bare — nothing on it.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette, but still built from a few separate open prongs with clear empty space between them, never a solid fused mass or connected web"},
       {label:"Hand",prompt:"an open upright hand with slim separate fingers — each finger a distinct bare open prong with clear empty space between it and its neighbors, never webbed, fused, or joined together"},
@@ -4291,6 +4293,8 @@ function buildPrompt(){
   const formPhrase = isAuto
     ? (state.obj==="birdhouse"
         ? "a rounded gourd-, orb- or pod-like birdhouse with a clear round entrance hole — clean and recognizable"
+        : state.obj==="jewelry"
+        ? "a solid, slender, tapering cone spire rising from the dish to a rounded point — a classic jewelry cone, clean and recognizable"
         : state.obj==="winebottleholder"
         ? "a low, wide, open cradle or scoop — like a small boat or hammock — with a smooth curved channel along its length, tilted so one end is higher, clearly a wine bottle cradle and NOT a vase, cylinder or cup"
         : `a clean, classic, clearly recognizable ${objNoun} shape, ornamented but never distorted beyond recognition`)
@@ -4311,7 +4315,7 @@ function buildPrompt(){
   const jewelryNote = state.obj==="jewelry"
     // Worded positively on purpose: the old version stacked "open", "empty air", "gaps" and
     // "visible through", which reads to Flux as holes and helped produce hollow hoop shapes.
-    ? " The decorative pattern is confined to the dish and the lower part of the spire. The upper spire and every slim prong stay smooth and plain, each one standing apart from its neighbors as its own slender upright form, solid and tapering to a rounded tip."
+    ? " The decorative pattern is confined to the dish and the lower part of the upright form. Its upper reaches and every slim prong, finger, branch or tine stay smooth and plain, each one standing apart from its neighbors as its own slender solid shape ending in a rounded tip."
     : "";
 
   // --- Compact SD prompt for local ComfyUI renders (identity-first, zero negations) ---
