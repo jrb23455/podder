@@ -92,12 +92,9 @@
   .chip.sd{font-size:12.5px;padding:6px 11px;font-weight:500}
   .chip.sd.on{border-color:var(--gold);background:rgba(255,206,84,.14);color:#fff;box-shadow:0 0 12px rgba(255,206,84,.16)}
 
-  /* The object list is 35-39 chips in the big categories and on its own filled the viewport,
-     so it scrolls in place rather than pushing everything below it off-screen. Search above
-     it is the fast path when you know what you want. */
-  #objChips{max-height:190px;overflow-y:auto;padding-right:4px}
-  #objChips::-webkit-scrollbar{width:8px}
-  #objChips::-webkit-scrollbar-thumb{background:#3a2a5a;border-radius:4px}
+  /* #objChips is deliberately NOT height-capped. A 190px inner scroll box was tried 2026-10-16
+     to shorten the panel, and it read as objects having vanished — nothing signals that a
+     chip list continues below its edge. The whole category must be visible at once. */
 
   /* Shape & style disclosure */
   #refineToggle{display:flex;align-items:center;gap:8px;width:100%;margin:0 0 14px;padding:9px 12px;
