@@ -1041,8 +1041,10 @@ const OBJECTS = {
       {label:"Barrel",prompt:"a rounded barrel form"},
       {label:"Fluted",prompt:"a fluted, vertically reeded cylinder"}
     ]},
-  jewelry:   {emoji:"💍", label:"Ring holder",
-    fn:"It is a small sculptural display stand with slim upright prongs or a central spire, plus a shallow catch dish at the base, on a stable flat bottom. It is shown completely bare — nothing on or in it.",
+  // promptName avoids the word "ring": as "a clearly recognizable ring holder shape" Flux drew
+  // the ring itself — a hollow hoop or tube with a big hole through it, sitting on a dish.
+  jewelry:   {emoji:"💍", label:"Ring holder", promptName:"jewelry display spire on a little dish",
+    fn:"It is a small tabletop jewelry display: a solid, slender, tapering spire — or a few slim upright prongs — rising from the center of a shallow round catch dish, on a stable flat bottom. The spire is solid all the way through and narrows to a rounded point at the top, like a classic jewelry cone. It is shown completely bare — nothing on it.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette, but still built from a few separate open prongs with clear empty space between them, never a solid fused mass or connected web"},
       {label:"Hand",prompt:"an open upright hand with slim separate fingers — each finger a distinct bare open prong with clear empty space between it and its neighbors, never webbed, fused, or joined together"},
@@ -4307,7 +4309,9 @@ function buildPrompt(){
   // a solid mesh/canopy, which is useless for actually hanging a ring. Confine the decoration to
   // the trunk/base and keep every prong bare, regardless of wildness.
   const jewelryNote = state.obj==="jewelry"
-    ? " The decorative pattern is confined to the trunk, spire core and base only. Every individual prong, branch, finger or arm that a ring would hang on stays smooth and bare — no relief pattern on the prongs themselves — and each one is a separate open shape with clear empty air on all sides, never touching, merging, webbing or fusing with its neighbors into a solid mass, fan, canopy or lattice. The silhouette must not read as a round or fan-shaped disc, medallion or coral-like cluster from any angle — the empty background must be clearly visible through generous gaps between every prong."
+    // Worded positively on purpose: the old version stacked "open", "empty air", "gaps" and
+    // "visible through", which reads to Flux as holes and helped produce hollow hoop shapes.
+    ? " The decorative pattern is confined to the dish and the lower part of the spire. The upper spire and every slim prong stay smooth and plain, each one standing apart from its neighbors as its own slender upright form, solid and tapering to a rounded tip."
     : "";
 
   // --- Compact SD prompt for local ComfyUI renders (identity-first, zero negations) ---
