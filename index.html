@@ -1004,17 +1004,18 @@ const OBJECTS = {
       {label:"Scalloped",prompt:"a scalloped, petal-edged rim bowl"},
       {label:"Fluted",prompt:"a fluted, vertically reeded bowl form"}
     ]},
-  wallplanter:{emoji:"🌿", label:"Hanging planter", promptName:"round planter pot",
-    fn:"It is a round pot with an open cavity at the top, a defined rim, a hollow interior and a small drainage detail at the bottom; the interior is completely bare. A single thick, sturdy loop is built into the very top, fully fused and merged into the body as one continuous piece of the same solid material, both ends seamlessly connected with no gap — an integral, load-bearing part of the model, never a separate, detached or floating ring. The loop is completely empty — just the bare solid pot and its empty loop, sitting upright, nothing threaded through the loop or hanging from it.",
+  wallplanter:{emoji:"🌿", label:"Hanging planter", promptName:"planter pot with a top loop",
+    autoForm:"a round, softly bulging pot, clean and recognizable",
+    fn:"It is a pot with an open cavity at the top, a defined rim, a hollow interior and a small drainage detail at the bottom; the interior is completely bare. A small, thick tab rises from the back of the rim with one round hanging hole through it, carved from the same solid piece as the pot. The tab is bare, and the pot sits upright.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
-      {label:"Orb",prompt:"a rounded hanging orb"},
-      {label:"Teardrop",prompt:"a hanging teardrop"},
-      {label:"Cone",prompt:"an inverted cone form"},
+      {label:"Orb",prompt:"a rounded orb pot, nearly spherical, with a small open top"},
+      {label:"Teardrop",prompt:"a teardrop pot — round and full at the bottom, tapering upward to a narrower open top"},
+      {label:"Cone",prompt:"INVERTED CONE — the whole pot is shaped like an ice-cream cone: a wide open rim at the top, the sides narrowing steadily all the way down to a rounded point at the bottom, so it is made to hang rather than stand"},
       {label:"Basket",prompt:"a woven-basket-like form"},
       {label:"Geometric",prompt:"a faceted geometric form"},
       {label:"Cocoon",prompt:"a smooth tapered cocoon-like hanging pod form"},
-      {label:"Face / head",prompt:"a stylized face or head with the opening at the crown, hanging upright by its loop"}
+      {label:"Face / head",prompt:"a sculpted face or head pot — eyes, nose and mouth carved boldly on the front, the open planting cavity at the crown of the head"}
     ]},
   lantern:   {emoji:"🏮", label:"Lantern", promptName:"ornamental hollow vessel",
     fn:"It is an ornamental hollow vessel — a patterned outer wall, a vented or open top and a stable flat base. Every wall stays solid, connected and reasonably thick — no paper-thin sections or loose fragments. The interior is completely bare — nothing inside.",
@@ -1030,7 +1031,8 @@ const OBJECTS = {
       {label:"Lotus",prompt:"an open lotus-flower form with pierced petal cut-outs"}
     ]},
   pencup:    {emoji:"✏️", label:"Pen cup", promptName:"pencil holder cup",
-    fn:"It is a small cylindrical desk tidy cup, open at the top with a hollow interior, on a solid flat base. The interior is completely bare — nothing inside. It is a small handheld-sized cup, NOT a desk or any furniture. The wild treatment wraps the outer wall.",
+    autoForm:"a simple straight-sided cylinder, clean and recognizable",
+    fn:"It is a small desk tidy cup, open at the top with a hollow interior, on a solid flat base. The interior is completely bare — nothing inside. It is a small handheld-sized cup, NOT a desk or any furniture. The wild treatment wraps the outer wall.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
       {label:"Cylinder",prompt:"a straight cylinder"},
@@ -1046,6 +1048,7 @@ const OBJECTS = {
   // Keep fn SHAPE-NEUTRAL: it is sent with every shape, so naming a spire/cone here turned
   // Hand, Tree, Antler etc. all into the same cone. The cone default lives in formPhrase (Auto).
   jewelry:   {emoji:"💍", label:"Ring holder", promptName:"jewelry display stand",
+    autoForm:"a solid, slender, tapering cone spire rising from the dish to a rounded point — a classic jewelry cone, clean and recognizable",
     fn:"It is a small tabletop jewelry display stand: a solid sculpted upright form rising from the center of a shallow round catch dish, on a stable flat bottom. It is shown completely bare — nothing on it.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette, but still built from a few separate open prongs with clear empty space between them, never a solid fused mass or connected web"},
@@ -1071,7 +1074,8 @@ const OBJECTS = {
       {label:"Geode",prompt:"a faceted geode-like crystal cluster bauble with jagged crystalline points"}
     ]},
   mushroomdeco:{emoji:"🍄", label:"Garden mushroom", promptName:"decorative mushroom ornament",
-    fn:"It is a single decorative mushroom ornament — one solid sculptural mushroom with a domed cap over a stem, on a stable flat base. Just the one mushroom object alone, nothing beside it, and no garden, grass, soil or scenery around it.",
+    autoForm:"one mushroom with a domed cap over a stout stem, clean and recognizable",
+    fn:"It is a single decorative mushroom ornament — a solid sculptural mushroom piece on a stable flat base. Just the mushroom ornament alone, nothing beside it, and no garden, grass, soil or scenery around it.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
       {label:"Toadstool",prompt:"a classic toadstool with a domed cap and stout stem"},
@@ -1347,8 +1351,9 @@ const OBJECTS = {
       {label:"Arch",prompt:"an arched display stand with a card slot"},
       {label:"Curved",prompt:"a smooth curved wave-like display stand with a card slot"}
     ]},
-  makeupbrush:{emoji:"💄", label:"Makeup brush holder", promptName:"small cylindrical cup",
-    fn:"It is a small cylindrical cup, open at the top with a hollow interior, on a solid flat base. The interior is completely bare — nothing inside. It is a small handheld-sized cup, NOT a desk or any furniture.",
+  makeupbrush:{emoji:"💄", label:"Makeup brush holder", promptName:"small open-topped cup",
+    autoForm:"a simple straight-sided cylinder, clean and recognizable",
+    fn:"It is a small cup, open at the top with a hollow interior, on a solid flat base. The interior is completely bare — nothing inside. It is a small handheld-sized cup, NOT a desk or any furniture.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
       {label:"Cup",prompt:"a simple cup or tumbler form"},
@@ -2882,8 +2887,9 @@ const OBJECTS = {
       {label:"Mermaid mother",prompt:"PERFECT SPHERE — a mermaid curled into a complete protective sphere of sheltering grace, her arched back forming the top hemisphere and her looping tail sealing the bottom, arms wrapped tight to complete the round outline, no fin or arm extending beyond the unbroken sphere."},
       {label:"Shipwreck mer",prompt:"DRAMATIC DIAGONAL — a mermaid sprawled across a cracked ship wheel, one arm thrown to the high end and the thick tail sealed to the low end, the full diagonal of the composition at least four times the figure's shoulder-width with the heavy base anchoring both low corners."}
     ]},
-  tikifig:{emoji:"🪵", label:"Tiki totem", promptName:"carved tiki totem figurine", cat:"figurines",
-    fn:"It is a single solid carved tiki-totem figurine — one sculpted decor piece with bold deep-carved geometric faces and patterns, a stable flat bottom, everything one continuous carved column. Just the one totem alone — no bar, torches, palm trees or scenery.",
+  tikifig:{emoji:"🪵", label:"Tiki totem", promptName:"carved tiki figurine", cat:"figurines",
+    autoForm:"a tall carved totem column, clean and recognizable",
+    fn:"It is a single solid carved tiki figurine — one sculpted decor piece with bold deep-carved geometric faces and patterns, a stable flat bottom, everything one continuous carved piece. Just the one totem alone — no bar, torches, palm trees or scenery.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind carved totem column with a surprising silhouette"},
       {label:"Classic tiki",prompt:"TALL NARROW COLUMN — a single tiki column five times taller than wide, a massive grimacing face carved in deep relief occupying the top three-quarters of the shaft, the base exactly as wide as the column with no carving protruding beyond the column's outer surface."},
@@ -3242,13 +3248,14 @@ const OBJECTS = {
       {label:"Rhombic",        prompt:"RHOMBIC TRIACONTAHEDRON — a 30-faced solid with all diamond-shaped rhombus faces, a rounded angular form, resting on one face, each rhombus face decorated"},
     ]},
 
-  gyroscope: {emoji:"⚙️", label:"Gyroscope", promptName:"armillary sphere of several nested hoops", cat:"geometry",
-    fn:"A single armillary sphere sculpture built from THREE OR MORE separate hoops, each one nested inside the next like a Russian doll. Every hoop is tilted to a different angle so they cross each other at different tilts, and open air is clearly visible between them — you can see straight through the gaps to the background. This is NOT one ring: it is several distinct hoops at once, one inside another. They are joined only at tiny pivot points. The whole assembly stands on a small base.",
+  gyroscope: {emoji:"⚙️", label:"Gyroscope", promptName:"gyroscope sculpture of nested hoops", cat:"geometry",
+    autoForm:"a single armillary sphere sculpture built from THREE OR MORE separate hoops, each one nested inside the next like a Russian doll. Every hoop is tilted to a different angle so they cross each other at different tilts, and open air is clearly visible between them — you can see straight through the gaps to the background. This is NOT one ring: it is several distinct hoops at once, one inside another. They are joined only at tiny pivot points. The whole assembly stands on a small base",
+    fn:"A single decorative gyroscope sculpture built from separate solid hoops nested one inside another, each tilted to its own angle so they cross, joined only at small pivot points. The whole assembly stands on a small base.",
     shapes:[
       {label:"Auto",           prompt:"driven entirely by the chosen style — a wild decorative gyroscope with surprising ring proportions and bold surface detail, balanced on a point"},
       {label:"Three rings",    prompt:"THREE-RING GYROSCOPE — three concentric rings nested at 90-degree angles to each other, each ring a solid decorated band, connected at four pivot points, sitting balanced"},
       {label:"Armillary sphere",prompt:"ARMILLARY SPHERE — multiple rings of varying widths representing celestial circles, nested concentrically, a small sphere at the center, the whole assembly on a short pedestal base"},
-      {label:"Double ring",    prompt:"DOUBLE RING — two large rings nested at a perpendicular angle, each ring a wide decorated band, connected at two points, the pair sitting on an axis point"},
+      {label:"Double ring",    prompt:"DOUBLE RING — two large rings of equal size crossing each other at right angles, like two lines of longitude on a globe, each ring a wide decorated band, joined where they cross, standing on a small base"},
       {label:"Nested five",    prompt:"FIVE-RING NEST — five rings of steadily decreasing diameter nested one inside the next, each tilted at its own angle, a dense concentric cage, mounted on a low base"},
       {label:"Orrery",         prompt:"ORRERY — nested rings carrying small spheres of different sizes on short arms, an armature of planetary orbits, the whole mechanism rising from a decorated pedestal base"},
       {label:"Tilted axis",    prompt:"TILTED AXIS GIMBAL — a large outer ring standing upright with an inner ring swung to a dramatic tilt inside it, the imbalance the defining feature, resting on a small solid base"},
@@ -3266,16 +3273,17 @@ const OBJECTS = {
       {label:"Heart loop",     prompt:"HEART MÖBIUS — the twisted band bent into a soft heart-shaped loop, wide flat band, the half-twist landing at the lower point of the heart"},
     ]},
 
-  helix: {emoji:"🧬", label:"Spiral helix", promptName:"tall upright corkscrew coil", cat:"geometry",
-    fn:"A single tall corkscrew coil standing UPRIGHT and climbing VERTICALLY, like a stretched spring or a spiral staircase. Each turn sits ABOVE the one below it with a clear open air gap between them, so the coil visibly ascends — four or more separate turns stacked up the height, and the piece is much taller than it is wide. The central axis is hollow and open, visible straight through. The coil itself is thick and sturdy, never wire-thin. It is NOT a closed ring or a donut lying flat — it rises.",
+  helix: {emoji:"🧬", label:"Spiral helix", promptName:"decorative helix sculpture", cat:"geometry",
+    autoForm:"a single tall corkscrew coil standing UPRIGHT and climbing VERTICALLY, like a stretched spring or a spiral staircase. Each turn sits ABOVE the one below it with a clear open air gap between them, so the coil visibly ascends — four or more separate turns stacked up the height, and the piece is much taller than it is wide. The central axis is hollow and open, visible straight through. The coil itself is thick and sturdy, never wire-thin. It is NOT a closed ring or a donut lying flat — it rises",
+    fn:"A single decorative coil sculpture. The coil itself is thick and sturdy, every part solid and printable.",
     shapes:[
       {label:"Auto",           prompt:"driven entirely by the chosen style — a wild decorative helix with surprising coil proportions and bold surface detail, standing upright"},
       {label:"Single coil",    prompt:"SINGLE HELIX — one thick band spiraling up around an empty central axis, evenly spaced turns, standing upright, the open core visible through the gaps"},
-      {label:"Double helix",   prompt:"DOUBLE HELIX — two thick bands spiraling in parallel around a shared central axis, connected by short sturdy rungs between them like a DNA ladder"},
+      {label:"Double helix",   prompt:"DOUBLE HELIX — two thick bands spiraling in parallel up a shared vertical axis, connected by short sturdy rungs between them like a DNA ladder, standing tall and upright, much taller than wide"},
       {label:"Tapered spiral", prompt:"TAPERED CONE HELIX — the coil spirals upward while steadily shrinking in radius, forming an overall cone, widest turn at the base"},
-      {label:"Flat spiral",    prompt:"FLAT COILED SPIRAL — a spiral coiled within a single flat plane like a coiled rope lying down, viewed from above, the spiral turns nested tightly"},
+      {label:"Flat spiral",    prompt:"FLAT SPIRAL — a low flat round disc whose top face is one continuous thick raised band winding round and round from the outer edge in to the center, like an ammonite fossil or a lollipop swirl, lying flat and viewed from above at an angle"},
       {label:"Barley twist",   prompt:"TWISTED COLUMN — a solid column whose entire body twists through a full rotation from base to top like a wrung cloth, a barley-twist spindle"},
-      {label:"Ribbon spiral",  prompt:"RIBBON SPIRAL — a wide flat ribbon spiraling upward around an open core, the broad flat face turning to catch the light at every height"},
+      {label:"Ribbon spiral",  prompt:"RIBBON SPIRAL — a wide flat ribbon spiraling upward around an open core, standing tall and upright, the broad flat face turning to catch the light at every height"},
     ]},
 
   fractal: {emoji:"❄️", label:"Fractal solid", promptName:"decorative fractal sculpture", cat:"geometry",
@@ -3325,11 +3333,12 @@ const OBJECTS = {
       {label:"Caltrop",        prompt:"FOUR-POINT CALTROP — four thick blunt spikes radiating from a central core in a tetrahedral arrangement, resting stably on three of them with the fourth pointing straight up"},
     ]},
 
-  penrose: {emoji:"🔺", label:"Impossible object", promptName:"Penrose impossible triangle of three beams", cat:"geometry",
-    fn:"A single Penrose impossible triangle — a TRIANGLE with exactly three straight sides, built from three thick square-section beams that meet at three corners. The overall silhouette is unmistakably triangular: three sides, three corners, a pointed apex at the top and a horizontal beam across the bottom. Each beam twists a quarter turn so the three cannot really join, which is what makes the figure impossible. It is a real solid physical object photographed from the one viewpoint where the illusion closes — not a flat drawing, and never a square or rectangular frame.",
+  penrose: {emoji:"🔺", label:"Impossible object", promptName:"impossible-geometry sculpture of thick beams", cat:"geometry",
+    autoForm:"a single Penrose impossible triangle — a TRIANGLE with exactly three straight sides, built from three thick square-section beams that meet at three corners. The overall silhouette is unmistakably triangular: three sides, three corners, a pointed apex at the top and a horizontal beam across the bottom. Each beam twists a quarter turn so the three cannot really join, which is what makes the figure impossible. It is a real solid physical object photographed from the one viewpoint where the illusion closes — not a flat drawing, and never a square or rectangular frame",
+    fn:"A single impossible-geometry sculpture built from thick straight beams. It is a real solid physical object, photographed from the one viewpoint where the illusion closes.",
     shapes:[
       {label:"Auto",           prompt:"driven entirely by the chosen style — a wild impossible-geometry sculpture of thick square beams forming a THREE-SIDED triangular impossible figure, viewed from the exact angle where the illusion reads"},
-      {label:"Penrose triangle",prompt:"PENROSE TRIANGLE — three thick square-section beams meeting at right angles, arranged so they appear to close into an impossible triangle, viewed from the exact angle where the illusion completes"},
+      {label:"Penrose triangle",prompt:"PENROSE TRIANGLE — a triangle with three straight sides and three corners, built from three thick straight beams that appear to close into an impossible loop, viewed from the exact angle where the illusion completes"},
       {label:"Impossible square",prompt:"IMPOSSIBLE SQUARE — four thick square-section beams forming a square frame that appears to twist impossibly out of its own plane, viewed head-on"},
       {label:"Impossible cube",prompt:"IMPOSSIBLE CUBE — a cube frame built from thick beams where the near and far edges appear to swap places, the joints defying depth, viewed from the illusion angle"},
       {label:"Endless stairs", prompt:"PENROSE STAIRS — a flight of thick blocky steps forming a closed square loop that appears to climb forever, viewed from above at the angle where the loop closes"},
@@ -3338,7 +3347,8 @@ const OBJECTS = {
     ]},
 
   hyperboloid: {emoji:"⌛", label:"Hyperboloid", promptName:"decorative hyperboloid form", cat:"geometry",
-    fn:"A single decorative hyperboloid — an hourglass-shaped form with a narrow waist, built from straight rods that lean and cross between a solid top ring and a solid bottom ring. Every rod is dead straight, yet the bundle creates a curved waist. The rods are thick and sturdy. It stands upright on a flat surface.",
+    autoForm:"a single decorative hyperboloid — an hourglass-shaped form with a narrow waist, built from straight rods that lean and cross between a solid top ring and a solid bottom ring. Every rod is dead straight, yet the bundle creates a curved waist. The rods are thick and sturdy. It stands upright on a flat surface",
+    fn:"A single decorative hyperboloid — an hourglass-like form with a pinched waist, sturdy, standing upright on a flat surface.",
     shapes:[
       {label:"Auto",           prompt:"driven entirely by the chosen style — a wild decorative hyperboloid with surprising waist proportions, straight rods leaning between two solid rings"},
       {label:"Classic waist",  prompt:"CLASSIC HYPERBOLOID — straight thick rods running from a solid bottom ring to a solid top ring, each rod tilted so the bundle pinches into a narrow waist at mid-height"},
@@ -4290,11 +4300,13 @@ function buildPrompt(){
   const objNoun = (o.promptName || o.label).toLowerCase();
   const isFig = catOf(state.obj)==="figurines" || catOf(state.obj)==="spiritual";
   const isAuto = shapeObj.label==="Auto";
+  // promptName and fn ship with EVERY shape, so they must never name a form — that is how the
+  // ring holder rendered the same cone for Hand/Tree/Antler. An object's default form lives in
+  // `autoForm` and is used only on Auto. (The per-object "Auto" entry in `shapes` is not read.)
   const formPhrase = isAuto
-    ? (state.obj==="birdhouse"
+    ? (o.autoForm ? o.autoForm
+      : state.obj==="birdhouse"
         ? "a rounded gourd-, orb- or pod-like birdhouse with a clear round entrance hole — clean and recognizable"
-        : state.obj==="jewelry"
-        ? "a solid, slender, tapering cone spire rising from the dish to a rounded point — a classic jewelry cone, clean and recognizable"
         : state.obj==="winebottleholder"
         ? "a low, wide, open cradle or scoop — like a small boat or hammock — with a smooth curved channel along its length, tilted so one end is higher, clearly a wine bottle cradle and NOT a vase, cylinder or cup"
         : `a clean, classic, clearly recognizable ${objNoun} shape, ornamented but never distorted beyond recognition`)
