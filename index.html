@@ -812,7 +812,7 @@
 
   <footer>
     Images render in the cloud; your favorites &amp; history stay in this browser.<br>
-    Tip: render, use ✎ Edit to touch up a result, then save it and upload to <b>meshy.ai</b> for image-to-3D.
+    Tip: render a design you like, then hit 🧊 Make 3D to download a printable STL.
   </footer>
 </div>
 
@@ -4541,8 +4541,11 @@ function renderImageInto(wrap, item, imgRef){
   meta.appendChild(sel);
   if(item.renderMs){ const t=document.createElement("span"); t.className="render-time"; t.textContent=fmtDuration(item.renderMs); meta.appendChild(t); }
   wrap.appendChild(meta);
-  wrap.appendChild(buildEditBox(item, wrap));
-  // Resurrect this picture's saved edits (favorites/history) below the edit box. Without this,
+  // WEB-ONLY: no ✎ edit box. img2img edits read instructions too literally ("a slot to insert
+  // coins" rendered an actual coin in the slot) and each attempt is a paid render, so users
+  // paid to fight it. buildEditBox/editImage are kept so the local copy can diverge cleanly;
+  // edits already saved in history still display below.
+  // Resurrect this picture's saved edits (favorites/history) below the meta row. Without this,
   // an edit's panel — image, save links, ☆ — only existed in the live DOM and closing the card
   // silently discarded it, even though the edit itself was safe in history.
   const pastEdits = [], pastVariants = [], seenIds = new Set();

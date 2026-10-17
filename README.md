@@ -43,7 +43,7 @@ node dev-server.mjs
 
 - The browser never sees your Replicate token — `api/generate.js` runs the model server-side and streams the finished image back as a data URL.
 - Rendered images are stored in the **browser's IndexedDB**; favorites/history/rerolls reference them by key. Nothing is stored server-side, so hosting is free-tier friendly.
-- ✎ Edit re-runs Flux in img2img mode anchored to the current picture (strength = how far it may drift).
+- (Web: the ✎ img2img edit box is removed — it took instructions too literally and billed each retry. Saved edits still display.)
 - The PIN gates every API call (`x-podder-pin` header, timing-safe compare server-side). A wrong/blank PIN re-locks the UI.
 
 ## Roadmap to paid
