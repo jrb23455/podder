@@ -1174,10 +1174,10 @@ const OBJECTS = {
       {label:"Tall column",prompt:"a tall, slender, gently tapering upright column"},
       {label:"Cone",prompt:"a solid tapering cone spire rising from the dish to a rounded point"},
       {label:"Faceted gem",prompt:"a tall spire cut like a gemstone — flat angled facets meeting at sharp ridges, tapering to a pointed tip"},
-      {label:"Hand",prompt:"an open upright hand form to drape necklaces over"},
-      {label:"Branch",prompt:"a branching twig-like form with slim arms to drape necklaces over"},
-      {label:"Hook",prompt:"a curved hook-like upright form to drape necklaces over"},
-      {label:"Wave",prompt:"a smooth curved wave-like upright form to drape necklaces over"}
+      {label:"Hand",prompt:"an open upright hand form"},
+      {label:"Branch",prompt:"a branching twig-like form with slim arms"},
+      {label:"Hook",prompt:"a curved hook-like upright form"},
+      {label:"Wave",prompt:"a smooth curved wave-like upright form"}
     ]},
   earringstand:{emoji:"👂", label:"Earring stand", promptName:"earring stand bristling with protruding pegs",
     fn:"It is a small upright earring stand whose face carries a row of short pegs that stick out horizontally like little hooks — the pegs are clearly three-dimensional and protrude from the surface, never flush holes in a flat plate. A shallow catch dish sits at the base, on a stable flat bottom. It is shown completely bare — nothing hanging on it.",
@@ -1195,15 +1195,15 @@ const OBJECTS = {
   watchstand:{emoji:"⌚", label:"Watch stand", promptName:"sculptural wrist cradle",
     fn:"It is a wristwatch stand. Rising from a stable flat base, it terminates at the top in a distinct, clearly visible curved arm or finger that projects outward and curves — like a curved horn or a bent finger. This curved cradle arm is a small but unmistakable physical feature that must always be visible at the top; the piece is never just a straight, featureless post or pillar with no arm. It is shown completely bare — nothing resting on it.",
     shapes:[
-      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette, but always topped with a distinct curved cradle arm to drape a watch over, never just a plain straight post"},
-      {label:"Tall column",prompt:"a tall, slender, gently tapering upright column, its top curving outward into a distinct cradle arm to drape a watch over"},
-      {label:"Cone",prompt:"a central tapering cone spire, its top curving outward into a distinct cradle arm to drape a watch over"},
-      {label:"Faceted gem",prompt:"an angular faceted gem-cut post, its top curving outward into a distinct cradle arm to drape a watch over"},
+      {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette, but always topped with a distinct curved cradle arm, never just a plain straight post"},
+      {label:"Tall column",prompt:"a tall, slender, gently tapering upright column, its top curving outward into a distinct cradle arm"},
+      {label:"Cone",prompt:"a central tapering cone spire, its top curving outward into a distinct cradle arm"},
+      {label:"Faceted gem",prompt:"an angular faceted gem-cut post, its top curving outward into a distinct cradle arm"},
       {label:"Organic pod",prompt:"a soft organic pod-shaped post — a smoothly swelling asymmetric upright form whose top curls outward into the cradle arm"},
       {label:"Cuff",prompt:"a C-shaped cuff cradle — a thick curved band standing upright like an open bracelet, sized to wrap a watch strap around"},
       {label:"Wave",prompt:"a smooth S-curved wave-shaped post rising from the base and curling over at the top into the cradle arm"},
-      {label:"Hook",prompt:"a curved hook-like post, its top curving outward into a distinct cradle arm to drape a watch over"},
-      {label:"Branch",prompt:"a branching twig-like post, its top curving outward into a distinct cradle arm to drape a watch over"}
+      {label:"Hook",prompt:"a curved hook-like post, its top curving outward into a distinct cradle arm"},
+      {label:"Branch",prompt:"a branching twig-like post, its top curving outward into a distinct cradle arm"}
     ]},
   budvase:{emoji:"🌱", label:"Bud vase", promptName:"slender narrow-necked ceramic vessel",
     // Deliberately never says flower/stem/bud. Diffusion has no negation: writing "no flowers"
@@ -1235,7 +1235,7 @@ const OBJECTS = {
       {label:"Scalloped",prompt:"a scalloped, petal-edged cup on a slender stem"},
       {label:"Bulbous",prompt:"a goblet with a fat round bulbous cup, nearly a sphere, on a short stout stem and wide foot"}
     ]},
-  wallpocket:{emoji:"🧱", label:"Wall pocket planter",
+  wallpocket:{emoji:"🧱", promptName:"flat-backed wall pocket vessel", label:"Wall pocket planter",
     fn:"It is a wall-pocket vessel — a flat-backed half-open form with an open cavity at the top, a defined rim, a hollow interior and a flat mounting back designed to sit flush against a wall. The interior is completely bare — nothing inside, mounted against a plain wall.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
@@ -1258,7 +1258,7 @@ const OBJECTS = {
       {label:"Organic pod",prompt:"a soft organic pod-shaped cradle — a smoothly swelling asymmetric body with a slot across its top"},
       {label:"Wedge",prompt:"shaped exactly like a doorstop or cheese-wedge: a sharp triangular profile when viewed from the side, thick and tall at the back, tapering along a diagonal sloped TOP SURFACE down to a thin sharp edge at the front — the top is a ramp, not flat, and the front-to-back profile is a triangle, not a rectangle. Explicitly NOT a cube, NOT a rectangular block, NOT a box with a flat top"},
       {label:"Easel",prompt:"an easel-shaped cradle — an upright panel tilted back on a sturdy rear leg, with a lip ledge along the bottom front"},
-      {label:"Arch",prompt:"an arched cradle form with a curved slot for the phone"},
+      {label:"Arch",prompt:"an arched cradle form with a deep curved slot across its face"},
       {label:"Bar",prompt:"a simple horizontal bar cradle on an angled base"}
     ]},
   tabletstand:{emoji:"💻", label:"Tablet stand", promptName:"compact angled easel",
@@ -1271,7 +1271,7 @@ const OBJECTS = {
       {label:"Geometric",prompt:"an angular geometric easel built from flat triangular facets meeting at sharp edges, with a slot across its top"},
       {label:"Wedge",prompt:"shaped exactly like a doorstop or cheese-wedge: a sharp triangular profile when viewed from the side, thick and tall at the back, tapering along a diagonal sloped TOP SURFACE down to a thin sharp edge at the front — the top is a ramp, not flat, and the front-to-back profile is a triangle, not a rectangle. Explicitly NOT a cube, NOT a rectangular block, NOT a box with a flat top"},
       {label:"Easel",prompt:"an easel-shaped easel — an upright panel tilted back on a sturdy rear leg, with a lip ledge along the bottom front"},
-      {label:"Arch",prompt:"an arched cradle form with a curved slot for the tablet"},
+      {label:"Arch",prompt:"an arched cradle form with a deep curved slot across its face"},
       {label:"Bar",prompt:"a simple horizontal bar cradle on an angled base"}
     ]},
   headphonestand:{emoji:"🎧", label:"Headphone stand", promptName:"small desk stand with a wide rounded top",
@@ -1292,13 +1292,13 @@ const OBJECTS = {
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
       {label:"Tall column",prompt:"a tall, slender, gently tapering upright column"},
-      {label:"Cube",prompt:"a boxy cube-shaped block on the base with a short upright bar on top to rest folded glasses on"},
+      {label:"Cube",prompt:"a boxy cube-shaped block on the base with a short upright bar on top"},
       {label:"Faceted gem",prompt:"an upright post cut like a gemstone — flat angled facets meeting at sharp ridges, with a rounded top bar"},
       {label:"Organic pod",prompt:"a soft organic pod-shaped upright post — a smoothly swelling asymmetric form with a rounded top"},
       {label:"Branch",prompt:"a branch-shaped post — a thick twig rising from the base and splitting into two short stubby arms at the top"},
       {label:"Bar",prompt:"a simple horizontal bar form on an upright post"},
-      {label:"Hook",prompt:"a curved hook-like upright post to rest folded sunglasses over"},
-      {label:"Cuff",prompt:"a curved open C-shaped cuff form to rest folded sunglasses over"}
+      {label:"Hook",prompt:"a curved hook-like upright post"},
+      {label:"Cuff",prompt:"a curved open C-shaped cuff form"}
     ]},
   bookend:{emoji:"📚", label:"Bookend", promptName:"solid decorative block",
     fn:"It is a single decorative bookend — one solid sculptural block with a flat vertical face on one side and a flat stable base. It is shown completely alone — nothing leaning against it.",
