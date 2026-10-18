@@ -1312,31 +1312,32 @@ const OBJECTS = {
       {label:"Wave",prompt:"a smooth curved wave-shaped block form, flat on the book-facing side"},
       {label:"Stacked",prompt:"a stacked-tier block form of graduated layers, flat on the book-facing side"}
     ]},
-  winebottleholder:{emoji:"🍾", label:"Wine bottle holder", promptName:"wine bottle cradle",
-    fn:"It is an empty wine bottle cradle — a curved open trough or scoop shape, like a small boat or hammock. The cradle is COMPLETELY EMPTY — there is NO bottle, NO wine, NO glass, NO cork, NO liquid anywhere in the image. Just the bare cradle by itself with nothing in it or near it. The cradle is open on top with a smooth curved channel running along its length, tilted so one end is higher than the other. It has a wide stable base and solid thick walls. It is NOT a vase, NOT a cylinder, NOT a cup — it is a low, wide, open cradle.",
+  winebottleholder:{emoji:"🍾", label:"Wine bottle holder", promptName:"long curved cradle",
+    autoForm:"a low, wide, open cradle or scoop, like a small boat or hammock, with a smooth curved channel along its length, tilted so one end is higher",
+    fn:"It is a long, low, empty cradle — a curved open trough or scoop like a small boat or hammock, open on top with a smooth half-round channel running along its length, tilted so one end is higher than the other. It has a wide stable base and solid thick walls, and the channel is bare and empty.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a low wide open cradle or scoop shape, not a vase or cylinder"},
       {label:"Spiral",prompt:"the cradle's outer walls twist and spiral like a wrung-out towel or barber pole, coiling from one end to the other"},
       {label:"Twisted",prompt:"the entire cradle torques and corkscrews along its length like twisted taffy"},
       {label:"Cube",prompt:"a blocky chamfered rectangular cradle with clean angular walls and a smooth curved channel scooped out of the top"},
       {label:"Faceted gem",prompt:"an angular, sharp-edged crystalline cradle with flat faceted outer faces and a smooth curved channel along the top"},
-      {label:"Wedge",prompt:"a thick triangular wedge-shaped cradle, wide at one end and tapering to a point at the other, with the bottle channel along the top"},
+      {label:"Wedge",prompt:"a thick triangular wedge-shaped cradle, wide at one end and tapering to a point at the other, with the curved channel along the top"},
       {label:"Sphere",prompt:"a squat half-sphere or bowl-like cradle, scooped out along one axis to form the bottle channel"},
       {label:"Wave",prompt:"a smooth flowing wave-shaped cradle with one sweeping S-curve along its length"},
-      {label:"Arch",prompt:"the cradle is shaped like an arched bridge, curving up in the middle with the bottle channel running along the top of the arch"}
+      {label:"Arch",prompt:"the cradle is shaped like an arched bridge, curving up in the middle with the curved channel running along the top of the arch"}
     ]},
   coinbank:{emoji:"🐷", label:"Coin bank", promptName:"sealed hollow vessel",
-    fn:"It is a decorative bank — a hollow sculptural body with a single narrow slot cut into the top, and a stable flat base. Apart from the one slot it is fully closed and solid, hollow inside. It is shown completely bare — nothing visible inside or around it, and with no removable plug, stopper or access panel.",
+    fn:"It is a decorative sealed container — a hollow sculptural body, closed all the way around, with a single narrow coin slot cut into the top and a stable flat base. It is shown completely bare.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
-      {label:"Bulbous orb",prompt:"a fat round vessel, nearly a sphere, sitting on a small flat foot, with the coin slot on top"},
+      {label:"Bulbous orb",prompt:"a fat round sealed container, nearly a sphere, closed all over, sitting on a small flat foot, with the coin slot on top"},
 
-      {label:"Cube",prompt:"a boxy cube-shaped vessel — four flat square sides meeting at crisp rounded corners, with the coin slot in the flat top"},
-      {label:"Faceted gem",prompt:"a vessel cut like a gemstone — a body of large flat angled facets meeting at sharp ridges, with the coin slot on top"},
-      {label:"Tin canister",prompt:"a cylindrical canister-shaped vessel — straight parallel sides, a flat lid with a rolled edge, and the coin slot in the lid"},
-      {label:"Dome",prompt:"a dome-shaped vessel — a wide rounded hemisphere rising from a flat base, with the coin slot near the top"},
-      {label:"Beehive",prompt:"a rounded beehive-dome form with a gently tapering ringed profile"},
-      {label:"Fluted",prompt:"a fluted rounded vessel — its body covered in evenly spaced deep vertical grooves and ridges, with the coin slot on top"}
+      {label:"Cube",prompt:"a boxy cube-shaped sealed container — four flat square sides meeting at crisp rounded corners, a closed flat top with the coin slot in it"},
+      {label:"Faceted gem",prompt:"a sealed container cut like a gemstone — a closed body of large flat angled facets meeting at sharp ridges, with the coin slot on top"},
+      {label:"Tin canister",prompt:"a cylindrical canister-shaped sealed container — straight parallel sides, a closed flat lid with a rolled edge, and the coin slot in the lid"},
+      {label:"Dome",prompt:"a dome-shaped sealed container — a wide closed rounded hemisphere rising from a flat base, with the coin slot near the top"},
+      {label:"Beehive",prompt:"a beehive-shaped sealed container — a closed rounded dome with stacked horizontal rings tapering gently toward the top, the coin slot at the crown"},
+      {label:"Fluted",prompt:"a fluted rounded sealed container, closed on top, its body covered in evenly spaced deep vertical grooves and ridges, with the coin slot on top"}
     ]},
   cardholder:{emoji:"📇", label:"Business card holder", promptName:"small slotted stand",
     fn:"It is a small compact display stand with a narrow slot or shallow angled ledge, on a stable flat base. It is shown completely bare — nothing in it.",
@@ -4307,8 +4308,6 @@ function buildPrompt(){
     ? (o.autoForm ? o.autoForm
       : state.obj==="birdhouse"
         ? "a rounded gourd-, orb- or pod-like birdhouse with a clear round entrance hole — clean and recognizable"
-        : state.obj==="winebottleholder"
-        ? "a low, wide, open cradle or scoop — like a small boat or hammock — with a smooth curved channel along its length, tilted so one end is higher, clearly a wine bottle cradle and NOT a vase, cylinder or cup"
         : `a clean, classic, clearly recognizable ${objNoun} shape, ornamented but never distorted beyond recognition`)
     : shapeObj.prompt;
   // Every render is 3D-print-safe, unconditionally — no toggle, no exceptions.
