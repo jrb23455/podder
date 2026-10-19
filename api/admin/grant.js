@@ -2,69 +2,43 @@
 //   headers: x-podder-pin: <owner pin>
 //   -> { ok, balance, email, credits }
 //
-// Owner-only. Grants (positive) or deducts (negative) credits to any account by email.
-// Idempotent ref is not set — this is a manual action and each call is intentional.
+// Owner-only. Grants (positive) or deducts (negative) credits to an account by email.
+// No idempotency ref — this is a manual action and each call is intentional.
 
-import { credit, rpc, missingEnv } from '../_lib/server.js';
-
-const PIN = () => process.env.PODDER_PIN || '';
+import { credit, debit, isInsufficient, missingEnv, checkOwnerPin, selectOne } from '../_lib/server.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
 
-  const pin = req.headers['x-podder-pin'] || '';
-  if (!PIN() || pin !== PIN()) return res.status(403).json({ error: 'forbidden' });
+  const pin = await checkOwnerPin(req);
+  if (pin === 'locked') return res.status(429).json({ error: 'too_many_attempts' });
+  if (pin !== 'ok') return res.status(403).json({ error: 'forbidden' });
 
   const missing = missingEnv();
   if (missing.length) return res.status(500).json({ error: 'server_not_configured', detail: `Missing: ${missing.join(', ')}` });
 
   const rawCredits = Number(req.body?.credits);
-  const email      = String(req.body?.email   || '').trim().toLowerCase();
-  const reason     = String(req.body?.reason  || 'admin_grant').trim() || 'admin_grant';
+  const email      = String(req.body?.email  || '').trim().toLowerCase();
+  const reason     = String(req.body?.reason || 'admin_grant').trim().slice(0, 60) || 'admin_grant';
 
   if (!email) return res.status(400).json({ error: 'email_required' });
   if (!Number.isInteger(rawCredits) || rawCredits === 0) {
     return res.status(400).json({ error: 'credits must be a non-zero integer' });
   }
 
-  // Look up the user id by email via the service role (auth.users is not in REST v1,
-  // so we use the admin auth API).
-  const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
-  const serviceKey  = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
-  const listR = await fetch(
-    `${supabaseUrl}/auth/v1/admin/users?email=${encodeURIComponent(email)}&per_page=1`,
-    { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
-  );
-  if (!listR.ok) {
-    const t = await listR.text().catch(() => '');
-    return res.status(502).json({ error: 'supabase_error', detail: t });
-  }
-
-  const { users } = await listR.json().catch(() => ({ users: [] }));
-  const user = users?.find(u => (u.email || '').toLowerCase() === email);
-  if (!user) return res.status(404).json({ error: 'user_not_found', email });
+  // profiles carries every account's email (backfilled on sign-up and on anonymous upgrade),
+  // so look the account up there. The GoTrue admin list endpoint ignores an email filter and
+  // just returns the first page of users, which is why the old lookup missed most accounts.
+  const profile = await selectOne('profiles', `email=ilike.${encodeURIComponent(email.replace(/[\%_*]/g, c => "\\" + c))}&select=id,email`);
+  if (!profile?.id) return res.status(404).json({ error: 'user_not_found', email });
 
   try {
-    // Use credit() for positive, debit for negative. credit() has no sign restriction
-    // so pass the absolute value and flip the delta sign via negative credits param.
-    // Actually: credit() calls credit_credits(p_amount) which does += p_amount.
-    // Passing a negative amount would violate the credits >= 0 check.
-    // For a deduction use rpc('debit_credits') directly without the guard, or just
-    // credit a negative amount — but debit_credits guards against going negative.
-    // Simplest safe approach: allow positive grants only here; a separate deduct path
-    // is rarely needed. Document this and let the admin use Supabase directly for deducts.
-    if (rawCredits < 0) {
-      // Force-deduct without the guard — admin action, intentional.
-      const balance = await rpc('credit_credits', {
-        p_user: user.id, p_amount: rawCredits, p_reason: reason, p_ref: null,
-      });
-      return res.status(200).json({ ok: true, balance, email, credits: rawCredits });
-    }
-
-    const balance = await credit(user.id, rawCredits, reason, null);
+    const balance = rawCredits > 0
+      ? await credit(profile.id, rawCredits, reason, null)
+      : await debit(profile.id, -rawCredits, reason, null);   // guarded: never below zero
     return res.status(200).json({ ok: true, balance, email, credits: rawCredits });
   } catch (e) {
+    if (isInsufficient(e)) return res.status(400).json({ error: 'not_enough_credits_to_remove' });
     return res.status(500).json({ error: 'grant_failed', detail: String(e.message || e) });
   }
 }

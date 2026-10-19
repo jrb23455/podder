@@ -12,8 +12,7 @@
 // The debit is a single guarded UPDATE (see debit_credits in 0001_credits.sql), so
 // parallel renders serialize on the row and the balance can never go negative.
 
-import { pinOk } from './auth.js';
-import { getUser, debit, credit, isInsufficient, missingEnv } from './_lib/server.js';
+import { getUser, debit, credit, isInsufficient, missingEnv, checkOwnerPin } from './_lib/server.js';
 import { creditsFor } from './_lib/config.js';
 
 export const maxDuration = 60;
@@ -63,7 +62,14 @@ async function replicate(input, token, cfg) {
     await new Promise(r => setTimeout(r, 12_000));
   }
   while (pred.status === 'starting' || pred.status === 'processing') {
-    if (Date.now() > deadline) throw new Error('Render timed out — try again');
+    if (Date.now() > deadline) {
+      // The user is refunded on timeout, so stop Replicate finishing (and billing) a render
+      // nobody will ever see.
+      if (pred.urls?.cancel) {
+        fetch(pred.urls.cancel, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+      }
+      throw new Error('Render timed out — try again');
+    }
     await new Promise(r => setTimeout(r, 1500));
     const poll = await fetch(pred.urls.get, { headers: { Authorization: `Bearer ${token}` } });
     pred = await poll.json();
@@ -82,7 +88,9 @@ export default async function handler(req, res) {
 
   // The owner PIN still works and bypasses billing entirely — it is how the account
   // holder uses their own app without buying credits from themselves.
-  const owner = pinOk(req.headers['x-podder-pin']);
+  const pinState = await checkOwnerPin(req);
+  if (pinState === 'locked') return res.status(429).json({ error: 'too_many_attempts' });
+  const owner = pinState === 'ok';
 
   let user = null;
   if (!owner) {

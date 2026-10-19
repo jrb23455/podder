@@ -1,22 +1,19 @@
 // POST /api/auth  { pin: "1234" }  ->  { ok: true }
 // The PIN lives in the PODDER_PIN environment variable (set it in Vercel's project settings).
-// This is a simple access gate for the pre-payments era — the client keeps the verified PIN
-// and sends it as an x-podder-pin header on every generate call, which the server re-checks.
+// It is the owner's key: the client keeps the verified PIN and sends it as an x-podder-pin
+// header, which every billed endpoint re-checks through checkOwnerPin (with a per-IP lockout).
 
-import { timingSafeEqual } from 'node:crypto';
+import { checkOwnerPin, pinMatches } from './_lib/server.js';
 
-export function pinOk(candidate) {
-  const real = process.env.PODDER_PIN || '';
-  if (!real || typeof candidate !== 'string') return false;
-  const a = Buffer.from(candidate.padEnd(64).slice(0, 64));
-  const b = Buffer.from(real.padEnd(64).slice(0, 64));
-  return candidate.length === real.length && timingSafeEqual(a, b);
-}
+// Kept for callers that only need a yes/no and have already been rate-limited.
+export const pinOk = pinMatches;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
-  const { pin } = req.body || {};
   if (!process.env.PODDER_PIN) return res.status(500).json({ error: 'server_missing_pin', detail: 'Set the PODDER_PIN environment variable.' });
-  if (!pinOk(pin)) return res.status(401).json({ error: 'bad_pin' });
+  const pin = String((req.body || {}).pin || '');
+  const r = await checkOwnerPin(req, pin);
+  if (r === 'locked') return res.status(429).json({ error: 'too_many_attempts', detail: 'Too many wrong PINs — try again in an hour.' });
+  if (r !== 'ok') return res.status(401).json({ error: 'bad_pin' });
   return res.status(200).json({ ok: true });
 }

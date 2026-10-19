@@ -1,7 +1,7 @@
 // POST /api/model3d            { image: dataURL }        -> { taskId, credits }   create the mesh
-// POST /api/model3d            { convert: taskId }       -> { taskId }            GLB -> STL
+// POST /api/model3d            { convert: taskId }       -> { taskId }            GLB -> STL (reused if already made)
 // POST /api/model3d            { refund: taskId }        -> { credits }           refund a failed job
-// GET  /api/model3d?task=<id>                            -> { status, progress, glb?, stl? }
+// GET  /api/model3d?task=<id>                            -> { status, progress, glb?, stl?, refunded? }
 //
 // Turns a Podder render into a downloadable printable mesh via Tripo.
 //
@@ -11,11 +11,11 @@
 // GLB from every generation endpoint; STL only exists as a separate convert_model task.
 //
 // BILLING: same debit-first rule as generate.js — charge on create, refund if the task fails.
-// The ledger ref is derived from the Tripo task id, so a refund can never double-apply even if
-// the client retries it.
+// model3d_tasks (0009) records which account paid for each task. Convert and refund are refused
+// for tasks the caller did not pay for, and the ledger ref (refund3d:<task>) makes a refund
+// apply at most once no matter how many paths try it.
 
-import { pinOk } from './auth.js';
-import { getUser, debit, credit, isInsufficient, missingEnv } from './_lib/server.js';
+import { getUser, debit, credit, isInsufficient, missingEnv, checkOwnerPin } from './_lib/server.js';
 import { MODEL3D_COST } from './_lib/config.js';
 
 export const maxDuration = 60;
@@ -31,6 +31,9 @@ const TRIPO_BASE = process.env.TRIPO_API_BASE || 'https://api.tripo3d.ai/v2/open
 // Set TRIPO_MODEL to "none" to omit the field entirely and take Tripo's own default.
 const GEN_MODEL = (process.env.TRIPO_MODEL ?? 'v2.5-20250123').trim();
 
+// Each STL conversion is its own paid Tripo task (~$0.05), so a mesh gets a fixed number.
+const MAX_CONVERTS = 3;
+
 const authHeader = token => ({ Authorization: `Bearer ${token}` });
 
 async function tripo(path, token, init = {}) {
@@ -43,6 +46,61 @@ async function tripo(path, token, init = {}) {
     throw new Error(j.message || j.suggestion || `Tripo ${r.status}`);
   }
   return j.data ?? j;
+}
+
+// ---- who paid for which task (model3d_tasks, service role only) ----
+const SB = () => (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
+const SK = () => process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const sbH = extra => ({ apikey: SK(), Authorization: `Bearer ${SK()}`, 'Content-Type': 'application/json', ...(extra || {}) });
+
+async function getTaskRow(taskId) {
+  const r = await fetch(`${SB()}/rest/v1/model3d_tasks?task_id=eq.${encodeURIComponent(taskId)}&select=*`, { headers: sbH() });
+  if (!r.ok) throw new Error('task lookup failed');
+  return (await r.json())[0] || null;
+}
+async function insertTaskRow(row) {
+  const r = await fetch(`${SB()}/rest/v1/model3d_tasks`, {
+    method: 'POST', headers: sbH({ Prefer: 'return=minimal' }), body: JSON.stringify(row),
+  });
+  if (!r.ok) throw new Error('task record failed');
+}
+async function patchTaskRow(taskId, patch) {
+  await fetch(`${SB()}/rest/v1/model3d_tasks?task_id=eq.${encodeURIComponent(taskId)}`, {
+    method: 'PATCH', headers: sbH({ Prefer: 'return=minimal' }), body: JSON.stringify(patch),
+  });
+}
+
+// Refund a failed paid task. Safe to call from every path (poll, client, /api/me): the ledger ref
+// makes the credit idempotent. Returns the new balance, or null when nothing was refunded.
+async function refundFailedTask(row) {
+  if (!row || !row.user_id || row.refunded) return null;
+  try {
+    const balance = await credit(row.user_id, MODEL3D_COST, 'refund:model3d', `refund3d:${row.task_id}`);
+    await patchTaskRow(row.task_id, { refunded: true });
+    return balance;
+  } catch (e) {
+    console.error('3d refund failed', { user: row.user_id, task: row.task_id, error: String(e.message || e) });
+    return null;
+  }
+}
+
+const isDead = s => s === 'failed' || s === 'banned' || s === 'expired';
+
+// Used by /api/me: settle a user's paid tasks that failed while nobody was watching (tab
+// closed, session expired mid-job). Only a handful of older, unsettled tasks per call.
+export async function settleStaleTasks(userId) {
+  const token = (process.env.TRIPO_API_KEY || '').trim();
+  if (!token || !userId) return;
+  const before = new Date(Date.now() - 10 * 60_000).toISOString();
+  const r = await fetch(`${SB()}/rest/v1/model3d_tasks?user_id=eq.${userId}&refunded=eq.false&stl_task_id=is.null` +
+    `&created_at=lt.${before}&order=created_at.desc&limit=5&select=*`, { headers: sbH() });
+  if (!r.ok) return;
+  for (const row of await r.json()) {
+    try {
+      const t = readTask(await tripo(`/task/${encodeURIComponent(row.task_id)}`, token));
+      if (isDead(t.status)) await refundFailedTask(row);
+    } catch { /* try again next time */ }
+  }
 }
 
 // Tripo wants an uploaded file token rather than an inline data URL.
@@ -95,13 +153,12 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'server_not_configured', detail: 'Set TRIPO_API_KEY.' });
   }
 
-  // ---- poll (no side effects, so it is safe to hammer) ----
+  // ---- poll ----
   if (req.method === 'GET') {
-    // Owner-only balance readout, so mesh cost can be measured rather than guessed at from
-    // vendor comparison blogs (which disagree wildly). Gated behind the PIN because it exposes
-    // account spend.
+    // Owner-only balance readout, so mesh cost can be measured rather than guessed at.
+    // Gated behind the PIN because it exposes account spend.
     if (req.query.balance !== undefined) {
-      if (!pinOk(req.headers['x-podder-pin'])) return res.status(401).json({ error: 'owner_only' });
+      if ((await checkOwnerPin(req)) !== 'ok') return res.status(401).json({ error: 'owner_only' });
       try {
         return res.status(200).json(await tripo('/user/balance', token));
       } catch (e) {
@@ -112,7 +169,13 @@ export default async function handler(req, res) {
     const id = String(req.query.task || '').trim();
     if (!id) return res.status(400).json({ error: 'missing_task' });
     try {
-      return res.status(200).json(readTask(await tripo(`/task/${encodeURIComponent(id)}`, token)));
+      const t = readTask(await tripo(`/task/${encodeURIComponent(id)}`, token));
+      if (isDead(t.status)) {
+        // A failed paid mesh is refunded here, by whoever polls it, so the refund does not
+        // depend on the buyer's tab staying open or their session staying fresh.
+        try { t.refunded = (await refundFailedTask(await getTaskRow(id))) !== null; } catch { /* /api/me retries */ }
+      }
+      return res.status(200).json(t);
     } catch (e) {
       return res.status(502).json({ error: 'tripo_failed', detail: String(e.message || e) });
     }
@@ -120,7 +183,9 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
 
-  const owner = pinOk(req.headers['x-podder-pin']);
+  const pinState = await checkOwnerPin(req);
+  if (pinState === 'locked') return res.status(429).json({ error: 'too_many_attempts' });
+  const owner = pinState === 'ok';
   let user = null;
   if (!owner) {
     const missing = missingEnv();
@@ -132,26 +197,28 @@ export default async function handler(req, res) {
   const { image, convert, refund } = req.body || {};
 
   try {
-    // ---- STL conversion: already paid for as part of the original mesh ----
+    // ---- STL conversion: included in the mesh price, limited per mesh ----
     if (convert) {
-      const d = await createTask({ type: 'convert_model', format: 'STL', original_model_task_id: String(convert) }, token);
-      return res.status(200).json({ taskId: d.task_id || d.taskId });
+      const id = String(convert);
+      const row = await getTaskRow(id);
+      if (!owner && (!row || row.user_id !== user.id)) return res.status(403).json({ error: 'not_your_model' });
+      // An STL already made for this mesh is reused; polling it hands back a fresh link.
+      if (row?.stl_task_id && !req.body?.fresh) return res.status(200).json({ taskId: row.stl_task_id, reused: true });
+      if (!owner && row.converts >= MAX_CONVERTS) return res.status(429).json({ error: 'convert_limit' });
+      const d = await createTask({ type: 'convert_model', format: 'STL', original_model_task_id: id }, token);
+      const stlId = d.task_id || d.taskId;
+      if (row) await patchTaskRow(id, { converts: row.converts + 1, stl_task_id: stlId });
+      return res.status(200).json({ taskId: stlId });
     }
 
-    // ---- refund a failed job; verified against Tripo, idempotent via the ledger ref ----
+    // ---- refund a failed job: only the buyer, only once, verified against Tripo ----
     if (refund) {
       if (!user) return res.status(200).json({ credits: null });
+      const row = await getTaskRow(String(refund));
+      if (!row || row.user_id !== user.id) return res.status(403).json({ error: 'not_your_model' });
       const t = readTask(await tripo(`/task/${encodeURIComponent(String(refund))}`, token));
-      if (t.status !== 'failed' && t.status !== 'banned' && t.status !== 'expired') {
-        return res.status(409).json({ error: 'task_not_failed', status: t.status });
-      }
-      let balance = null;
-      try {
-        balance = await credit(user.id, MODEL3D_COST, 'refund:model3d', `refund3d:${refund}`);
-      } catch (e) {
-        console.error('3d refund failed', { user: user.id, task: refund, error: String(e.message || e) });
-      }
-      return res.status(200).json({ credits: balance });
+      if (!isDead(t.status)) return res.status(409).json({ error: 'task_not_failed', status: t.status });
+      return res.status(200).json({ credits: await refundFailedTask(row) });
     }
 
     // ---- create the mesh ----
@@ -163,7 +230,7 @@ export default async function handler(req, res) {
     if (user) {
       try {
         // Charged before the task is created. If creation then throws we refund immediately
-        // below; if the task itself fails later the client calls { refund }.
+        // below; if the task itself fails later, the poll or /api/me refunds it.
         balance = await debit(user.id, MODEL3D_COST, 'model3d', `model3d:${fileToken}`);
       } catch (e) {
         if (isInsufficient(e)) return res.status(402).json({ error: 'insufficient_credits', needed: MODEL3D_COST });
@@ -171,12 +238,12 @@ export default async function handler(req, res) {
       }
     }
 
+    let taskId;
     try {
       // texture/pbr OFF by default: the deliverable is an STL, and STL stores geometry only —
       // it cannot carry colour or materials, so every credit spent texturing is thrown away at
       // the convert step. Tripo returns the untextured result as base_model instead of
-      // pbr_model, which readTask() already handles. Set TRIPO_TEXTURE=1 to turn it back on
-      // (only worth it if GLB with materials ever becomes a deliverable in its own right).
+      // pbr_model, which readTask() already handles. Set TRIPO_TEXTURE=1 to turn it back on.
       const wantTexture = process.env.TRIPO_TEXTURE === '1';
       const d = await createTask({
         type: 'image_to_model',
@@ -185,14 +252,18 @@ export default async function handler(req, res) {
         texture: wantTexture,
         pbr: wantTexture,
       }, token);
-      return res.status(200).json({ taskId: d.task_id || d.taskId, credits: balance });
+      taskId = d.task_id || d.taskId;
     } catch (e) {
       if (user) {
         try { balance = await credit(user.id, MODEL3D_COST, 'refund:model3d', `refund3d:create:${fileToken}`); } catch {}
       }
       throw e;
     }
+
+    try { await insertTaskRow({ task_id: taskId, user_id: user ? user.id : null }); }
+    catch (e) { console.error('model3d_tasks insert failed', taskId, String(e.message || e)); }
+    return res.status(200).json({ taskId, credits: balance });
   } catch (e) {
-    return res.status(502).json({ error: 'tripo_failed', detail: String(e.message || e), refunded: !!user });
+    return res.status(502).json({ error: 'tripo_failed', detail: String(e.message || e), refunded: !!user && !convert && !refund });
   }
 }

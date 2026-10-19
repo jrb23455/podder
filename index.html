@@ -8,7 +8,10 @@
 <meta name="description" content="Pick an object, add a style, and render a print-ready design in the cloud. Every result is a single solid form with no fragile parts, ready for image-to-3D." />
 <meta property="og:title" content="Podder — design generator for 3D printing" />
 <meta property="og:description" content="Pick an object, add a style, and render a print-ready design. Every result is a single solid form with no fragile parts, ready for image-to-3D." />
-<meta property="og:image" content="https://www.podder.dev/Podder-512.png" />
+<meta property="og:image" content="https://www.podder.dev/og.jpg" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:image" content="https://www.podder.dev/og.jpg" />
 <meta property="og:url" content="https://www.podder.dev/" />
 <meta property="og:type" content="website" />
 <meta name="twitter:card" content="summary_large_image" />
@@ -63,6 +66,18 @@
   .tag{color:var(--muted);font-size:13.5px;margin:2px 0 22px;max-width:640px;line-height:1.5}
 
   .tabs{display:flex;gap:6px;margin-bottom:18px}
+  @media (max-width:640px){
+    .tabs{overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .tabs::-webkit-scrollbar{display:none}
+    .tabs .tab{flex:0 0 auto}
+    /* Generate sits three screens down on a phone; keep the action row pinned while scrolling. */
+    #genActions{position:sticky;bottom:0;z-index:30;margin:24px -12px 0;padding:10px 12px;
+      background:#0d0916;border-top:1px solid var(--panel-brd);border-radius:12px}
+    #genActions{gap:6px}
+    #genActions .btn{padding:8px 10px;font-size:13px;flex:1 1 auto;min-height:38px}
+    #genActions #genBtn{flex:1 1 100%;font-size:15px}
+    #genActions .quality-toggle{flex:0 0 auto}
+  }
   .tab{padding:9px 16px;border-radius:11px;border:1px solid transparent;background:var(--panel);
     color:var(--muted);cursor:pointer;font-size:14px;font-weight:600;transition:.15s}
   .tab:hover{color:var(--ink)}
@@ -81,6 +96,9 @@
   .lock.on{color:var(--gold);border-color:var(--gold);background:rgba(255,206,84,.1)}
 
   .chips{display:flex;flex-wrap:wrap;gap:9px}
+  .finishNote{margin-top:10px;font-size:13px;color:var(--muted);line-height:1.5}
+  .finishNote:empty{display:none}
+  .finishNote a{color:var(--accent2)}
   .chip{padding:9px 14px;border-radius:11px;border:1px solid var(--panel-brd);background:rgba(255,255,255,.03);
     color:var(--ink);cursor:pointer;font-size:14px;font-weight:600;transition:.15s;user-select:none;display:flex;gap:7px;align-items:center}
   .chip .em{font-size:15px}
@@ -371,6 +389,7 @@
       <div class="row">
         <div class="label">Object <span class="lock" data-lock="obj" title="Keep this fixed when you regenerate">🔓 lock</span></div>
         <div class="chips" id="objChips"></div>
+        <div class="finishNote" id="finishNote"></div>
       </div>
 
       <!-- Shape + style live behind a disclosure. They are the two biggest chip rows (~45
@@ -447,11 +466,11 @@
         </div>
       </div>
 
-      <div class="actions">
+      <div class="actions" id="genActions">
         <button class="btn primary" id="genBtn">✦ Generate</button>
         <button class="btn ghost" id="surpriseBtn">🎲 Surprise me</button>
         <button class="btn ghost" id="randomizeBtn" title="Each render slot gets its own random object, shape &amp; style from this category">🎲 Randomize all</button>
-        <button class="btn ghost" id="stopAllBtn" title="Stop every render currently in progress">⏹ Stop all</button>
+        <button class="btn ghost" id="stopAllBtn" title="Stop waiting for renders in progress. Renders already sent still finish and are still charged.">⏹ Stop all</button>
         <label class="quality-toggle" id="qualityLabel" title="Fast: quicker, costs less. Quality: slower, sharper detail.">
           <span id="qtLabel" class="qt-label">⚡ Fast</span>
           <input type="checkbox" id="qualityToggle" />
@@ -492,251 +511,251 @@
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Vase</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/Vase_ClassicUrn_vaporwave_pastel_00004_.png" loading="lazy" alt="Vase — Classic Urn, vaporwave, pastel">
-          <img class="galleryThumb" src="gallery/Vase_ClassicUrn_vaporwave_pastel_00005_.png" loading="lazy" alt="Vase — Classic Urn, vaporwave, pastel">
-          <img class="galleryThumb" src="gallery/Vase_Amphora_honeycomb_pastel_00004_.png" loading="lazy" alt="Vase — Amphora, honeycomb, pastel">
-          <img class="galleryThumb" src="gallery/Vase_origami_art_edit_00002_.png" loading="lazy" alt="Vase — origami, art">
-          <img class="galleryThumb" src="gallery/Vase_origami_art_edit_00005_.png" loading="lazy" alt="Vase — origami, art">
-          <img class="galleryThumb" src="gallery/Vase_baroque-egyptian-lunar_pastel_00001_.png" loading="lazy" alt="Vase — baroque, Egyptian, lunar, pastel">
-          <img class="galleryThumb" src="gallery/Vase_botanical_pastel_00001_.png" loading="lazy" alt="Vase — botanical, pastel">
-          <img class="galleryThumb" src="gallery/Vase_volcanic_pastel_00001_.png" loading="lazy" alt="Vase — volcanic, pastel">
+          <img class="galleryThumb" src="gallery/Vase_ClassicUrn_vaporwave_pastel_00004_.webp" loading="lazy" alt="Vase — Classic Urn, vaporwave, pastel">
+          <img class="galleryThumb" src="gallery/Vase_ClassicUrn_vaporwave_pastel_00005_.webp" loading="lazy" alt="Vase — Classic Urn, vaporwave, pastel">
+          <img class="galleryThumb" src="gallery/Vase_Amphora_honeycomb_pastel_00004_.webp" loading="lazy" alt="Vase — Amphora, honeycomb, pastel">
+          <img class="galleryThumb" src="gallery/Vase_origami_art_edit_00002_.webp" loading="lazy" alt="Vase — origami, art">
+          <img class="galleryThumb" src="gallery/Vase_origami_art_edit_00005_.webp" loading="lazy" alt="Vase — origami, art">
+          <img class="galleryThumb" src="gallery/Vase_baroque-egyptian-lunar_pastel_00001_.webp" loading="lazy" alt="Vase — baroque, Egyptian, lunar, pastel">
+          <img class="galleryThumb" src="gallery/Vase_botanical_pastel_00001_.webp" loading="lazy" alt="Vase — botanical, pastel">
+          <img class="galleryThumb" src="gallery/Vase_volcanic_pastel_00001_.webp" loading="lazy" alt="Vase — volcanic, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Chalice / Goblet</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/ChaliceGoblet_drippy-origami_pastel_00003_.png" loading="lazy" alt="Chalice/Goblet — drippy origami, pastel">
-          <img class="galleryThumb" src="gallery/ChaliceGoblet_drippy-origami_pastel_00004_.png" loading="lazy" alt="Chalice/Goblet — drippy origami, pastel">
-          <img class="galleryThumb" src="gallery/ChaliceGoblet_trippy_pastel_00014_.png" loading="lazy" alt="Chalice/Goblet — trippy, pastel">
+          <img class="galleryThumb" src="gallery/ChaliceGoblet_drippy-origami_pastel_00003_.webp" loading="lazy" alt="Chalice/Goblet — drippy origami, pastel">
+          <img class="galleryThumb" src="gallery/ChaliceGoblet_drippy-origami_pastel_00004_.webp" loading="lazy" alt="Chalice/Goblet — drippy origami, pastel">
+          <img class="galleryThumb" src="gallery/ChaliceGoblet_trippy_pastel_00014_.webp" loading="lazy" alt="Chalice/Goblet — trippy, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Bookend</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/Bookend_alien-trippy-honeycomb_pastel_edit_00002_.png" loading="lazy" alt="Bookend — alien, trippy, honeycomb, pastel">
-          <img class="galleryThumb" src="gallery/Bookend_alien-trippy-honeycomb_pastel_edit_00004_.png" loading="lazy" alt="Bookend — alien, trippy, honeycomb, pastel">
-          <img class="galleryThumb" src="gallery/Bookend_alien-trippy-honeycomb_pastel_edit_00006_.png" loading="lazy" alt="Bookend — alien, trippy, honeycomb, pastel">
-          <img class="galleryThumb" src="gallery/Bookend_Cube_drippy-zen-pixelvoxel_pastel_00001_.png" loading="lazy" alt="Bookend — Cube, drippy, zen, pixel voxel, pastel">
+          <img class="galleryThumb" src="gallery/Bookend_alien-trippy-honeycomb_pastel_edit_00002_.webp" loading="lazy" alt="Bookend — alien, trippy, honeycomb, pastel">
+          <img class="galleryThumb" src="gallery/Bookend_alien-trippy-honeycomb_pastel_edit_00004_.webp" loading="lazy" alt="Bookend — alien, trippy, honeycomb, pastel">
+          <img class="galleryThumb" src="gallery/Bookend_alien-trippy-honeycomb_pastel_edit_00006_.webp" loading="lazy" alt="Bookend — alien, trippy, honeycomb, pastel">
+          <img class="galleryThumb" src="gallery/Bookend_Cube_drippy-zen-pixelvoxel_pastel_00001_.webp" loading="lazy" alt="Bookend — Cube, drippy, zen, pixel voxel, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Incense Holder</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/IncenseHolder_Lotus_origami-zen_magenta_00002_.png" loading="lazy" alt="Incense Holder — Lotus, origami, zen, magenta">
-          <img class="galleryThumb" src="gallery/IncenseHolder_Lotus_zen-origami_magenta_00001_.png" loading="lazy" alt="Incense Holder — Lotus, zen, origami, magenta">
+          <img class="galleryThumb" src="gallery/IncenseHolder_Lotus_origami-zen_magenta_00002_.webp" loading="lazy" alt="Incense Holder — Lotus, origami, zen, magenta">
+          <img class="galleryThumb" src="gallery/IncenseHolder_Lotus_zen-origami_magenta_00001_.webp" loading="lazy" alt="Incense Holder — Lotus, zen, origami, magenta">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Picture Frame</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/PictureFrame_origami-trippy_pastel_00002_.png" loading="lazy" alt="Picture Frame — origami, trippy, pastel">
-          <img class="galleryThumb" src="gallery/PictureFrame_origami-trippy_pastel_00005_.png" loading="lazy" alt="Picture Frame — origami, trippy, pastel">
-          <img class="galleryThumb" src="gallery/PictureFrame_trippy-origami_pastel_00001_.png" loading="lazy" alt="Picture Frame — trippy, origami, pastel">
-          <img class="galleryThumb" src="gallery/PictureFrame_trippy-origami_pastel_00006_.png" loading="lazy" alt="Picture Frame — trippy, origami, pastel">
+          <img class="galleryThumb" src="gallery/PictureFrame_origami-trippy_pastel_00002_.webp" loading="lazy" alt="Picture Frame — origami, trippy, pastel">
+          <img class="galleryThumb" src="gallery/PictureFrame_origami-trippy_pastel_00005_.webp" loading="lazy" alt="Picture Frame — origami, trippy, pastel">
+          <img class="galleryThumb" src="gallery/PictureFrame_trippy-origami_pastel_00001_.webp" loading="lazy" alt="Picture Frame — trippy, origami, pastel">
+          <img class="galleryThumb" src="gallery/PictureFrame_trippy-origami_pastel_00006_.webp" loading="lazy" alt="Picture Frame — trippy, origami, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Bird Feeder</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/BirdFeeder_FlyingSaucer_trippy_sunset_00003_.png" loading="lazy" alt="Bird Feeder — Flying Saucer, trippy, sunset">
+          <img class="galleryThumb" src="gallery/BirdFeeder_FlyingSaucer_trippy_sunset_00003_.webp" loading="lazy" alt="Bird Feeder — Flying Saucer, trippy, sunset">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Birdhouse</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/Birdhouse_ClassicHouse_trippy-origami_pastel_00006_.png" loading="lazy" alt="Birdhouse — Classic House, trippy, origami, pastel">
-          <img class="galleryThumb" src="gallery/Birdhouse_trippy-origami_sunset_00003_.png" loading="lazy" alt="Birdhouse — trippy, origami, sunset">
+          <img class="galleryThumb" src="gallery/Birdhouse_ClassicHouse_trippy-origami_pastel_00006_.webp" loading="lazy" alt="Birdhouse — Classic House, trippy, origami, pastel">
+          <img class="galleryThumb" src="gallery/Birdhouse_trippy-origami_sunset_00003_.webp" loading="lazy" alt="Birdhouse — trippy, origami, sunset">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Coaster</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/Coaster_Freeform_coralreef-voronoi_magenta_edit_00002_.png" loading="lazy" alt="Coaster — Freeform, coral reef, voronoi, magenta">
+          <img class="galleryThumb" src="gallery/Coaster_Freeform_coralreef-voronoi_magenta_edit_00002_.webp" loading="lazy" alt="Coaster — Freeform, coral reef, voronoi, magenta">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Garden Mushroom</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/GardenMushroom_crochet-drippy_pastel_00001_.png" loading="lazy" alt="Garden Mushroom — crochet, drippy, pastel">
+          <img class="galleryThumb" src="gallery/GardenMushroom_crochet-drippy_pastel_00001_.webp" loading="lazy" alt="Garden Mushroom — crochet, drippy, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Kawaii Food</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/KawaiiFood_drippy_marble_00004_.png" loading="lazy" alt="Kawaii Food — drippy, marble">
+          <img class="galleryThumb" src="gallery/KawaiiFood_drippy_marble_00004_.webp" loading="lazy" alt="Kawaii Food — drippy, marble">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Bird</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/Bird_Peacock_sacred-trippy_pastel_00002_.png" loading="lazy" alt="Bird — Peacock, sacred, trippy, pastel">
+          <img class="galleryThumb" src="gallery/Bird_Peacock_sacred-trippy_pastel_00002_.webp" loading="lazy" alt="Bird — Peacock, sacred, trippy, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Chonky Animal</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/ChonkyAnimal_PlumpPenguin_mossy_obsidian_00002_.png" loading="lazy" alt="Chonky Animal — Plump Penguin, mossy, obsidian">
-          <img class="galleryThumb" src="gallery/ChonkyAnimal_baroque-opart-scaled_magenta_00001_.png" loading="lazy" alt="Chonky Animal — baroque, op-art, magenta">
+          <img class="galleryThumb" src="gallery/ChonkyAnimal_PlumpPenguin_mossy_obsidian_00002_.webp" loading="lazy" alt="Chonky Animal — Plump Penguin, mossy, obsidian">
+          <img class="galleryThumb" src="gallery/ChonkyAnimal_baroque-opart-scaled_magenta_00001_.webp" loading="lazy" alt="Chonky Animal — baroque, op-art, magenta">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Character</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/Character_crystal_marble_00002_.png" loading="lazy" alt="Character — crystal, marble">
+          <img class="galleryThumb" src="gallery/Character_crystal_marble_00002_.webp" loading="lazy" alt="Character — crystal, marble">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Cyberpunk</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/Cyberpunk_HeavyMerc_lunar-mosaic_terracotta_00001_.png" loading="lazy" alt="Cyberpunk — Heavy Merc, lunar, mosaic, terracotta">
-          <img class="galleryThumb" src="gallery/Cyberpunk_HeavyMerc_mosaic-lunar_terracotta_00002_.png" loading="lazy" alt="Cyberpunk — Heavy Merc, mosaic, lunar, terracotta">
+          <img class="galleryThumb" src="gallery/Cyberpunk_HeavyMerc_lunar-mosaic_terracotta_00001_.webp" loading="lazy" alt="Cyberpunk — Heavy Merc, lunar, mosaic, terracotta">
+          <img class="galleryThumb" src="gallery/Cyberpunk_HeavyMerc_mosaic-lunar_terracotta_00002_.webp" loading="lazy" alt="Cyberpunk — Heavy Merc, mosaic, lunar, terracotta">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Death Machine</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/DeathMachine_ReaperEngine_alien-botanical-voronoi_magenta_00001_.png" loading="lazy" alt="Death Machine — Reaper Engine, alien, botanical, voronoi, magenta">
-          <img class="galleryThumb" src="gallery/DeathMachine_ReaperEngine_honeycomb-mosaic_pastel_00001_.png" loading="lazy" alt="Death Machine — Reaper Engine, honeycomb, mosaic, pastel">
-          <img class="galleryThumb" src="gallery/DeathMachine_WarAltar_origami_obsidian_00001_.png" loading="lazy" alt="Death Machine — War Altar, origami, obsidian">
+          <img class="galleryThumb" src="gallery/DeathMachine_ReaperEngine_alien-botanical-voronoi_magenta_00001_.webp" loading="lazy" alt="Death Machine — Reaper Engine, alien, botanical, voronoi, magenta">
+          <img class="galleryThumb" src="gallery/DeathMachine_ReaperEngine_honeycomb-mosaic_pastel_00001_.webp" loading="lazy" alt="Death Machine — Reaper Engine, honeycomb, mosaic, pastel">
+          <img class="galleryThumb" src="gallery/DeathMachine_WarAltar_origami_obsidian_00001_.webp" loading="lazy" alt="Death Machine — War Altar, origami, obsidian">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Horror Icon</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/HorrorIcon_GrimReaper_trippy_bone_00005_.png" loading="lazy" alt="Horror Icon — Grim Reaper, trippy, bone">
-          <img class="galleryThumb" src="gallery/HorrorIcon_PlagueDoctor_trippy_obsidian_00001_.png" loading="lazy" alt="Horror Icon — Plague Doctor, trippy, obsidian">
+          <img class="galleryThumb" src="gallery/HorrorIcon_GrimReaper_trippy_bone_00005_.webp" loading="lazy" alt="Horror Icon — Grim Reaper, trippy, bone">
+          <img class="galleryThumb" src="gallery/HorrorIcon_PlagueDoctor_trippy_obsidian_00001_.webp" loading="lazy" alt="Horror Icon — Plague Doctor, trippy, obsidian">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Alien</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/Alien_mosaic-origami_pastel_00002_.png" loading="lazy" alt="Alien — mosaic, origami, pastel">
+          <img class="galleryThumb" src="gallery/Alien_mosaic-origami_pastel_00002_.webp" loading="lazy" alt="Alien — mosaic, origami, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Chinese Guardian</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/ChineseGuardian_XuanWu_origami_art_00003_.png" loading="lazy" alt="Chinese Guardian — Xuan Wu, origami, art">
-          <img class="galleryThumb" src="gallery/ChineseGuardian_origami_art_00003_.png" loading="lazy" alt="Chinese Guardian — origami, art">
-          <img class="galleryThumb" src="gallery/ChineseGuardian_circuitboard_pastel_00001_.png" loading="lazy" alt="Chinese Guardian — circuit board, pastel">
+          <img class="galleryThumb" src="gallery/ChineseGuardian_XuanWu_origami_art_00003_.webp" loading="lazy" alt="Chinese Guardian — Xuan Wu, origami, art">
+          <img class="galleryThumb" src="gallery/ChineseGuardian_origami_art_00003_.webp" loading="lazy" alt="Chinese Guardian — origami, art">
+          <img class="galleryThumb" src="gallery/ChineseGuardian_circuitboard_pastel_00001_.webp" loading="lazy" alt="Chinese Guardian — circuit board, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Hindu Deity</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/HinduDeity_swirly-crystal_pastel_00001_.png" loading="lazy" alt="Hindu Deity — swirly, crystal, pastel">
+          <img class="galleryThumb" src="gallery/HinduDeity_swirly-crystal_pastel_00001_.webp" loading="lazy" alt="Hindu Deity — swirly, crystal, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Egyptian God</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/EgyptianGod_Osiris_feathered-wave_art_00001_.png" loading="lazy" alt="Egyptian God — Osiris, feathered, wave, art">
-          <img class="galleryThumb" src="gallery/Deity_JackalGod_origami-volcanic_pastel_00003_.png" loading="lazy" alt="Deity — Jackal God, origami, volcanic, pastel">
-          <img class="galleryThumb" src="gallery/Deity_JackalGod_volcanic-origami_pastel_00001_.png" loading="lazy" alt="Deity — Jackal God, volcanic, origami, pastel">
+          <img class="galleryThumb" src="gallery/EgyptianGod_Osiris_feathered-wave_art_00001_.webp" loading="lazy" alt="Egyptian God — Osiris, feathered, wave, art">
+          <img class="galleryThumb" src="gallery/Deity_JackalGod_origami-volcanic_pastel_00003_.webp" loading="lazy" alt="Deity — Jackal God, origami, volcanic, pastel">
+          <img class="galleryThumb" src="gallery/Deity_JackalGod_volcanic-origami_pastel_00001_.webp" loading="lazy" alt="Deity — Jackal God, volcanic, origami, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Japanese Spirit</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/JapaneseSpirit_FudoMyoo_lunar-alien_obsidian_00002_.png" loading="lazy" alt="Japanese Spirit — Fudo Myoo, lunar, alien, obsidian">
-          <img class="galleryThumb" src="gallery/JapaneseSpirit_mossy_pastel_00001_.png" loading="lazy" alt="Japanese Spirit — mossy, pastel">
+          <img class="galleryThumb" src="gallery/JapaneseSpirit_FudoMyoo_lunar-alien_obsidian_00002_.webp" loading="lazy" alt="Japanese Spirit — Fudo Myoo, lunar, alien, obsidian">
+          <img class="galleryThumb" src="gallery/JapaneseSpirit_mossy_pastel_00001_.webp" loading="lazy" alt="Japanese Spirit — mossy, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Greek Guardian</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/GreekGuardian_thornedvine_pastel_00001_.png" loading="lazy" alt="Greek Guardian — thorned vine, pastel">
+          <img class="galleryThumb" src="gallery/GreekGuardian_thornedvine_pastel_00001_.webp" loading="lazy" alt="Greek Guardian — thorned vine, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Norse Being</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/NorseBeing_drippy-volcanic-thornedvine_pastel_00001_.png" loading="lazy" alt="Norse Being — drippy, volcanic, thorned vine, pastel">
+          <img class="galleryThumb" src="gallery/NorseBeing_drippy-volcanic-thornedvine_pastel_00001_.webp" loading="lazy" alt="Norse Being — drippy, volcanic, thorned vine, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Mesoamerican God</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/MesoamericanGod_organic_pastel_00001_.png" loading="lazy" alt="Mesoamerican God — organic, pastel">
+          <img class="galleryThumb" src="gallery/MesoamericanGod_organic_pastel_00001_.webp" loading="lazy" alt="Mesoamerican God — organic, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Polynesian Being</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/PolynesianBeing_cyberpunk_pastel_00001_.png" loading="lazy" alt="Polynesian Being — cyberpunk, pastel">
+          <img class="galleryThumb" src="gallery/PolynesianBeing_cyberpunk_pastel_00001_.webp" loading="lazy" alt="Polynesian Being — cyberpunk, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Slavic Folklore</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/SlavicFolklore_circuitboard-egyptian_pastel_00001_.png" loading="lazy" alt="Slavic Folklore — circuit board, Egyptian, pastel">
+          <img class="galleryThumb" src="gallery/SlavicFolklore_circuitboard-egyptian_pastel_00001_.webp" loading="lazy" alt="Slavic Folklore — circuit board, Egyptian, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Caribbean Spirit</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/CaribbeanSpirit_swirly-volcanic-mosaic_pastel_00001_.png" loading="lazy" alt="Caribbean Spirit — swirly, volcanic, mosaic, pastel">
+          <img class="galleryThumb" src="gallery/CaribbeanSpirit_swirly-volcanic-mosaic_pastel_00001_.webp" loading="lazy" alt="Caribbean Spirit — swirly, volcanic, mosaic, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Meditation</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/Meditation_zen_pastel_00001_.png" loading="lazy" alt="Meditation — zen, pastel">
+          <img class="galleryThumb" src="gallery/Meditation_zen_pastel_00001_.webp" loading="lazy" alt="Meditation — zen, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Tibetan Buddhist</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/TibetanBuddhist_egyptian-origami-cosmic_pastel_00001_.png" loading="lazy" alt="Tibetan Buddhist — Egyptian, origami, cosmic, pastel">
+          <img class="galleryThumb" src="gallery/TibetanBuddhist_egyptian-origami-cosmic_pastel_00001_.webp" loading="lazy" alt="Tibetan Buddhist — Egyptian, origami, cosmic, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">DMT Realm</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/DMTRealm_LivingMandala_surprise_pastel_00001_.png" loading="lazy" alt="DMT Realm — Living Mandala, pastel">
-          <img class="galleryThumb" src="gallery/DMTRealm_MachineElf_surprise_pastel_00003_.png" loading="lazy" alt="DMT Realm — Machine Elf, pastel">
-          <img class="galleryThumb" src="gallery/DMTRealm_MachineElf_surprise_pastel_00006_.png" loading="lazy" alt="DMT Realm — Machine Elf, pastel">
-          <img class="galleryThumb" src="gallery/DMTRealm_cyberpunk_pastel_00001_.png" loading="lazy" alt="DMT Realm — cyberpunk, pastel">
+          <img class="galleryThumb" src="gallery/DMTRealm_LivingMandala_surprise_pastel_00001_.webp" loading="lazy" alt="DMT Realm — Living Mandala, pastel">
+          <img class="galleryThumb" src="gallery/DMTRealm_MachineElf_surprise_pastel_00003_.webp" loading="lazy" alt="DMT Realm — Machine Elf, pastel">
+          <img class="galleryThumb" src="gallery/DMTRealm_MachineElf_surprise_pastel_00006_.webp" loading="lazy" alt="DMT Realm — Machine Elf, pastel">
+          <img class="galleryThumb" src="gallery/DMTRealm_cyberpunk_pastel_00001_.webp" loading="lazy" alt="DMT Realm — cyberpunk, pastel">
         </div>
       </div>
 
       <div class="galleryGroup">
         <div class="galleryGroupLabel">Shipibo Conibo</div>
         <div class="galleryGrid">
-          <img class="galleryThumb" src="gallery/ShipiboConibo_IcarosSinger_mosaic-origami_pastel_00001_.png" loading="lazy" alt="Shipibo Conibo — Icaros Singer, mosaic, origami, pastel">
-          <img class="galleryThumb" src="gallery/ShipiboConibo_IcarosSinger_mosaic-origami_pastel_00003_.png" loading="lazy" alt="Shipibo Conibo — Icaros Singer, mosaic, origami, pastel">
-          <img class="galleryThumb" src="gallery/ShipiboConibo_MeranonCloudSpirit_mosaic-origami_pastel_00003_.png" loading="lazy" alt="Shipibo Conibo — Meranon Cloud Spirit, mosaic, origami, pastel">
-          <img class="galleryThumb" src="gallery/ShipiboConibo_Shapeshifter_mosaic-origami_pastel_00003_.png" loading="lazy" alt="Shipibo Conibo — Shapeshifter, mosaic, origami, pastel">
-          <img class="galleryThumb" src="gallery/ShipiboConibo_ToeSpirit_surprise_art_00002_.png" loading="lazy" alt="Shipibo Conibo — Toe Spirit, art">
+          <img class="galleryThumb" src="gallery/ShipiboConibo_IcarosSinger_mosaic-origami_pastel_00001_.webp" loading="lazy" alt="Shipibo Conibo — Icaros Singer, mosaic, origami, pastel">
+          <img class="galleryThumb" src="gallery/ShipiboConibo_IcarosSinger_mosaic-origami_pastel_00003_.webp" loading="lazy" alt="Shipibo Conibo — Icaros Singer, mosaic, origami, pastel">
+          <img class="galleryThumb" src="gallery/ShipiboConibo_MeranonCloudSpirit_mosaic-origami_pastel_00003_.webp" loading="lazy" alt="Shipibo Conibo — Meranon Cloud Spirit, mosaic, origami, pastel">
+          <img class="galleryThumb" src="gallery/ShipiboConibo_Shapeshifter_mosaic-origami_pastel_00003_.webp" loading="lazy" alt="Shipibo Conibo — Shapeshifter, mosaic, origami, pastel">
+          <img class="galleryThumb" src="gallery/ShipiboConibo_ToeSpirit_surprise_art_00002_.webp" loading="lazy" alt="Shipibo Conibo — Toe Spirit, art">
         </div>
       </div>
 
@@ -809,7 +828,10 @@
 
   <footer>
     Images render in the cloud; your favorites &amp; history stay in this browser.<br>
-    Tip: render a design you like, then hit 🧊 Make 3D to download a printable STL.
+    Tip: render a design you like, then hit 🧊 Make 3D to download a printable STL.<br>
+    Prints may need cleanup and extra hardware. <a href="/terms" target="_blank" rel="noopener" style="color:var(--accent2)">Terms &amp; printing notes</a>
+    · <a href="/privacy" target="_blank" rel="noopener" style="color:var(--accent2)">Privacy</a>
+    · <a href="/brochure" target="_blank" rel="noopener" style="color:var(--accent2)">Design book</a>
   </footer>
 </div>
 
@@ -832,8 +854,10 @@
         <span id="modeSwitchText">New here?</span> <button type="button" id="toggleAuthMode">Create an account</button>
       </div>
       <div class="gateNote" id="gateBonus"></div>
+      <div class="gateNote">By continuing you agree to the <a href="/terms" target="_blank" rel="noopener" style="color:var(--accent2)">Terms of Service</a>.</div>
       <div class="gateAlt" style="margin-top:14px">
         <button type="button" id="magicLinkLink">Email me a sign-in link instead</button>
+        · <button type="button" id="forgotLink">Forgot password?</button>
       </div>
       <div class="gateAlt"><button type="button" id="showPinLink">Use access PIN</button></div>
     </div>
@@ -858,6 +882,8 @@
     <p class="sub" id="buySub">Credits never expire.</p>
     <div id="packList"></div>
     <div class="gateNote" id="buyCosts"></div>
+    <div class="gateNote"><button type="button" id="deleteAcctBtn" style="background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font:inherit;padding:0">Delete my account</button></div>
+    <div class="gateNote">Purchases are subject to the <a href="/terms" target="_blank" rel="noopener" style="color:var(--accent2)">Terms of Service</a>. Credits are non-refundable; failed renders are refunded automatically.</div>
   </div>
 </div>
 
@@ -3092,17 +3118,6 @@ const OBJECTS = {
       {label:"Freeform",     prompt:"FREEFORM — an irregular organic blob outline, no symmetry, surprising silhouette, bold decorated surface, flat back"},
     ]},
 
-  hairclip: {emoji:"🪢", label:"Hair clip", promptName:"decorative hair claw clip", cat:"jewelry",
-    fn:"A single decorative hair claw clip — a spring-jaw clip with two rows of comb teeth that clamp together to hold hair. The decorative spine runs along the top. Viewed closed, teeth visible along the bottom jaw. All surfaces are boldly styled. Just the clip alone on a flat surface — no hair, no head, not being worn.",
-    shapes:[
-      {label:"Auto",          prompt:"driven entirely by the chosen style — a wild sculptural hair claw clip with a surprising spine silhouette, closed jaw with teeth, resting alone"},
-      {label:"Classic claw",  prompt:"RECTANGULAR SPINE — a classic rectangular claw clip, the spine long and straight, even width from end to end, double row of teeth below"},
-      {label:"Butterfly wide",prompt:"WIDE SWEPT WINGS — a wide butterfly-style claw clip, the spine flaring outward on both sides like spread wings, much wider than long, teeth below"},
-      {label:"Oval",          prompt:"OVAL DOME — a claw clip with a smooth rounded oval dome spine, highest in the center tapering to both ends, teeth below"},
-      {label:"Pointed arc",   prompt:"ARCHED PEAK — a claw clip spine that rises to a dramatic central pointed peak, like a crown arch, tapering to low ends, teeth below"},
-      {label:"Mini claw",     prompt:"COMPACT SQUARE — a small square compact claw clip, the spine squat and nearly as wide as long, bold surface detail, teeth below"},
-      {label:"Sculptural",    prompt:"FREEFORM ORGANIC — the spine erupts in an asymmetric sculptural mass, irregular lumpy silhouette along the top, bold and surprising, teeth below"},
-    ]},
 
   bangle: {emoji:"⭕", label:"Bangle", promptName:"solid bangle bracelet", cat:"jewelry",
     fn:"A single solid closed bangle bracelet — a rigid ring that slides over the hand onto the wrist. Completely closed with no gap. All one continuous piece, thick-walled and sturdy. Just the bangle alone, resting at a slight angle on a flat surface — no wrist, no arm, not being worn.",
@@ -3857,8 +3872,6 @@ const SD_OBJ = {
                 neg:"(pair of earrings:1.5), (two earrings:1.5), (earring pair:1.4), (ear:1.5), (earlobe:1.5), (person:1.5), (human:1.4), (model:1.4), worn, (thin wire hook:1.4), (fishhook wire:1.4), (necklace:1.3), (ring:1.3), (bracelet:1.3), (pendant:1.3)"},
   brooch:      {noun:"decorative brooch pin", bits:"(a single solid decorative brooch lying face-up alone on a flat surface, one CONTINUOUS SOLID decorated face filled right across the middle, NO hole and NO opening through the center, flat back:1.5), macro studio shot, palm-sized brooch scale",
                 neg:"(wreath:1.5), (ring shape:1.5), (hole through the center:1.5), (open center:1.5), (donut:1.5), (annulus:1.4), (circlet:1.4), (frame:1.4), (clothing:1.5), (fabric:1.5), (lapel:1.4), (coat:1.4), (person:1.5), (human:1.4), (model:1.4), worn, (pin clasp visible on front:1.3), (thin prongs:1.4), (wire:1.4), (necklace:1.3), (ring:1.3), (earring:1.3), (multiple brooches:1.4)"},
-  hairclip:    {noun:"decorative hair claw clip", bits:"(a single decorative hair claw clip resting closed on a flat surface, decorative spine on top, double row of comb teeth along the bottom jaw, no hair:1.5), macro studio shot",
-                neg:"(hair:1.5), (head:1.5), (person:1.5), (human:1.4), (model:1.4), worn, (open jaw:1.3), (alligator clip:1.3), (binder clip:1.3), (stapler:1.3), (tool:1.3), (multiple clips:1.4), (necklace:1.3), (bracelet:1.3), (ring:1.3)"},
   bangle:      {noun:"solid closed bangle bracelet", bits:"(a single solid closed bangle bracelet resting at a slight angle on a flat surface, no gap, completely closed ring, thick walls:1.5), macro studio shot, wristband scale",
                 neg:"(wrist:1.5), (arm:1.5), (hand:1.5), (person:1.5), (human:1.4), (model:1.4), worn, (open gap:1.4), (cuff:1.3), (thin walls:1.4), (wire:1.4), (chain:1.4), (necklace:1.3), (ring:1.3), (earring:1.3), (multiple bangles:1.4), (picture frame:1.4), (mirror frame:1.4), (portal:1.3)"},
   tiara:       {noun:"decorative tiara headpiece", bits:"(a single decorative tiara resting on its two curved ends on a flat surface, an open semicircular arc with upward decorative peaks along the top edge, thick solid band, both ends open with no clasp, no head beneath it:1.5), macro studio shot",
@@ -4178,7 +4191,46 @@ if(__idsBackfilled){ LS_set("podder_favs",favs); LS_set("podder_hist",hist); LS_
 // Object/Style chips are generated from the OBJECTS/STYLES data (not hand-listed in the HTML) so
 // the picker always reflects the full catalog — a static chip list silently stops growing the
 // moment a new object/style is added to the data, which is exactly what happened once already.
+// What a printed piece still needs before it works. Shown under the object chips.
+const SEAL = "Seal the inside to make it watertight; drill a drainage hole for live plants.";
+const HANG = "Add cord, wire or chain to hang it.";
+const FINISH = {
+  earring:"Add skin-safe ear wires or posts (titanium, niobium or surgical steel). Never put printed plastic through a piercing.",
+  brooch:"Glue a pin back onto the back.",
+  beltbuckle:"Needs a metal buckle back with a prong and a belt bar; plastic alone won't hold a belt.",
+  cufflinks:"Glue cufflink backs (bullet or toggle) onto the back.",
+  pendant:"Add a jump ring, a chain or cord, and a clasp.",
+  keychain:"Add a metal split ring through the loop.",
+  ring:"Scale it to your ring size before printing; sand and seal the inside.",
+  bangle:"Scale it to fit over your hand before printing.",
+  cuff:"Scale it to your wrist before printing.",
+  anklet:"Scale it to your ankle before printing.",
+  tiara:"Add hair combs or a headband to hold it in place.",
+  crown:"Add hair combs or elastic to hold it in place.",
+  haircomb:"Sand the teeth smooth and seal them so they don't snag hair.",
+  ornament:HANG, birdhouse:HANG+" Use outdoor-rated material and sealing.", birdfeeder:HANG+" Use outdoor-rated material and sealing.",
+  wallplanter:HANG+" "+SEAL,
+  vase:"Seal the inside to make it watertight.", budvase:"Seal the inside to make it watertight.",
+  planter:SEAL, cactusplanter:SEAL, herbpot:SEAL,
+  wallpocket:"Add a keyhole slot or hanger, plus a wall anchor.",
+  votive:"Use LED tea lights, not real flames.", lantern:"Use LED tea lights, not real flames.",
+  incense:"Print in a heat-resistant material and use it on a non-flammable surface.",
+  chalice:"Decorative: not food safe unless finished with a food-safe coating.",
+  bowl:"Decorative: not food safe unless finished with a food-safe coating.",
+  pictureframe:"Add glass or acrylic and a backing board.",
+  coinbank:"Drill a hole in the bottom to get coins out, and plug it with a rubber stopper.",
+  coaster:"Seal the top and add cork or felt pads underneath.",
+  phonestand:"Add felt or rubber feet; check it holds your phone securely.",
+  tabletstand:"Add felt or rubber feet; check it holds your tablet securely.",
+  winebottleholder:"Check it cradles your bottle securely before trusting it."
+};
+function updateFinishNote(){
+  const el=$("#finishNote"); if(!el) return;
+  const n=FINISH[state.obj];
+  el.innerHTML = n ? `🛠 <b>After printing:</b> ${n} <a href="/terms#finishing" target="_blank" rel="noopener">More</a>` : "";
+}
 function buildChips(){
+  updateFinishNote();
   // Category tabs — switching one jumps to that category's first object.
   const cc=$("#catChips");
   if(cc){ cc.innerHTML="";
@@ -4558,13 +4610,7 @@ function renderImageInto(wrap, item, imgRef){
   meta.appendChild(sv3d);
   // Image -> printable STL, in-app. Only offered when the server actually holds a Tripo key,
   // so the button can never appear and then 500 on click.
-  if(ACCT.cfg?.model3d?.enabled){
-    const mk=document.createElement("button"); mk.className="btn ghost";
-    mk.style.cssText="font-size:12px;padding:3px 8px;margin-left:6px";
-    mk.textContent=`🧊 Make 3D — ${ACCT.cfg.model3d.cost} cr`;
-    mk.onclick=()=>makeModel3D(item, imgRef, mk, meta);
-    meta.appendChild(mk);
-  }
+  if(ACCT.cfg?.model3d?.enabled) add3dButtons(item, imgRef, meta);
   imgSrc(imgRef).then(u=>{ if(!u){ image.onerror(); return; } image.src=u; dl.href=u; });
   // "Apply design to other objects" — img2img this picture into a different object's form.
   const sel = document.createElement("select"); sel.className = "variantSel";
@@ -4640,13 +4686,7 @@ function renderEditResultInto(wrap, item, imgRef){
   meta.appendChild(sv3d);
   // Image -> printable STL, in-app. Only offered when the server actually holds a Tripo key,
   // so the button can never appear and then 500 on click.
-  if(ACCT.cfg?.model3d?.enabled){
-    const mk=document.createElement("button"); mk.className="btn ghost";
-    mk.style.cssText="font-size:12px;padding:3px 8px;margin-left:6px";
-    mk.textContent=`🧊 Make 3D — ${ACCT.cfg.model3d.cost} cr`;
-    mk.onclick=()=>makeModel3D(item, imgRef, mk, meta);
-    meta.appendChild(mk);
-  }
+  if(ACCT.cfg?.model3d?.enabled) add3dButtons(item, imgRef, meta);
   imgSrc(imgRef).then(u=>{ if(u){ image.src=u; dl.href=u; } });
   meta.appendChild(buildFavBtn(item));
   if(item.renderMs){ const t=document.createElement("span"); t.className="render-time"; t.textContent=fmtDuration(item.renderMs); meta.appendChild(t); }
@@ -4984,7 +5024,10 @@ function renderRerollsTab(){
 
 /* ---------- MISC ---------- */
 let toastTimer;
-function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),1600);}
+// Errors stay up long enough to read; quick confirmations stay quick.
+function toast(msg, ms){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);
+  if(!ms) ms = /fail|error|couldn|could not|can't|cannot|not enough|no longer|sign in|too many/i.test(String(msg)) ? 5000 : 1800;
+  toastTimer=setTimeout(()=>t.classList.remove("show"),ms);}
 // Weirdness levels. Everything a level changes lives on the level itself, so the slider is
 // widened or retuned by editing this table alone — the three call sites in buildPrompt read
 // from here rather than each carrying their own if-ladder (which is how the old 3-level
@@ -5054,6 +5097,7 @@ async function verifyPin(pin){
   try{
     const r = await fetch("/api/auth",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({pin})});
     if(r.ok) return "ok";
+    if(r.status===429) return "locked";
     return r.status===401 ? "bad" : "error";
   }catch(e){ return "error"; }
 }
@@ -5086,6 +5130,7 @@ function consumeAuthHash(){
   if(!access_token) return null;
   const s = { access_token, refresh_token, expires_at: Date.now() + (Number(p.get("expires_in"))||3600)*1000 };
   saveSession(s);
+  if(p.get("type") === "recovery") setTimeout(promptNewPassword, 300);
   return s;
 }
 
@@ -5199,6 +5244,37 @@ async function upgradeAnonAccount(email, password){
   return { needsConfirm: !j.email_confirmed_at && !j.confirmed_at };
 }
 
+// Password reset. Supabase emails a recovery link; it signs the person in and lands back here
+// with type=recovery, where promptNewPassword() sets the new one on the live session.
+async function sendPasswordReset(email){
+  const cfg = await loadConfig();
+  if(!cfg.ready) throw new Error("Sign-in is not configured yet.");
+  const r = await fetch(`${cfg.supabaseUrl}/auth/v1/recover?redirect_to=${encodeURIComponent(location.origin)}`,{
+    method:"POST", headers:{"content-type":"application/json", apikey:cfg.anonKey},
+    body:JSON.stringify({email})});
+  if(!r.ok){
+    const j = await r.json().catch(()=>({}));
+    throw new Error(authErr(j,"Could not send the reset email"));
+  }
+}
+async function promptNewPassword(){
+  for(let tries=0; tries<3; tries++){
+    const pw = prompt("Choose a new password (at least 6 characters):");
+    if(pw === null) return;
+    if(pw.length < 6){ alert("That password is too short."); continue; }
+    try{
+      const cfg = await loadConfig(); const token = await getToken();
+      const r = await fetch(`${cfg.supabaseUrl}/auth/v1/user`,{
+        method:"PUT", headers:{"content-type":"application/json", apikey:cfg.anonKey, Authorization:`Bearer ${token}`},
+        body:JSON.stringify({password:pw})});
+      const j = await r.json().catch(()=>({}));
+      if(!r.ok) throw new Error(authErr(j,"Could not change the password"));
+      toast("Password updated — you're signed in", 4000);
+      return;
+    }catch(e){ alert(e.message || String(e)); }
+  }
+}
+
 async function sendMagicLink(email){
   const cfg = await loadConfig();
   if(!cfg.ready) throw new Error("Sign-in is not configured yet — set SUPABASE_URL and SUPABASE_ANON_KEY.");
@@ -5290,13 +5366,60 @@ async function refreshMe(){
    returns GLB from every generation endpoint; STL only exists as a separate convert task.
    Billing is server-side (debit on create); if a task fails we ask the server to refund, which
    is keyed on the task id so a retry cannot double-credit. */
-function authHeaders(extra){
-  // Same rule as apiFetch: session token when signed in, owner PIN otherwise.
+async function authHeaders(extra){
+  // Same rule as apiFetch: session token when signed in, owner PIN otherwise. getToken()
+  // refreshes a token that is about to expire, which matters because a mesh job outlives one.
   const h = Object.assign({}, extra||{});
-  const token = ACCT.owner ? "" : (ACCT.session?.access_token || "");
+  const token = ACCT.owner ? "" : await getToken();
   if(token) h.Authorization = `Bearer ${token}`;
   if(ACCT.owner || !token) h["x-podder-pin"] = getPin();
   return h;
+}
+
+// Finished STLs are remembered per design (item id -> Tripo convert task id), so a paid model
+// can be downloaded again after a reload. Tripo's file links expire, so the link is never
+// stored; polling the task hands back a fresh one each time.
+const STL_KEY = "podder_stl";
+const stlTaskFor = item => (item && item.id && LS_get(STL_KEY, {})[item.id]) || null;
+function rememberStl(item, taskId){
+  if(!item || !item.id || !taskId) return;
+  const m = LS_get(STL_KEY, {}); m[item.id] = taskId; LS_set(STL_KEY, m);
+}
+async function freshStlUrl(taskId){
+  const r = await fetch(`/api/model3d?task=${encodeURIComponent(taskId)}`, {headers: await authHeaders()});
+  const j = await r.json().catch(()=>({}));
+  if(j.status !== "success") throw new Error(j.error || "That STL is no longer available — make the 3D model again");
+  const url = j.stl || j.glb;
+  if(!url) throw new Error("Tripo returned no file");
+  return url;
+}
+function openDownload(url){
+  const a = document.createElement("a");
+  a.href = url; a.target = "_blank"; a.rel = "noopener";
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function stlDownloadButton(taskId){
+  const a = document.createElement("button");
+  a.className = "btn primary";
+  a.style.cssText = "font-size:12px;padding:3px 8px;margin-left:6px";
+  a.textContent = "⬇ Download STL";
+  a.title = "Scale it up in your slicer — it arrives about 1 unit across";
+  a.onclick = async ()=>{
+    a.disabled = true;
+    try{ openDownload(await freshStlUrl(taskId)); }
+    catch(e){ toast(e.message || String(e), 5000); }
+    finally{ a.disabled = false; }
+  };
+  return a;
+}
+function add3dButtons(item, imgRef, meta){
+  const saved = stlTaskFor(item);
+  if(saved){ meta.appendChild(stlDownloadButton(saved)); return; }
+  const mk=document.createElement("button"); mk.className="btn ghost";
+  mk.style.cssText="font-size:12px;padding:3px 8px;margin-left:6px";
+  mk.textContent=`🧊 Make 3D — ${ACCT.cfg.model3d.cost} cr`;
+  mk.onclick=()=>makeModel3D(item, imgRef, mk, meta);
+  meta.appendChild(mk);
 }
 
 async function makeModel3D(item, imgRef, btn, meta){
@@ -5332,11 +5455,12 @@ async function makeModel3D(item, imgRef, btn, meta){
   const waitFor = async (taskId, label) => {
     for(let i=0; i<200; i++){
       await sleep(2500);
-      const r = await fetch(`/api/model3d?task=${encodeURIComponent(taskId)}`, {headers: authHeaders()});
+      const r = await fetch(`/api/model3d?task=${encodeURIComponent(taskId)}`, {headers: await authHeaders()});
       const j = await r.json().catch(()=>({}));
       if(j.status === "success") return j;
       if(j.status === "failed" || j.status === "banned" || j.status === "expired"){
-        const e = new Error(j.error || "Tripo could not build this one"); e.taskId = taskId; throw e;
+        const e = new Error((j.error || "Tripo could not build this one") + (j.refunded ? " — credits refunded" : ""));
+        e.taskId = taskId; throw e;
       }
       say(`${label}${typeof j.progress === "number" ? " " + j.progress + "%" : "…"}`);
     }
@@ -5347,7 +5471,7 @@ async function makeModel3D(item, imgRef, btn, meta){
   try{
     say("uploading…");
     const r = await fetch("/api/model3d", {
-      method:"POST", headers: authHeaders({"content-type":"application/json"}),
+      method:"POST", headers: await authHeaders({"content-type":"application/json"}),
       body: JSON.stringify({ image })
     });
     const j = await r.json().catch(()=>({}));
@@ -5369,7 +5493,7 @@ async function makeModel3D(item, imgRef, btn, meta){
 
     say("converting to STL…");
     const c = await fetch("/api/model3d", {
-      method:"POST", headers: authHeaders({"content-type":"application/json"}),
+      method:"POST", headers: await authHeaders({"content-type":"application/json"}),
       body: JSON.stringify({ convert: created })
     });
     const cj = await c.json().catch(()=>({}));
@@ -5378,18 +5502,14 @@ async function makeModel3D(item, imgRef, btn, meta){
 
     const url = done.stl || done.glb;
     if(!url) throw new Error("Tripo returned no file");
+    rememberStl(item, cj.taskId);
 
     // Tripo normalises meshes to a unit cube, so the raw file slices at ~1mm. Say so plainly
     // rather than letting someone discover it on the print bed.
     status.remove();
     btn.remove();
-    const a = document.createElement("a");
-    a.className = "btn primary";
-    a.style.cssText = "font-size:12px;padding:3px 8px;margin-left:6px;text-decoration:none";
-    a.href = url; a.target = "_blank"; a.rel = "noopener";
-    a.download = downloadName(item, "x.png").replace(/\.png$/i, ".stl");
-    a.textContent = "⬇ Download STL";
-    meta.appendChild(a);
+    meta.appendChild(stlDownloadButton(cj.taskId));
+    openDownload(url);
     const note = document.createElement("span");
     note.className = "render-time";
     note.style.cssText = "margin-left:8px;color:#6f5f8f";
@@ -5403,7 +5523,7 @@ async function makeModel3D(item, imgRef, btn, meta){
     if(created){
       try{
         const rr = await fetch("/api/model3d", {
-          method:"POST", headers: authHeaders({"content-type":"application/json"}),
+          method:"POST", headers: await authHeaders({"content-type":"application/json"}),
           body: JSON.stringify({ refund: created })
         });
         const rj = await rr.json().catch(()=>({}));
@@ -5937,8 +6057,9 @@ buildChips();buildShapeChips();buildStyleDetail();refreshCounts();
     #podderSplash .splashBox img{width:84px;height:84px;border-radius:20px;animation:splashSpin 2.6s linear infinite;filter:drop-shadow(0 0 18px #b84fff);}
     @keyframes splashSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
     #podderSplash .splashBox h2{margin:16px 0 6px;font-size:24px;text-shadow:0 0 20px #c04bff;}
-    #podderSplash .splashBox p{color:rgba(200,180,240,.75);font-size:14px;line-height:1.6;margin:0;}
-    #podderSplash .splashTime{color:var(--accent2,#54d69b);font-size:13px;margin-top:10px;min-height:18px;}
+    #podderSplash .splashBox p{color:#fff;font-size:16px;line-height:1.6;margin:0 16px;text-shadow:0 1px 10px rgba(0,0,0,.9),0 0 3px rgba(0,0,0,.8);}
+    #podderSplash .splashBox h2{color:#fff;text-shadow:0 0 20px #c04bff,0 2px 8px rgba(0,0,0,.8);}
+    #podderSplash .splashTime{color:#fff;opacity:.8;font-size:12px;margin-top:14px;min-height:18px;text-shadow:0 1px 6px rgba(0,0,0,.9);letter-spacing:.04em}
   `;
   document.head.appendChild(style);
 
@@ -5948,9 +6069,9 @@ buildChips();buildShapeChips();buildStyleDetail();refreshCounts();
     <canvas id="splashCanvas"></canvas>
     <div class="splashBox">
       <img src="Podder-192.png" alt="" onerror="this.style.display='none'"/>
-      <h2>Hold Tight…</h2>
-      <p>App is warming up.</p>
-      <div class="splashTime" id="splashTime"></div>
+      <h2>Welcome to Podder</h2>
+      <p>Design it. Download it. Print it.<br>One-of-a-kind 3D-printable pieces, made in seconds.</p>
+      <div class="splashTime">tap anywhere to start</div>
     </div>`;
   document.body.appendChild(el);
 
@@ -6018,26 +6139,20 @@ void main(){
   }
 
   const canvas=el.querySelector("#splashCanvas");
-  const timeEl=el.querySelector("#splashTime");
   const stopShader=startShader(canvas);
-  const dismiss=()=>{stopShader();el.remove();};
-
-  const TOTAL=6;
-  timeEl.textContent=TOTAL+" seconds…";
-  let remaining=TOTAL-1;
-  const countdown=setInterval(()=>{
-    timeEl.textContent=remaining>0?remaining+" seconds…":"";
-    if(remaining<=0)clearInterval(countdown);
-    remaining--;
-  },1000);
-  setTimeout(()=>{clearInterval(countdown);dismiss();},TOTAL*1000);
+  let gone=false;
+  const dismiss=()=>{ if(gone) return; gone=true; el.style.transition="opacity .35s"; el.style.opacity="0";
+    setTimeout(()=>{ stopShader(); el.remove(); }, 350); };
+  el.addEventListener("click", dismiss);
+  // Long enough to read the welcome, short enough not to feel like a wait; a tap skips it.
+  setTimeout(dismiss, 3200);
 })();
 $("#genBtn").onclick=generate;
 $("#surpriseBtn").onclick=surprise;
 $("#randomizeBtn").onclick=randomizeAll;
 $("#stopAllBtn").onclick=async()=>{
   const n=await cancelInFlight();
-  toast(n>0 ? `⏹ Stopped ${n} render${n===1?"":"s"}` : "Nothing is generating right now");
+  toast(n>0 ? `⏹ Stopped waiting for ${n} render${n===1?"":"s"} (already-sent renders are still charged)` : "Nothing is generating right now", n>0 ? 4000 : 0);
 };
 $("#qualityToggle").onchange=()=>{
   const q=$("#qualityToggle").checked;
@@ -6178,6 +6293,37 @@ $("#magicLinkLink").onclick = async ()=>{
   }
 };
 
+$("#forgotLink").onclick = async ()=>{
+  const email = $("#emailInput").value.trim();
+  $("#emailErr").classList.add("hidden"); $("#emailOk").classList.add("hidden");
+  if(!email){
+    $("#emailErr").textContent = "Enter your email address first, then tap Forgot password.";
+    $("#emailErr").classList.remove("hidden"); $("#emailInput").focus(); return;
+  }
+  try{
+    await sendPasswordReset(email);
+    $("#emailOk").textContent = `If ${email} has an account, a reset link is on its way.`;
+    $("#emailOk").classList.remove("hidden");
+  }catch(err){
+    $("#emailErr").textContent = err.message;
+    $("#emailErr").classList.remove("hidden");
+  }
+};
+
+$("#deleteAcctBtn").onclick = async ()=>{
+  const typed = prompt("This permanently deletes your account and any credits left on it. Purchases are not refunded.\n\nType DELETE to confirm.");
+  if(typed === null) return;
+  if(typed.trim().toUpperCase() !== "DELETE"){ toast("Not deleted — you need to type DELETE", 4000); return; }
+  try{
+    const token = await getToken();
+    const r = await fetch("/api/account",{method:"DELETE", headers:{Authorization:`Bearer ${token}`}});
+    if(!r.ok) throw new Error("Could not delete the account — please contact support@podder.dev");
+    $("#buyWrap").classList.remove("show");
+    signOut();
+    toast("Your account has been deleted", 5000);
+  }catch(e){ toast(e.message || String(e), 6000); }
+};
+
 $("#pinForm").onsubmit = async (e)=>{
   e.preventDefault();
   const pin = $("#pinInput").value.trim();
@@ -6191,7 +6337,7 @@ $("#pinForm").onsubmit = async (e)=>{
     $("#pinErr").classList.add("hidden"); $("#pinInput").value = "";
     hidePinGate(); updateAcctBar();
   } else {
-    $("#pinErr").textContent = result === "error" ? "Server error — is PODDER_PIN set in Vercel?" : "Wrong PIN — try again.";
+    $("#pinErr").textContent = result === "error" ? "Server error — is PODDER_PIN set in Vercel?" : result === "locked" ? "Too many wrong PINs — try again in an hour." : "Wrong PIN — try again.";
     $("#pinErr").classList.remove("hidden"); $("#pinInput").select();
   }
 };

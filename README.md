@@ -1,35 +1,44 @@
 # Podder (Web)
 
-**Design generator for 3D printing.** Pick an object — 124 across home goods, figurines, spiritual, jewelry and geometry — layer on a style, and render it in the cloud with Flux. Printability is built into every prompt: a single isolated object, one solid form, no fragile parts, clean studio background, ready for image-to-3D and printing.
+**Design generator for 3D printing.** Pick an object (123 across home goods, figurines, spiritual, jewelry and geometry), layer on a style, and render it in the cloud with Flux. Turn a render into a printable STL with Tripo. Live at [podder.dev](https://www.podder.dev).
 
 The app is a single static page plus a handful of serverless functions. No build step, no npm dependencies.
 
 ```
-index.html        the whole app (UI + prompt engine)
-api/auth.js       POST {pin} — access gate
-api/generate.js   POST {prompt, aspect, image?, strength?} — Flux via Replicate
-dev-server.mjs    local preview only (mimics Vercel routing)
+index.html            the whole app (UI + prompt engine)
+brochure.html         the public design book (/brochure), data in brochure/
+terms.html            /terms    privacy.html  /privacy
+api/generate.js       renders (Replicate Flux), debit first, refund on failure
+api/model3d.js        image -> STL (Tripo); tasks tied to the account that paid
+api/checkout.js       Stripe checkout   api/claim.js + api/stripe-webhook.js  fulfil purchases
+api/me.js             balance + ledger; also settles failed 3D jobs
+api/config.js         public client config (Supabase URL + anon key, prices)
+api/account.js        DELETE: user deletes their own account
+api/auth.js           owner PIN check (per-IP lockout after 10 wrong tries an hour)
+api/admin/grant.js    owner: grant or remove credits by email
+api/brochure.js       owner edits to the design book
+supabase/migrations   schema; apply in order
+scripts/preflight.mjs runs as Vercel's build step and blocks a broken catalog
 ```
 
-## Deploy (GitHub → Vercel)
+## Environment variables (Vercel)
 
-1. Push this folder to a GitHub repo.
-2. In [Vercel](https://vercel.com): **Add New → Project**, import the repo. Framework preset: **Other**. No build command, no output directory — deploy as-is.
-3. In the Vercel project → **Settings → Environment Variables**, add:
-
-| Variable | Value |
+| Variable | What |
 |---|---|
-| `PODDER_PIN` | The access PIN you give people (e.g. `4821`) |
-| `REPLICATE_API_TOKEN` | From [replicate.com/account/api-tokens](https://replicate.com/account/api-tokens) |
-| `REPLICATE_MODEL` | *(optional)* defaults to `black-forest-labs/flux-dev` |
+| `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` | accounts and credits |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | payments |
+| `REPLICATE_API_TOKEN` | renders (without it, renders are free labeled mocks) |
+| `TRIPO_API_KEY` | 3D models (the button only appears when set) |
+| `PODDER_PIN` | owner access: unlimited, unbilled. Use a long random value. |
+| `PUBLIC_ORIGIN` | optional, e.g. `https://www.podder.dev`, for Stripe return URLs |
 
-4. Redeploy. Done — share the URL + PIN.
+Prices, packs and the signup bonus live in `api/_lib/config.js`; the bonus amounts themselves are granted by the database triggers (see the migrations).
 
-Without `REPLICATE_API_TOKEN`, the app still works end-to-end but returns labeled **mock images** — useful for previewing the UI at zero cost.
+## Security notes
 
-## Costs
-
-Renders run on your Replicate account: roughly **$0.025–0.03 per image** on `flux-dev`, or ~$0.003 on `black-forest-labs/flux-schnell` (faster, lower fidelity — set it via `REPLICATE_MODEL`). The PIN is the only thing standing between the internet and your Replicate bill — treat it accordingly, and rotate it in Vercel whenever you want to cut someone off.
+- Only the server (service-role key) can move credits. The credit functions are not callable with the public anon key (migration 0009).
+- Every billed endpoint debits before calling the vendor and refunds on failure.
+- The owner PIN bypasses billing, so it is rate-limited per IP and should be long.
 
 ## Local preview
 
@@ -37,16 +46,8 @@ Renders run on your Replicate account: roughly **$0.025–0.03 per image** on `f
 node dev-server.mjs
 ```
 
-→ http://localhost:8299 — PIN defaults to `2323` in dev, renders are mocks unless `REPLICATE_API_TOKEN` is set in the environment.
+Opens http://localhost:8299. Renders are mocks unless `REPLICATE_API_TOKEN` is set.
 
-## How it works
+## Storage
 
-- The browser never sees your Replicate token — `api/generate.js` runs the model server-side and streams the finished image back as a data URL.
-- Rendered images are stored in the **browser's IndexedDB**; favorites/history/rerolls reference them by key. Nothing is stored server-side, so hosting is free-tier friendly.
-- (Web: the ✎ img2img edit box is removed — it took instructions too literally and billed each retry. Saved edits still display.)
-- The PIN gates every API call (`x-podder-pin` header, timing-safe compare server-side). A wrong/blank PIN re-locks the UI.
-
-## Roadmap to paid
-
-- Swap the PIN for real auth + Stripe (the `x-podder-pin` header check in `api/*.js` is the single choke point to replace).
-- Optional: persist images to Vercel Blob/S3 so a user's gallery follows them across devices.
+Rendered images, favorites and history live in the browser (IndexedDB + localStorage), not on the server. Saved STLs are remembered by Tripo task id and re-fetched on demand, since Tripo's file links expire.

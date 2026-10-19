@@ -7,6 +7,8 @@
 // Anything under api/_lib is ignored by Vercel's function builder (leading underscore),
 // so this file is importable but never routable.
 
+import { timingSafeEqual } from 'node:crypto';
+
 const SUPABASE_URL = () => (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
 const SERVICE_KEY  = () => process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
@@ -239,4 +241,54 @@ export function readRawBody(req, timeoutMs = 2000) {
     req.on('end', () => done(data));
     req.on('error', () => done(null));
   });
+}
+
+// ---------------------------------------------------------------------------
+// Owner PIN, with a brute-force lockout. The PIN skips billing for renders and meshes, so a
+// guessable PIN is a direct line to the Replicate and Tripo bills. Every wrong guess is logged
+// per IP in pin_failures (0009); after PIN_MAX_FAILS in an hour that IP is refused even with the
+// right PIN until the hour rolls over. A missing/blank header is not a guess and is not logged.
+// ---------------------------------------------------------------------------
+const PIN_MAX_FAILS = 10;
+
+export function pinMatches(candidate) {
+  const real = process.env.PODDER_PIN || '';
+  if (!real || typeof candidate !== 'string') return false;
+  const a = Buffer.from(candidate.padEnd(64).slice(0, 64));
+  const b = Buffer.from(real.padEnd(64).slice(0, 64));
+  return candidate.length === real.length && timingSafeEqual(a, b);
+}
+
+export function clientIp(req) {
+  const xf = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  return xf || String(req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown');
+}
+
+async function recentPinFailures(ip) {
+  const since = new Date(Date.now() - 3600_000).toISOString();
+  const r = await fetch(
+    `${SUPABASE_URL()}/rest/v1/pin_failures?ip=eq.${encodeURIComponent(ip)}&created_at=gte.${since}&select=id`,
+    { headers: { apikey: SERVICE_KEY(), Authorization: `Bearer ${SERVICE_KEY()}`, Prefer: 'count=exact', Range: '0-0' } }
+  );
+  const total = Number((r.headers.get('content-range') || '').split('/')[1]);
+  return Number.isFinite(total) ? total : 0;
+}
+
+// -> 'ok' | 'none' (no PIN sent) | 'bad' | 'locked'
+export async function checkOwnerPin(req, pin = req.headers['x-podder-pin']) {
+  if (typeof pin !== 'string' || !pin) return 'none';
+  if (!process.env.PODDER_PIN) return 'bad';
+  const ip = clientIp(req);
+  let fails = 0;
+  try { fails = await recentPinFailures(ip); } catch { /* fail open on the counter, never on the PIN */ }
+  if (fails >= PIN_MAX_FAILS) return 'locked';
+  if (pinMatches(pin)) return 'ok';
+  try {
+    await fetch(`${SUPABASE_URL()}/rest/v1/pin_failures`, {
+      method: 'POST',
+      headers: { apikey: SERVICE_KEY(), Authorization: `Bearer ${SERVICE_KEY()}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ ip }),
+    });
+  } catch { /* logging a failure must never turn it into a success */ }
+  return 'bad';
 }

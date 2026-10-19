@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Podder Privacy</title>
+<meta name="description" content="What Podder collects, why, who processes it, and how to delete your account." />
+<link rel="icon" href="Podder.ico" />
+<style>
+  :root{
+    --bg:#0a0710; --bg2:#120a1f; --panel:rgba(255,255,255,.04); --panel-brd:rgba(255,255,255,.09);
+    --ink:#f3ecff; --muted:#a794c9; --accent:#c04bff; --accent2:#39e6c8; --gold:#ffce54;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,sans-serif;line-height:1.65}
+  .wrap{max-width:780px;margin:0 auto;padding:32px 16px 64px}
+  a{color:var(--accent2)}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+  header img{width:44px;height:44px;border-radius:12px}
+  header a{color:var(--ink);text-decoration:none;font-weight:700;font-size:20px}
+  h1{font-size:28px;margin:18px 0 4px}
+  .updated{color:var(--muted);font-size:13px;margin:0 0 24px}
+  h2{font-size:19px;margin:34px 0 8px;color:var(--gold)}
+  h3{font-size:15px;margin:18px 0 4px}
+  p,li{font-size:15px}
+  ul{padding-left:20px}
+  .callout{background:var(--panel);border:1px solid var(--panel-brd);border-left:3px solid var(--accent);border-radius:12px;padding:14px 16px;margin:16px 0}
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px}
+  th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--panel-brd)}
+  th{color:var(--muted);font-weight:600}
+  td:first-child{white-space:nowrap;font-weight:600}
+  @media (max-width:560px){ td:first-child{white-space:normal} th,td{padding:7px 6px} }
+  footer{margin-top:40px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><img src="Podder-192.png" alt="" /><a href="/">Podder</a></header>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: October 19, 2026</p>
+
+  <div class="callout">
+    <strong>The short version.</strong> We keep only what we need to run your account and your credits.
+    Your images and design history stay in your own browser. We don't use ads or trackers, and we don't sell your data.
+  </div>
+
+  <h2>What we collect</h2>
+  <ul>
+    <li><strong>Account details:</strong> your email address and a password. The password is stored hashed by our sign-in provider; we never see it. If you try Podder without an account, we create an anonymous account with no email.</li>
+    <li><strong>Credits:</strong> your balance and a log of credit changes (renders, 3D models, purchases, refunds).</li>
+    <li><strong>Purchases:</strong> payments are handled by Stripe. We receive the email on the purchase and which pack you bought, never your card number.</li>
+    <li><strong>3D model jobs:</strong> which account paid for which 3D model, so the right account can download and be refunded.</li>
+    <li><strong>Security logs:</strong> the IP address of failed owner-PIN attempts, kept to block guessing, and standard server logs kept by our host.</li>
+  </ul>
+
+  <h2>What stays on your device</h2>
+  <p>Your rendered images, favorites, history and settings are saved in your browser's local storage, not on our servers. Clearing your browser data deletes them. They don't follow you to another device.</p>
+
+  <h2>What we send to other services</h2>
+  <p>To do its job, Podder passes data to these processors:</p>
+  <table>
+    <thead><tr><th>Service</th><th>What and why</th></tr></thead>
+    <tbody>
+      <tr><td>Supabase</td><td>Sign-in, account and credit records.</td></tr>
+      <tr><td>Vercel</td><td>Hosts the site and its server functions.</td></tr>
+      <tr><td>Stripe</td><td>Takes payments for credit packs.</td></tr>
+      <tr><td>Replicate</td><td>Receives the design prompt you build to generate each image.</td></tr>
+      <tr><td>Tripo</td><td>Receives the image you choose when you make a 3D model.</td></tr>
+    </tbody>
+  </table>
+  <p>Each handles the data under its own terms and privacy policy. We don't sell or rent your information, and we don't share it for advertising.</p>
+
+  <h2>Cookies and tracking</h2>
+  <p>Podder doesn't use advertising or analytics trackers. It stores your sign-in session and your saved work in your browser's local storage so the app keeps working between visits.</p>
+
+  <h2>How long we keep it</h2>
+  <p>We keep your account and credit records while your account exists. Failed-PIN records are only checked for one hour. Stripe keeps payment records as the law requires.</p>
+
+  <h2>Your choices</h2>
+  <ul>
+    <li><strong>Delete your account:</strong> open <em>Buy credits</em> in the app and choose <em>Delete my account</em>. This erases your account, credit balance and history from our database right away. Unused credits are lost and not refunded.</li>
+    <li><strong>Get a copy or a correction:</strong> email us and we'll help.</li>
+  </ul>
+
+  <h2>Children</h2>
+  <p>Podder is not meant for children under 13, and we don't knowingly collect their information.</p>
+
+  <h2>Changes</h2>
+  <p>If we change this policy, we'll update the date at the top.</p>
+
+  <h2>Contact</h2>
+  <p>Email <a href="mailto:support@podder.dev">support@podder.dev</a>.</p>
+
+  <footer><a href="/">← Back to Podder</a> · <a href="/terms">Terms</a> · <a href="/brochure">Design book</a></footer>
+</div>
+</body>
+</html>

@@ -5,8 +5,7 @@
 // stores what the owner changed on top of it: hidden tiles, cover picks and edited text. One row
 // in brochure_overrides (0008), reachable only with the service-role key.
 
-import { pinOk } from './auth.js';
-import { missingEnv } from './_lib/server.js';
+import { missingEnv, checkOwnerPin } from './_lib/server.js';
 
 const URL_ = () => (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
 const KEY = () => process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -38,7 +37,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
-  if (!pinOk(req.headers['x-podder-pin'])) return res.status(401).json({ error: 'owner_only' });
+  if ((await checkOwnerPin(req)) !== 'ok') return res.status(401).json({ error: 'owner_only' });
 
   const data = clean(req.body?.data);
   if (JSON.stringify(data).length > MAX_BYTES) return res.status(413).json({ error: 'too_large' });

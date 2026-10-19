@@ -1,0 +1,5 @@
+# Not part of the site: keep these out of the public deployment.
+AUDIT.md
+README.md
+supabase/
+dev-server.mjs

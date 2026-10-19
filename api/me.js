@@ -7,6 +7,7 @@
 
 import { getUser, selectOne, missingEnv } from './_lib/server.js';
 import { CREDIT_COST, PACKS } from './_lib/config.js';
+import { settleStaleTasks } from './model3d.js';
 
 export default async function handler(req, res) {
   const missing = missingEnv();
@@ -16,6 +17,10 @@ export default async function handler(req, res) {
 
   const user = await getUser(req);
   if (!user) return res.status(401).json({ error: 'not_signed_in' });
+
+  // Refund any paid 3D job that failed while its tab was closed. Capped so a slow Tripo never
+  // holds up the balance read.
+  await Promise.race([settleStaleTasks(user.id).catch(() => {}), new Promise(r => setTimeout(r, 4000))]);
 
   const profile = await selectOne('profiles', `id=eq.${user.id}&select=credits`);
 
