@@ -942,7 +942,7 @@ const OBJECTS = {
       {label:"Twisted",prompt:"a column that corkscrews and twists from base to rim"},
       {label:"Teardrop",prompt:"a smooth teardrop form, round and wide at the base, tapering upward"},
       {label:"Faceted gem",prompt:"an angular faceted crystalline body of flat planes"},
-      {label:"Cube",prompt:"a boxy cube-shaped vase — four flat square sides meeting at crisp, slightly rounded corners, as wide as it is tall, with a round opening set into its flat top"},
+      {label:"Cube",prompt:"a cube vase — a square box with four flat, smooth, unbroken side walls and crisp slightly rounded corners, as wide as it is tall, with a short round neck rising from the center of its flat top"},
       {label:"Fluted",prompt:"a fluted, vertically reeded column form with evenly spaced ridges running top to bottom"},
       {label:"Torus",prompt:"a donut-shaped torus ring form standing upright with the open mouth set into the top of the ring"}
     ]},
@@ -961,7 +961,7 @@ const OBJECTS = {
       {label:"Scalloped",prompt:"a pot whose rim is cut into a continuous ring of rounded scallops like flower petals, the scallops echoed as soft vertical lobes down the body"}
     ]},
   birdhouse: {emoji:"🐦", label:"Birdhouse", promptName:"birdhouse",
-    fn:"It works as a nest box: a single clean round entrance hole on the front leads into a hollow nesting chamber inside (shown bare and empty), and there is exactly ONE opening — every other surface, including the entire top, is completely solid and smoothly closed with no other holes, slots, gaps or windows. Directly below that entrance hole, a short, prominently projecting dowel-rod perch — a simple round wooden peg sticking straight out from the front face — is a small but clearly visible physical detail. A single thick, sturdy loop sits at the very top, fully fused and merged into the body as one continuous piece of the same solid material, both ends seamlessly connected with no gap — an integral, load-bearing part of the model, never a separate, detached or floating ring — and the loop is left empty. It stands on a stable flat base.",
+    fn:"It works as a nest box: one round entrance hole sits in the middle of the front wall, and just below it a short round wooden peg perch sticks straight out. All the rest of the body is smooth, closed and unbroken, with a hollow nesting chamber inside. A single thick, sturdy loop sits at the very top, fully fused into the body as one continuous piece of the same solid material, and the loop is left empty. It stands on a stable flat base.",
     shapes:[
       {label:"Auto",prompt:"an abstract sculptural hollow form driven entirely by the chosen style — a wild urn-, gourd-, orb- or pod-like silhouette"},
       {label:"Gourd",prompt:"a plump rounded gourd or calabash form with a bulbous body and a narrower neck"},
@@ -970,9 +970,9 @@ const OBJECTS = {
       {label:"Egg / acorn",prompt:"an egg- or acorn-shaped birdhouse — taller than wide, fuller at the bottom, with a small cap at the top"},
       {label:"Mushroom",prompt:"a mushroom form with a domed cap over a rounded body"},
       {label:"Tall silo",prompt:"a tall rounded silo or barrel form with a domed top, read clearly as one continuous hollow body"},
-      {label:"Tall steeple",prompt:"a very tall slim church steeple or needle-spire form, much taller than wide"},
+      {label:"Tall steeple",prompt:"a tall slim birdhouse shaped like a church steeple — a narrow tower body with a tall pointed spire roof, one round entrance hole in the front of the tower body"},
       {label:"Beehive",prompt:"a rounded beehive-dome form with a gently tapering ringed profile, one continuous hollow body"},
-      {label:"Classic house",prompt:"a classic little birdhouse with four walls and a single peaked pitched roof, tidy and traditional",houseLike:true},
+      {label:"Classic house",prompt:"a classic little birdhouse shaped like a tiny house — a box about as wide as it is tall with a single peaked pitched roof overhanging the front, one round entrance hole centered in the front wall",houseLike:true},
       {label:"Barrel",prompt:"a tall rounded barrel or keg form with a domed top, read clearly as one continuous hollow body"},
       {label:"Cocoon",prompt:"a smooth tapered cocoon-like pod form, rounded and fully enclosed but for the one entrance hole"}
     ]},
@@ -1004,17 +1004,17 @@ const OBJECTS = {
       {label:"Honeycomb",prompt:"a cup built from a cluster of hexagonal honeycomb cells, the outer wall a pattern of six-sided cells"},
       {label:"Fluted",prompt:"a fluted cup — its sides covered from top to bottom by evenly spaced deep vertical grooves and ridges"}
     ]},
-  incense:   {emoji:"🪔", label:"Incense holder", promptName:"compact sculptural dish",
-    fn:"It is a small decorative dish — just the bare printable object on its own. It has a single small narrow vertical hole in the top, set within a shallow concave catch basin. Apart from that one hole it is fully closed and solid, with a hollow interior and a stable flat base.",
+  incense:   {emoji:"🪔", label:"Incense holder", promptName:"incense holder dish",
+    fn:"It is an incense holder: a low catch tray with a gently raised edge, and rising from its floor one small rounded knob whose top is pierced by a single tiny pinhole drilled straight down into it. The tray is open and bare, on a stable flat base.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
-      {label:"Dish",prompt:"a shallow round dish — a low circular dish with a gently raised rim"},
+      {label:"Dish",prompt:"a shallow round tray — a low circular dish with a gently raised rim, the small pierced knob in its center"},
       {label:"Boat",prompt:"a long narrow boat-shaped dish, pointed at both ends like a canoe, with gently raised curved sides"},
       {label:"Mountain",prompt:"a rugged mountain or ridge form with the hole at a peak"},
       {label:"Lotus",prompt:"a lotus-flower dish — layered rows of pointed petals opening outward around a shallow center"},
       {label:"Slab",prompt:"a flat rectangular slab dish — a thick low block with crisp straight edges and a shallow catch basin in the top"},
-      {label:"Tower",prompt:"a slender upright tower dish, several times taller than it is wide, standing on a small flat foot"},
-      {label:"Crescent",prompt:"a crescent-moon-shaped dish — a curved shallow tray tapering to two pointed horns"},
+      {label:"Plank",prompt:"a long narrow flat plank tray, about six times longer than it is wide, with a slightly raised lip all around and the small pierced knob near one end"},
+      {label:"Crescent",prompt:"a crescent-moon-shaped tray — a curved shallow tray tapering to two pointed horns, the small pierced knob near one horn"},
       {label:"Geometric",prompt:"a faceted low-poly geometric block with the hole at the peak"}
     ]},
   bowl:      {emoji:"🥣", label:"Catch-all bowl",
@@ -1030,9 +1030,9 @@ const OBJECTS = {
       {label:"Scalloped",prompt:"a bowl whose rim is cut into a continuous ring of rounded scallops like the petals of a flower"},
       {label:"Fluted",prompt:"a fluted bowl — its outer wall covered by evenly spaced deep vertical grooves and ridges running from foot to rim"}
     ]},
-  wallplanter:{emoji:"🌿", label:"Hanging planter", promptName:"planter pot with a top loop",
+  wallplanter:{emoji:"🌿", label:"Hanging planter", promptName:"hanging planter pot with an arched hanging handle",
     autoForm:"a round, softly bulging pot, clean and recognizable",
-    fn:"It is a pot with an open cavity at the top, a defined rim, a hollow interior and a small drainage detail at the bottom; the interior is completely bare. A small, thick tab rises from the back of the rim with one round hanging hole through it, carved from the same solid piece as the pot. The tab is bare, and the pot sits upright.",
+    fn:"It is a hanging planter: an open pot with a defined rim and a hollow, bare interior, plus a thick arched handle — a solid curved bar that rises from two opposite sides of the rim and meets high above the center of the pot, with a small round hanging loop at its peak. Pot, handle and loop are one continuous solid piece.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
       {label:"Orb",prompt:"a rounded orb pot, nearly spherical, with a small open top"},
@@ -1042,8 +1042,8 @@ const OBJECTS = {
       {label:"Cocoon",prompt:"a smooth tapered cocoon-like hanging pod form"},
       {label:"Face / head",prompt:"a sculpted face or head pot — eyes, nose and mouth carved boldly on the front, the open planting cavity at the crown of the head"}
     ]},
-  lantern:   {emoji:"🏮", label:"Lantern", promptName:"ornamental hollow vessel",
-    fn:"It is an ornamental hollow vessel — a patterned outer wall, a vented or open top and a stable flat base. Every wall stays solid, connected and reasonably thick — no paper-thin sections or loose fragments. The interior is completely bare — nothing inside.",
+  lantern:   {emoji:"🏮", label:"Lantern", promptName:"decorative lantern",
+    fn:"It is a tabletop lantern: an enclosed housing whose walls are pierced all the way around with open windows and cut-out patterns, capped by a solid closed roof with a sturdy carrying ring on top, standing on a flat base. Every wall stays solid, connected and reasonably thick.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
       {label:"Cylinder",prompt:"a straight vertical cylinder with parallel walls, roughly as wide as it is tall, flat top and flat base"},
@@ -1190,51 +1190,51 @@ const OBJECTS = {
       {label:"Barrel",prompt:"a barrel-shaped small pot — wider at the middle than at the top and bottom, with raised hoop bands circling the body near the top and the bottom"},
       {label:"Fluted",prompt:"a fluted small pot — its sides covered from top to bottom by evenly spaced deep vertical grooves and ridges"}
     ]},
-  necklacestand:{emoji:"📿", label:"Necklace stand", promptName:"slender sculptural post",
-    fn:"It is a small sculptural upright post or hook form for draping over, plus a shallow catch dish at the base, on a stable flat bottom. It is shown completely bare — nothing on or hanging from it.",
+  necklacestand:{emoji:"📿", label:"Necklace stand", promptName:"necklace display stand",
+    fn:"It is a necklace display stand: an upright form rising from a shallow catch dish, its top spreading into wide arms or hooks held high above the dish, so chains can be draped over them and hang freely down. It is shown completely bare.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
-      {label:"Tall column",prompt:"a tall, slender, gently tapering upright column"},
+      {label:"Tall column",prompt:"a tall slender column topped by a wide horizontal crossbar like a letter T, both ends of the crossbar turned up into small rounded hooks"},
       {label:"Cone",prompt:"a solid tapering cone spire rising from the dish to a rounded point"},
-      {label:"Faceted gem",prompt:"a tall spire cut like a gemstone — flat angled facets meeting at sharp ridges, tapering to a pointed tip"},
+      {label:"Faceted gem",prompt:"a tall faceted gem-cut post topped by a wide faceted crossbar like a letter T, its ends turned up into small hooks"},
       {label:"Hand",prompt:"an open upright hand form"},
       {label:"Branch",prompt:"a branching twig-like form with slim arms"},
       {label:"Hook",prompt:"a curved hook-like upright form"},
-      {label:"Wave",prompt:"a smooth curved wave-like upright form"}
+      {label:"Bust",prompt:"a smooth stylized display bust — a tall slender neck rising into gently sloping shoulders, its top a smooth rounded dome"}
     ]},
-  earringstand:{emoji:"👂", label:"Earring stand", promptName:"earring stand bristling with protruding pegs",
-    fn:"It is a small upright earring stand whose face carries a row of short pegs that stick out horizontally like little hooks — the pegs are clearly three-dimensional and protrude from the surface, never flush holes in a flat plate. A shallow catch dish sits at the base, on a stable flat bottom. It is shown completely bare — nothing hanging on it.",
+  earringstand:{emoji:"👂", label:"Earring stand", promptName:"earring display stand",
+    fn:"It is an earring display stand: a thin upright panel standing on a shallow catch dish, the panel pierced through by neat rows of many small round see-through holes for hooking earrings, with light visible through every hole. It is shown completely bare.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette, but still built from a few separate open prongs with clear empty space between them, never a solid fused mass or connected web"},
       {label:"Hand",prompt:"an open upright hand with slim separate fingers — each finger a distinct bare open prong with clear empty space between it and its neighbors, never webbed, fused, or joined together"},
-      {label:"Tall column",prompt:"a tall slender upright column stand, several times taller than wide, with pegs projecting from it at several heights"},
+      {label:"Tall column",prompt:"a tall narrow upright panel, several times taller than wide, with a rounded top"},
       {label:"Faceted gem",prompt:"an upright display panel cut like a gemstone — large flat angled facets across its face, with pegs projecting from it"},
       {label:"Geometric",prompt:"an upright geometric display panel built from flat triangular facets, with pegs projecting from it"},
-      {label:"Slab",prompt:"a flat rectangular display slab with peg holes"},
+      {label:"Slab",prompt:"a flat rectangular upright panel with a slim raised border"},
       {label:"Tree",prompt:"a small branching twig tree with slim peg-like arms"},
       {label:"Wave",prompt:"a smooth curved wave-like display panel studded with peg holes"},
-      {label:"Cloud",prompt:"a flat cloud-shaped display panel studded with peg holes"}
+      {label:"Cloud",prompt:"a flat cloud-shaped upright panel with softly rounded lobes"}
     ]},
-  watchstand:{emoji:"⌚", label:"Watch stand", promptName:"sculptural wrist cradle",
-    fn:"It is a wristwatch stand. Rising from a stable flat base, it terminates at the top in a distinct, clearly visible curved arm or finger that projects outward and curves — like a curved horn or a bent finger. This curved cradle arm is a small but unmistakable physical feature that must always be visible at the top; the piece is never just a straight, featureless post or pillar with no arm. It is shown completely bare — nothing resting on it.",
+  watchstand:{emoji:"⌚", label:"Watch stand", promptName:"watch display stand",
+    fn:"It is a wristwatch display stand: on top of a short upright post sits a thick, smooth, rounded bolster — an oval cylinder lying sideways, about as wide as a wrist — for a watch strap to wrap around. The post rises from a stable flat base. It is shown completely bare.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette, but always topped with a distinct curved cradle arm, never just a plain straight post"},
-      {label:"Tall column",prompt:"a tall, slender, gently tapering upright column, its top curving outward into a distinct cradle arm"},
-      {label:"Cone",prompt:"a central tapering cone spire, its top curving outward into a distinct cradle arm"},
+      {label:"Tall column",prompt:"a slender gently tapering column post holding the sideways bolster on top"},
+      {label:"Cone",prompt:"a tapering cone post holding the sideways bolster on top"},
       {label:"Faceted gem",prompt:"an angular faceted gem-cut post, its top curving outward into a distinct cradle arm"},
       {label:"Organic pod",prompt:"a soft organic pod-shaped post — a smoothly swelling asymmetric upright form whose top curls outward into the cradle arm"},
       {label:"Cuff",prompt:"a C-shaped cuff cradle — a thick curved band standing upright like an open bracelet, sized to wrap a watch strap around"},
       {label:"Wave",prompt:"a smooth S-curved wave-shaped post rising from the base and curling over at the top into the cradle arm"},
-      {label:"Hook",prompt:"a curved hook-like post, its top curving outward into a distinct cradle arm"},
+      {label:"Hook",prompt:"a curved post that bends forward at the top to hold the sideways bolster"},
       {label:"Branch",prompt:"a branching twig-like post, its top curving outward into a distinct cradle arm"}
     ]},
-  budvase:{emoji:"🌱", label:"Bud vase", promptName:"slender narrow-necked ceramic vessel",
+  budvase:{emoji:"🌱", label:"Bud vase", promptName:"petite bud vase",
     // Deliberately never says flower/stem/bud. Diffusion has no negation: writing "no flowers"
     // puts flowers in the prompt, which is what an earlier attempt here did — it listed four
     // flower words trying to banish them and rendered a bigger bouquet. Same rule as the
     // SD_OBJ note above ("pencil holder" draws pencils). Phrased like `vase`, which renders
     // reliably empty precisely because it never mentions contents at all.
-    fn:"The vessel is slender and tall with a narrow neck and a small open mouth at the top, hollow inside, on a solid stable flat base. The interior is completely bare.",
+    fn:"It is a petite bud vase, small enough to hold in one hand: a small body with a long thin neck only a finger's width wide and a tiny round mouth at the top, hollow inside, on a solid stable flat base. The interior is completely bare.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
       {label:"Tall column",prompt:"a tall, slender, gently tapering miniature column"},
@@ -1270,60 +1270,60 @@ const OBJECTS = {
       {label:"Cocoon",prompt:"a flat-backed smooth tapered cocoon-like pod form"},
       {label:"Scalloped",prompt:"a flat-backed wall pocket whose top rim is cut into a continuous ring of rounded scallops like petals"}
     ]},
-  phonestand:{emoji:"📱", label:"Phone stand", promptName:"compact angled cradle",
-    fn:"It is a small sculptural stand — a compact cradle or angled slot, on a stable flat base. It is shown completely bare — nothing propped in it.",
+  phonestand:{emoji:"📱", label:"Phone stand", promptName:"phone stand",
+    fn:"It is a phone stand: a flat base with a back rest leaning back at a steep angle and a raised lip ledge along the front edge of the base, forming a deep groove between the lip and the back rest where a device can stand propped up. It is shown completely bare.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
-      {label:"Slab",prompt:"a thick flat slab cradle tilted back at a gentle angle, with a deep horizontal slot running across its lower front edge"},
-      {label:"Cube",prompt:"a boxy cube-shaped cradle — a solid block with four flat square sides and crisp rounded corners, a deep slot cut across its top"},
+      {label:"Slab",prompt:"a thick flat slab back rest leaning back on a low base with a front lip"},
+      {label:"Cube",prompt:"a boxy block base with crisp rounded corners, a flat back rest leaning back from its rear edge and a raised lip along its front"},
       {label:"Faceted gem",prompt:"an angular gem-cut cradle — a solid block cut into large flat facets meeting at sharp ridges, with a slot across its top"},
       {label:"Organic pod",prompt:"a soft organic pod-shaped cradle — a smoothly swelling asymmetric body with a slot across its top"},
       {label:"Wedge",prompt:"shaped exactly like a doorstop or cheese-wedge: a sharp triangular profile when viewed from the side, thick and tall at the back, tapering along a diagonal sloped TOP SURFACE down to a thin sharp edge at the front — the top is a ramp, not flat, and the front-to-back profile is a triangle, not a rectangle. Explicitly NOT a cube, NOT a rectangular block, NOT a box with a flat top"},
       {label:"Easel",prompt:"an easel-shaped cradle — an upright panel tilted back on a sturdy rear leg, with a lip ledge along the bottom front"},
       {label:"Arch",prompt:"an arched cradle form with a deep curved slot across its face"},
-      {label:"Bar",prompt:"a simple horizontal bar cradle on an angled base"}
+      {label:"Bar",prompt:"two slim side rails leaning back like an easel, joined by a horizontal front bar that forms the lip"}
     ]},
-  tabletstand:{emoji:"💻", label:"Tablet stand", promptName:"compact angled easel",
-    fn:"It is a small sculptural stand — a compact angled cradle or slotted easel, on a stable flat base. It is shown completely bare — nothing propped in it.",
+  tabletstand:{emoji:"💻", label:"Tablet stand", promptName:"tablet stand",
+    fn:"It is a tablet stand: a wide flat base with a broad back rest leaning back at a steep angle and a raised lip ledge along the whole front edge of the base, forming a long deep groove between the lip and the back rest where a tablet can stand propped up. It is shown completely bare.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
-      {label:"Slab",prompt:"a thick flat slab easel tilted back at a gentle angle, with a deep horizontal slot running across its lower front edge"},
-      {label:"Cube",prompt:"a boxy cube-shaped easel — a solid block with four flat square sides and crisp rounded corners, a deep slot cut across its top"},
+      {label:"Slab",prompt:"a broad thick flat slab back rest leaning back on a low wide base with a front lip"},
+      {label:"Cube",prompt:"a wide boxy block base with crisp rounded corners, a broad flat back rest leaning back from its rear edge and a raised lip along its front"},
       {label:"Faceted gem",prompt:"an angular gem-cut easel — a solid block cut into large flat facets meeting at sharp ridges, with a slot across its top"},
       {label:"Geometric",prompt:"an angular geometric easel built from flat triangular facets meeting at sharp edges, with a slot across its top"},
       {label:"Wedge",prompt:"shaped exactly like a doorstop or cheese-wedge: a sharp triangular profile when viewed from the side, thick and tall at the back, tapering along a diagonal sloped TOP SURFACE down to a thin sharp edge at the front — the top is a ramp, not flat, and the front-to-back profile is a triangle, not a rectangle. Explicitly NOT a cube, NOT a rectangular block, NOT a box with a flat top"},
       {label:"Easel",prompt:"an easel-shaped easel — an upright panel tilted back on a sturdy rear leg, with a lip ledge along the bottom front"},
-      {label:"Arch",prompt:"an arched cradle form with a deep curved slot across its face"},
+      {label:"Arch",prompt:"a broad back rest with an arched top, leaning back on a wide base with a front lip"},
       {label:"Bar",prompt:"a simple horizontal bar cradle on an angled base"}
     ]},
-  headphonestand:{emoji:"🎧", label:"Headphone stand", promptName:"small desk stand with a wide rounded top",
-    autoForm:"a smooth upright post rising from a heavy round base and widening at the top into a broad, gently domed top that overhangs the post on both sides",
-    fn:"It is a small tabletop stand, no bigger than a coffee mug, photographed alone on the studio surface. It rises from a stable flat base, and its highest point is a wide, solid, convex rounded top, domed upward, broad enough to drape a headband over. The whole object stays small, simple and desk-sized, and it is shown completely bare.",
+  headphonestand:{emoji:"🎧", label:"Headphone stand", promptName:"tall desk stand with a curved saddle top",
+    autoForm:"a sculptural upright post whose style is driven entirely by the chosen style",
+    fn:"It is a tall desk stand about a forearm high: a heavy flat base, a straight upright post, and at the very top a wide curved saddle — a broad smooth bar a hand's width across lying crosswise on the post and curving gently downward at both ends, shaped to match the curve of a headband. The saddle is bare.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style, but always a slim upright post rising from a heavy base to a broad, gently domed top that overhangs it on both sides"},
-      {label:"Tall column",prompt:"a tall straight column rising from a heavy base, topped by a broad, gently domed top that overhangs it on both sides"},
-      {label:"Faceted gem",prompt:"an upright post cut like a tall crystal into large flat angled facets, rising from a heavy base to a broad faceted top"},
-      {label:"Organic pod",prompt:"a smoothly swelling organic upright form rising from a heavy base and flaring at the top into a broad, smooth, rounded top"},
-      {label:"Arch",prompt:"an arch-shaped stand — a thick solid arch rising from the base, its curved top wide enough to rest a headband on"},
+      {label:"Tall column",prompt:"a tall straight cylindrical column post"},
+      {label:"Faceted gem",prompt:"the post and saddle cut into large flat angled facets meeting at sharp ridges, like a tall gemstone"},
+      {label:"Organic pod",prompt:"a smoothly swelling organic post with soft asymmetric bulges"},
+      {label:"Arch",prompt:"the post is an open arch — two legs rising from the base and joining beneath the saddle"},
       {label:"Hook",prompt:"a thick solid post rising from the base and curling over at the top into a broad, rounded, downward-curving hook"},
-      {label:"Wave",prompt:"a smooth S-curved post rising from the base and ending at the top in a wide, solid, overhanging domed cap"},
+      {label:"Wave",prompt:"a smooth S-curved post that sways from the base up to the saddle"},
       {label:"Faceted cap",prompt:"an angular faceted post ending abruptly at the top in a wide overhanging faceted cap, never a plain uniform-width column"}
     ]},
-  sunglassesstand:{emoji:"🕶️", label:"Sunglasses stand", promptName:"slender display post",
-    fn:"It is a small sculptural upright post or narrow bar, on a stable flat base. It is shown completely bare — nothing resting on it.",
+  sunglassesstand:{emoji:"🕶️", label:"Sunglasses stand", promptName:"eyewear display stand",
+    fn:"It is an eyewear display stand: a slender upright post rising from a stable flat base, topped by a stylized nose bridge — a small smooth rounded ridge shaped like the bridge of a nose, sloping down on both sides — the stand’s only resting point. It is shown completely bare.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
-      {label:"Tall column",prompt:"a tall, slender, gently tapering upright column"},
-      {label:"Cube",prompt:"a boxy cube-shaped block on the base with a short upright bar on top"},
+      {label:"Tall column",prompt:"a tall slender gently tapering column post with the nose-bridge ridge on top"},
+      {label:"Cube",prompt:"a boxy cube-shaped block base with a slim post rising from it to the nose-bridge ridge"},
       {label:"Faceted gem",prompt:"an upright post cut like a gemstone — flat angled facets meeting at sharp ridges, with a rounded top bar"},
       {label:"Organic pod",prompt:"a soft organic pod-shaped upright post — a smoothly swelling asymmetric form with a rounded top"},
       {label:"Branch",prompt:"a branch-shaped post — a thick twig rising from the base and splitting into two short stubby arms at the top"},
       {label:"Bar",prompt:"a simple horizontal bar form on an upright post"},
       {label:"Hook",prompt:"a curved hook-like upright post"},
-      {label:"Cuff",prompt:"a curved open C-shaped cuff form"}
+      {label:"Cuff",prompt:"a curved open C-shaped arch standing upright, its highest point shaped into the nose-bridge ridge"}
     ]},
   bookend:{emoji:"📚", label:"Bookend", promptName:"solid decorative block",
-    fn:"It is a single decorative bookend — one solid sculptural block with a flat vertical face on one side and a flat stable base. It is shown completely alone — nothing leaning against it.",
+    fn:"It is a single bookend, L-shaped when seen from the side: an upright decorative block with one flat, straight vertical face, joined at its bottom edge to a thin flat foot plate that sticks out from that face, so books can stand on the plate and lean against the flat face. It is shown completely alone.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
       {label:"Slab",prompt:"a tall flat rectangular slab block — a thick upright plate with crisp straight edges, standing on its flat base"},
@@ -1362,17 +1362,17 @@ const OBJECTS = {
       {label:"Beehive",prompt:"a beehive-shaped sealed container — a closed rounded dome with stacked horizontal rings tapering gently toward the top, the coin slot at the crown"},
       {label:"Fluted",prompt:"a fluted rounded sealed container, closed on top, its body covered in evenly spaced deep vertical grooves and ridges, with the coin slot on top"}
     ]},
-  cardholder:{emoji:"📇", label:"Business card holder", promptName:"small slotted stand",
-    fn:"It is a small compact display stand with a narrow slot or shallow angled ledge, on a stable flat base. It is shown completely bare — nothing in it.",
+  cardholder:{emoji:"📇", label:"Business card holder", promptName:"desk business card holder",
+    fn:"It is a small desk card holder: a low compact base with a narrow groove running along its length, its back wall leaning back slightly, so a short stack of business cards can stand upright in the groove. The groove is empty.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
-      {label:"Slab",prompt:"a thick flat slab stand tilted back at a gentle angle, with a deep horizontal slot running across its lower front edge"},
-      {label:"Cube",prompt:"a boxy cube-shaped stand — a solid block with four flat square sides and crisp rounded corners, a deep slot cut across its top"},
+      {label:"Slab",prompt:"a low thick slab with crisp straight edges, the card groove along its top"},
+      {label:"Cube",prompt:"a low boxy block with crisp rounded corners, the card groove cut along its top"},
       {label:"Faceted gem",prompt:"an angular gem-cut stand — a solid block cut into large flat facets meeting at sharp ridges, with a slot across its top"},
-      {label:"Geometric",prompt:"an angular geometric stand built from flat triangular facets meeting at sharp edges, with a slot across its top"},
+      {label:"Geometric",prompt:"a low block built from flat triangular facets meeting at sharp edges, the card groove along its top"},
       {label:"Wedge",prompt:"shaped exactly like a doorstop or cheese-wedge: a sharp triangular profile when viewed from the side, thick and tall at the back, tapering along a diagonal sloped TOP SURFACE down to a thin sharp edge at the front — the top is a ramp, not flat, and the front-to-back profile is a triangle, not a rectangle. Explicitly NOT a cube, NOT a rectangular block, NOT a box with a flat top"},
-      {label:"Arch",prompt:"an arch-shaped stand — a solid rounded arch standing upright, with a slot cut across the top of the arch"},
-      {label:"Curved",prompt:"a smooth curved wave-like display stand with a card slot"}
+      {label:"Arch",prompt:"a low wide arch-shaped body, the card groove cut along the top of the arch"},
+      {label:"Curved",prompt:"a low smooth wave-shaped body, the card groove along its top"}
     ]},
   makeupbrush:{emoji:"💄", label:"Makeup brush holder", promptName:"small open-topped cup",
     autoForm:"a simple straight-sided cylinder, clean and recognizable",
@@ -1388,8 +1388,8 @@ const OBJECTS = {
       {label:"Barrel",prompt:"a barrel-shaped cup — wider at the middle than at the top and bottom, with raised hoop bands circling the body near the top and the bottom"},
       {label:"Fluted",prompt:"a fluted cup — its sides covered from top to bottom by evenly spaced deep vertical grooves and ridges"}
     ]},
-  toothbrush:{emoji:"🪥", label:"Toothbrush holder", promptName:"small open cup",
-    fn:"It is a small cup or stand with one or more narrow upright slots or an open hollow interior, on a solid flat base. The interior is completely bare — nothing inside. It is a small handheld-sized item, NOT a bathroom vanity or any furniture.",
+  toothbrush:{emoji:"🪥", label:"Toothbrush holder", promptName:"small cup with a holed lid",
+    fn:"It is a small toothbrush-holder cup: a cup whose top is closed by a flat lid pierced by four or five round holes in a ring, each hole about a finger wide, on a solid flat base. The holes are empty. It is a small handheld-sized item.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
       {label:"Cup",prompt:"a simple tumbler-shaped cup, slightly wider at the rim than at the base, with smooth straight sides"},
@@ -3646,7 +3646,7 @@ const PALETTES = [
 const STYLE_FORM = {"sacred": "built from interlocking sacred-geometry forms", "drippy": "melting like a candle-wax sculpture, sagging and dripping all over", "swirly": "formed entirely of swirling, spiraling ridges", "trippy": "warped into impossible kaleidoscopic geometry", "organic": "grown from living coral-like organic tissue and tendrils", "crystal": "carved from jagged quartz crystal and bristling with crystal clusters", "alien": "reimagined as a strange alien biomechanical being", "botanical": "made of twisting vines, leaves and blooming flowers", "wave": "formed from curling ocean waves", "baroque": "sculpted as an ornate baroque masterpiece of scrolls and acanthus leaves", "egyptian": "carved as an ancient Egyptian temple relic covered in hieroglyphs", "zen": "shaped from smooth river stones and raked sand ripples", "cyberpunk": "rebuilt as a cyberpunk cyborg of armored panels and circuitry", "vaporwave": "built from retro grid lines and stepped glitch blocks", "cosmic": "formed from swirling nebulae, stars and planets", "volcanic": "formed from cracked volcanic rock with obsidian shards erupting from it", "glacial": "carved from jagged glacier ice hung with icicles", "mossy": "overgrown all over with thick moss, lichen and creeping roots", "origami": "folded entirely from crisp origami paper", "honeycomb": "built from hexagonal honeycomb cells", "chainmail": "clad entirely in chainmail and riveted armor plates", "feathered": "covered entirely in layered feathers", "scaled": "covered entirely in overlapping reptile scales", "wicker": "woven entirely from wicker strands like a basket", "marbled": "carved from veined marble stone", "circuitboard": "built from circuit-board traces, chips and solder nodes", "mosaic": "pieced together from mosaic tiles", "filigree": "formed from bold arabesque filigree scrollwork", "barnacle": "encrusted all over with barnacles and shells", "thornedvine": "formed from thorny bramble vines", "pixelvoxel": "built entirely from chunky voxel cubes like a pixel-art model", "opart": "covered in warping op-art stripes", "lunar": "carved from cratered moon rock", "storm": "formed from swirling storm clouds and lightning bolts", "coralreef": "grown from branching coral, sea-urchin spines and polyps", "fungal": "overgrown with mushroom caps and mycelium", "voronoi": "built from an irregular Voronoi cell lattice", "crochet": "crocheted entirely from chunky yarn like an amigurumi toy"};
 // `t` is for open vessels (VESSELS); `solid` for everything else, which has no cavity to show.
 const VESSELS = new Set(["vase","budvase","planter","cactusplanter","herbpot","wallplanter","wallpocket","bowl",
-  "trinketdish","coindish","pencup","makeupbrush","toothbrush","votive","chalice","lantern"]);
+  "trinketdish","coindish","pencup","makeupbrush","toothbrush","votive","chalice"]);
 const VIEWS = [
   {v:"three-quarter", t:"from a three-quarter angle that reveals its full three-dimensional depth, hollow interior and negative space",
                       solid:"from a three-quarter angle that reveals its full three-dimensional form and depth"},
