@@ -444,7 +444,7 @@
           </select>
         </div>
         <div class="row" style="margin-bottom:0">
-          <div class="label">How many prompts <span class="rangeval" id="countVal">3</span></div>
+          <div class="label" title="Used by Generate, Similar, Reroll and Apply design — each image costs credits">How many designs per click <span class="rangeval" id="countVal">3</span></div>
           <input type="range" id="count" min="1" max="6" step="1" value="3" />
         </div>
         <div class="row" style="margin-bottom:0">
@@ -498,7 +498,7 @@
 
   <!-- REROLLS TAB -->
   <div id="tab-rerolls" class="hidden">
-    <p class="tag">Each set below is 6 random objects rendered in the same style DNA as the favorite you rerolled from. Reroll again for a fresh set of 6 — old sets stay put until you delete them.</p>
+    <p class="tag">Each set below is a batch of random objects rendered in the same style DNA as the favorite you rerolled from. Reroll again for a fresh set — old sets stay put until you delete them.</p>
     <div id="rerollsList"></div>
   </div>
 
@@ -4509,8 +4509,8 @@ function buildCard(item, opts={}){
     </div>
     <div class="tools">
       <div class="tbtn fav ${isFav?'on':''}">${isFav?'★ Saved':'☆ Favorite'}</div>
-      <div class="tbtn render" title="${item.renderImg?`Render 6 similar designs under this picture — ${priceLabel(6)}`:`Generate the image — ${priceLabel(1)}`}">${item.renderImg?`🔄 Similar ×6${costSuffix(6)}`:`🖼 Render${costSuffix(1)}`}</div>
-      ${opts.showReroll?`<div class="tbtn reroll" title="Render 6 random objects in this same style — ${priceLabel(6)}">🎲 Reroll ×6${costSuffix(6)}</div>`:''}
+      <div class="tbtn render${item.renderImg?' similar':''}" title="${item.renderImg?`Render ${batchN()} similar designs under this picture — ${priceLabel(batchN())}`:`Generate the image — ${priceLabel(1)}`}">${item.renderImg?`🔄 Similar ×${batchN()}${costSuffix(batchN())}`:`🖼 Render${costSuffix(1)}`}</div>
+      ${opts.showReroll?`<div class="tbtn reroll" title="Render ${batchN()} random objects in this same style — ${priceLabel(batchN())}">🎲 Reroll ×${batchN()}${costSuffix(batchN())}</div>`:''}
       ${opts.showRemove?'<div class="tbtn remove">✕ Remove</div>':''}
     </div>
     <div class="render-wrap">${item.renderImg?'':'<div class="render-status">Click 🖼 Render to generate this design.</div>'}</div>`;
@@ -4521,17 +4521,19 @@ function buildCard(item, opts={}){
     if(opts.onFavToggle) opts.onFavToggle();
   };
   card.querySelector(".render").onclick=()=>{
-    // Once a picture exists, the button becomes "similar ×6" — img2img variations anchored to
-    // the actual pixels. Before that, it's a plain first render.
+    // Once a picture exists, the button becomes "Similar ×N" (N = designs per click).
+    // Before that, it's a plain first render.
     if(item.renderImg){
-      if(!confirmSpend(6, "Render 6 similar designs from this picture?")) return;
-      spawnVariants(item, card.querySelector(".render-wrap"));
+      const n = batchN();
+      if(!confirmSpend(n, `Render ${n} similar design${n===1?"":"s"} from this picture?`)) return;
+      spawnVariants(item, card.querySelector(".render-wrap"), undefined, n);
     }
     else renderCard(item, card);
   };
   if(opts.showReroll) card.querySelector(".reroll").onclick=()=>{
-    if(!confirmSpend(6, "Reroll — render 6 random objects in this same style?")) return;
-    rerollFromItem(item);
+    const n = batchN();
+    if(!confirmSpend(n, `Reroll — render ${n} random object${n===1?"":"s"} in this same style?`)) return;
+    rerollFromItem(item, n);
   };
   if(opts.showRemove) card.querySelector(".remove").onclick=()=>{opts.onRemove(item);};
   card._item=item;
@@ -4624,8 +4626,9 @@ function renderImageInto(wrap, item, imgRef){
   sel.onchange = ()=>{
     const k = sel.value; sel.value = "";
     if(!k) return;
-    if(!confirmSpend(6, `Apply this design to 6 ${OBJECTS[k].label} renders?`)) return;
-    spawnVariants(item, wrap, k);
+    const n = batchN();
+    if(!confirmSpend(n, `Apply this design to ${n} ${OBJECTS[k].label} render${n===1?"":"s"}?`)) return;
+    spawnVariants(item, wrap, k, n);
   };
   meta.appendChild(sel);
   if(item.renderMs){ const t=document.createElement("span"); t.className="render-time"; t.textContent=fmtDuration(item.renderMs); meta.appendChild(t); }
@@ -4957,16 +4960,17 @@ function refreshCounts(){$("#favCount").textContent=favs.length;$("#histCount").
 // each reroll still draws a fresh random clause/palette combo within them, same as any other
 // render). Creates one new persistent "subfolder" (a reroll group) — rerolling again adds another
 // group rather than replacing this one, so old sets stay browsable in the Rerolls tab.
-async function rerollFromItem(sourceItem){
+async function rerollFromItem(sourceItem, count){
+  const N = Math.max(1, Math.min(6, count || batchN()));
   // Temporarily drive buildPrompt() with the source item's style DNA + palette, then restore
   // whatever the user currently has set on the Generate tab so this doesn't disrupt their work.
   const savedObj=state.obj, savedShape=state.shape, savedStyles=new Set(state.styles), savedDetail=new Set(state.styleDetail), savedPalette=$("#palette").value;
   state.styles=new Set(sourceItem.styles||[]);
   state.styleDetail=new Set();
 
-  // Reroll across 6 random objects from the SOURCE item's own category — a favorite vase
+  // Reroll across N random objects from the SOURCE item's own category — a favorite vase
   // rerolls into other homegoods, a favorite dragon into other figurines.
-  const objKeys=shuffle(Object.keys(OBJECTS).filter(k=>catOf(k)===catOf(sourceItem.obj))).slice(0,6);
+  const objKeys=shuffle(Object.keys(OBJECTS).filter(k=>catOf(k)===catOf(sourceItem.obj))).slice(0,N);
   const group={
     id:Date.now()+"-"+Math.floor(Math.random()*1e6),
     label:(sourceItem.styles||[]).map(s=>STYLES[s]?.label||s).join(" · ")||"surprise mix",
@@ -4986,13 +4990,13 @@ async function rerollFromItem(sourceItem){
   LS_set("podder_rerolls",rerolls);
   refreshCounts();
   closeCardModal();
-  toast(`🎲 Rerolling 6 objects in "${group.label}" style…`);
+  toast(`🎲 Rerolling ${objKeys.length} object${objKeys.length===1?"":"s"} in "${group.label}" style…`);
   showTab("rerolls");
 }
 function renderRerollsTab(){
   const container=$("#rerollsList");
   container.innerHTML="";
-  if(!rerolls.length){ container.innerHTML=`<div class="empty">No rerolls yet. Open a favorite and click 🎲 Reroll ×6.</div>`; return; }
+  if(!rerolls.length){ container.innerHTML=`<div class="empty">No rerolls yet. Open a favorite and click 🎲 Reroll.</div>`; return; }
   rerolls.forEach(group=>{
     const section=document.createElement("div"); section.className="rerollGroup";
     section.innerHTML=`
@@ -5079,7 +5083,21 @@ function onWild(){
     $("#overdriveBtn").classList.remove("on");
   }
 }
-function onCount(){$("#countVal").textContent=$("#count").value;}
+// "How many designs per click" drives Generate AND the card buttons (Similar, Reroll, Apply
+// design), which used to be fixed at 6 renders — a surprise 6 or 18 credits per click.
+function batchN(){ return Math.max(1, Math.min(6, +$("#count").value || 3)); }
+function relabelBatchButtons(){
+  const n = batchN();
+  document.querySelectorAll(".tbtn.render.similar").forEach(b=>{
+    b.textContent = `🔄 Similar ×${n}${costSuffix(n)}`;
+    b.title = `Render ${n} similar design${n===1?"":"s"} under this picture — ${priceLabel(n)}`;
+  });
+  document.querySelectorAll(".tbtn.reroll").forEach(b=>{
+    b.textContent = `🎲 Reroll ×${n}${costSuffix(n)}`;
+    b.title = `Render ${n} random object${n===1?"":"s"} in this same style — ${priceLabel(n)}`;
+  });
+}
+function onCount(){$("#countVal").textContent=$("#count").value; LS_set("podder_count", batchN()); relabelBatchButtons();}
 
 /* ---------- CLOUD RENDER (serverless API + browser image store) ---------- */
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
@@ -5880,7 +5898,8 @@ async function renderCard(item, card, revealAfter, startAfter){
     wrap.innerHTML = (ctl.signal.aborted || /abort/i.test(msg)) ? `<div class="render-status">⏹ Cancelled</div>` : `<div class="render-status err">Render failed: ${msg}</div>`;
   }finally{
     clearInterval(tick); inFlightCtls.delete(ctl);
-    btn.disabled = false; btn.textContent = item.renderImg ? "🔄 Similar ×6" : "🖼 Render";
+    btn.disabled = false;
+    if(item.renderImg){ btn.classList.add("similar"); relabelBatchButtons(); } else btn.textContent = "🖼 Render";
   }
 }
 
@@ -5897,11 +5916,12 @@ function buildPromptAs(sourceItem, targetObjKey){
   state.obj=savedObj; state.shape=savedShape; state.styles=savedStyles; state.styleDetail=savedDetail; $("#palette").value=savedPalette;
   return it;
 }
-// 🔄 Similar ×6 / ✨ apply-design-to: six img2img renders anchored to THIS picture's pixels.
+// 🔄 Similar ×N / ✨ apply-design-to: N renders (designs per click) from THIS picture.
 // No vision model — conditioning on the image itself beats describing it in words. Same object
 // keeps strength low (design + structure held); a different object pushes strength higher so
 // the new form can take over while the surface DNA carries across.
-async function spawnVariants(item, wrap, targetObjKey){
+async function spawnVariants(item, wrap, targetObjKey, count){
+  const N = Math.max(1, Math.min(6, count || batchN()));
   const img = wrap.querySelector(":scope > img.render");
   if(!img || !img.src){ toast("Render the picture first"); return; }
   const cross = !!(targetObjKey && targetObjKey!==item.obj);
@@ -5911,7 +5931,7 @@ async function spawnVariants(item, wrap, targetObjKey){
     grid = document.createElement("div"); grid.className = "variantGrid";
     wrap.insertBefore(grid, wrap.querySelector(":scope > .edit-box"));
   }
-  toast(cross ? `✨ Applying this design to 6 ${OBJECTS[targetObjKey].label} takes…` : "🔄 Rendering 6 similar designs…");
+  toast(cross ? `✨ Applying this design to ${N} ${OBJECTS[targetObjKey].label} take${N===1?"":"s"}…` : `🔄 Rendering ${N} similar design${N===1?"":"s"}…`);
 
   // Cross-object applies use img2img so the source design transfers visually.
   // Similar renders use fresh txt2img prompts built from the same recipe — same
@@ -5935,7 +5955,7 @@ async function spawnVariants(item, wrap, targetObjKey){
   }
 
   const tiles = [];
-  for(let i=0;i<6;i++){
+  for(let i=0;i<N;i++){
     const tile = document.createElement("div"); tile.className = "variantTile";
     tile.innerHTML = `<img class="render-spin vspin" src="Podder-192.png" alt="" />`;
     grid.appendChild(tile);
@@ -5943,7 +5963,7 @@ async function spawnVariants(item, wrap, targetObjKey){
   }
   const batch = new AbortController(); inFlightCtls.add(batch);
   (async()=>{
-    for(let i=0;i<6;i++){
+    for(let i=0;i<N;i++){
       if(batch.signal.aborted) break;
       const tile = tiles[i];
       const ctl = new AbortController(); inFlightCtls.add(ctl);
@@ -6205,6 +6225,7 @@ document.addEventListener("click", e=>{
 updateRefineSummary();
 if(state.styles.size || (state.shape && state.shape !== "Auto")) setRefineOpen(true);
 
+{ const saved = LS_get("podder_count", null); if(saved){ $("#count").value = saved; $("#countVal").textContent = saved; } }
 $("#count").oninput=onCount;
 $("#wild").oninput=onWild;
 onWild();   // sync the label to the slider's initial value — otherwise it shows stale markup text
