@@ -3622,10 +3622,16 @@ const PALETTES = [
   {v:"marble",    t:"matte veined marble in cool grey-white tones"}
 ];
 
+// `t` is for open vessels (VESSELS); `solid` for everything else, which has no cavity to show.
+const VESSELS = new Set(["vase","budvase","planter","cactusplanter","herbpot","wallplanter","wallpocket","bowl",
+  "trinketdish","coindish","pencup","makeupbrush","toothbrush","votive","chalice","lantern"]);
 const VIEWS = [
-  {v:"three-quarter", t:"from a three-quarter angle that reveals its full three-dimensional depth, hollow interior and negative space"},
-  {v:"front",         t:"from a straight-on front view that clearly shows its silhouette, opening and functional features"},
-  {v:"slightly-above",t:"from a slightly elevated angle looking down into it, emphasizing the hollow cavity and depth"},
+  {v:"three-quarter", t:"from a three-quarter angle that reveals its full three-dimensional depth, hollow interior and negative space",
+                      solid:"from a three-quarter angle that reveals its full three-dimensional form and depth"},
+  {v:"front",         t:"from a straight-on front view that clearly shows its silhouette, opening and functional features",
+                      solid:"from a straight-on front view that clearly shows its full silhouette and features"},
+  {v:"slightly-above",t:"from a slightly elevated angle looking down into it, emphasizing the hollow cavity and depth",
+                      solid:"from a slightly elevated three-quarter angle that shows the whole piece and its base"},
   {v:"eye-level",     t:"at eye level with strong side lighting that carves out its depth and surface relief"}
 ];
 
@@ -4373,7 +4379,7 @@ function buildPrompt(){
         : `${wl.lead} ${clauses.join(", and ")}, applied as ${reliefWord} physically sculpted three-dimensional relief ${wl.tail}${jewelryNote}`,
       printable ? PRINTABLE : "",
       wildNote,
-      `Photographed ${view.t}, sitting directly on a plain seamless light-grey studio surface with no pedestal, stand or platform beneath it, and no other objects, furniture or scenery anywhere in frame.`,
+      `Photographed ${VESSELS.has(state.obj) ? view.t : (view.solid || view.t)}, sitting directly on a plain seamless light-grey studio surface with no pedestal, stand or platform beneath it, and no other objects, furniture or scenery anywhere in frame.`,
       "Soft even diffuse studio lighting, matte non-reflective surface, ultra-detailed, sharp focus, professional product photography, 4k."
     ].filter(Boolean).join(" ").replace(/\s{2,}/g," ");
   } else {
