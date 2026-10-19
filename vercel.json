@@ -1,7 +1,15 @@
 {
   "functions": {
-    "api/*.js": { "maxDuration": 60 }
+    "api/*.js": {
+      "maxDuration": 60
+    }
   },
   "buildCommand": "node scripts/preflight.mjs",
-  "outputDirectory": "."
+  "outputDirectory": ".",
+  "rewrites": [
+    {
+      "source": "/brochure",
+      "destination": "/brochure.html"
+    }
+  ]
 }
