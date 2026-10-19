@@ -6091,7 +6091,7 @@ buildChips();buildShapeChips();buildStyleDetail();refreshCounts();
       <img src="Podder-192.png" alt="" onerror="this.style.display='none'"/>
       <h2>Welcome to Podder</h2>
       <p>Design it. Download it. Print it.<br>One-of-a-kind 3D-printable pieces, made in seconds.</p>
-      <div class="splashTime">tap anywhere to start</div>
+      <div class="splashTime">(click to enter Podder)</div>
     </div>`;
   document.body.appendChild(el);
 
@@ -6164,8 +6164,8 @@ void main(){
   const dismiss=()=>{ if(gone) return; gone=true; el.style.transition="opacity .35s"; el.style.opacity="0";
     setTimeout(()=>{ stopShader(); el.remove(); }, 350); };
   el.addEventListener("click", dismiss);
-  // Long enough to read the welcome, short enough not to feel like a wait; a tap skips it.
-  setTimeout(dismiss, 3200);
+  // Six seconds to read the welcome; a click or tap enters straight away.
+  setTimeout(dismiss, 6000);
 })();
 $("#genBtn").onclick=generate;
 $("#surpriseBtn").onclick=surprise;
