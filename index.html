@@ -1190,20 +1190,20 @@ const OBJECTS = {
       {label:"Barrel",prompt:"a barrel-shaped small pot — wider at the middle than at the top and bottom, with raised hoop bands circling the body near the top and the bottom"},
       {label:"Fluted",prompt:"a fluted small pot — its sides covered from top to bottom by evenly spaced deep vertical grooves and ridges"}
     ]},
-  necklacestand:{emoji:"📿", label:"Necklace stand", promptName:"necklace display stand",
-    fn:"It is a necklace display stand: an upright form rising from a shallow catch dish, its top spreading into wide arms or hooks held high above the dish, so chains can be draped over them and hang freely down. It is shown completely bare.",
+  necklacestand:{emoji:"📿", label:"Necklace stand", promptName:"tall T-bar jewelry stand",
+    fn:"It is a tall T-bar jewelry stand rising from a shallow catch dish: an upright form topped by a wide horizontal crossbar whose two ends turn up into plain rounded knobs. The crossbar is the highest point of the stand, its top edge flat and smooth, and it is bare.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette"},
       {label:"Tall column",prompt:"a tall slender column topped by a wide horizontal crossbar like a letter T, both ends of the crossbar turned up into small rounded hooks"},
-      {label:"Cone",prompt:"a solid tapering cone spire rising from the dish to a rounded point"},
+      {label:"Cone",prompt:"a tall tapering cone spire holding the crossbar at its tip"},
       {label:"Faceted gem",prompt:"a tall faceted gem-cut post topped by a wide faceted crossbar like a letter T, its ends turned up into small hooks"},
-      {label:"Hand",prompt:"an open upright hand form"},
+      {label:"Hand",prompt:"an upright open hand with slim separate fingers, the crossbar resting across the fingertips"},
       {label:"Branch",prompt:"a branching twig-like form with slim arms"},
-      {label:"Hook",prompt:"a curved hook-like upright form"},
-      {label:"Bust",prompt:"a smooth stylized display bust — a tall slender neck rising into gently sloping shoulders, its top a smooth rounded dome"}
+      {label:"Hook",prompt:"a curved hook-shaped post holding the crossbar"},
+      {label:"Bust",prompt:"a smooth stylized neck form — a tall slender column flaring into gently sloping shoulders that form the crossbar"}
     ]},
-  earringstand:{emoji:"👂", label:"Earring stand", promptName:"earring display stand",
-    fn:"It is an earring display stand: a thin upright panel standing on a shallow catch dish, the panel pierced through by neat rows of many small round see-through holes for hooking earrings, with light visible through every hole. It is shown completely bare.",
+  earringstand:{emoji:"👂", label:"Earring stand", promptName:"earring holder",
+    fn:"It is an earring holder: an upright frame standing on a shallow catch dish, its outline following the chosen shape. Inside the frame, five slim horizontal rails run straight across from side to side like the rungs of a ladder, with open space between each rail — the rails are the most prominent feature. The style decorates the outer frame and the dish; the rails stay slim, plain and clearly visible.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette, but still built from a few separate open prongs with clear empty space between them, never a solid fused mass or connected web"},
       {label:"Hand",prompt:"an open upright hand with slim separate fingers — each finger a distinct bare open prong with clear empty space between it and its neighbors, never webbed, fused, or joined together"},
@@ -1215,8 +1215,8 @@ const OBJECTS = {
       {label:"Wave",prompt:"a smooth curved wave-like display panel studded with peg holes"},
       {label:"Cloud",prompt:"a flat cloud-shaped upright panel with softly rounded lobes"}
     ]},
-  watchstand:{emoji:"⌚", label:"Watch stand", promptName:"small display stand with a cushion bar on top",
-    fn:"It is a small display stand: on top of a short upright post sits a thick, smooth, rounded bolster — an oval cylinder lying sideways, about as long as a palm is wide. The post rises from a stable flat base. The bolster is the bare top of the stand, smooth and uncovered.",
+  watchstand:{emoji:"⌚", label:"Watch stand", promptName:"small display stand with an oval cuff on top",
+    fn:"It is a small display stand: on top of a short upright post sits a thick, smooth, C-shaped cuff — an open oval ring standing upright, about as wide as a wrist. The post rises from a stable flat base. The cuff is bare and smooth.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind silhouette, but always topped with a distinct curved cradle arm, never just a plain straight post"},
       {label:"Tall column",prompt:"a slender gently tapering column post holding the sideways bolster on top"},
@@ -1631,36 +1631,37 @@ const OBJECTS = {
       {label:"Dragon",prompt:"HOURGLASS — a dragon bust dramatically pinched at the neck, the massive horned head at least three times wider than the narrow neck, which widens again into broad layered scales at the base"},
       {label:"Samurai",prompt:"TWISTED SPIRAL — a samurai bust with the broad kabuto helmet and crescent crest spiraling around a central axis, menpo guard and armor plates wrapping in a thick helical twist"}
     ]},
-  chessfig:{emoji:"♟️", label:"Chess piece", promptName:"oversized decorative chess piece", cat:"figurines",
-    fn:"It is a single oversized decorative chess piece — one solid sculptural piece with the classic silhouette of its rank, on a wide round weighted-looking base. Just the one piece alone — no chessboard, no other pieces.",
+  chessfig:{emoji:"♟️", label:"Chess piece", promptName:"collectible fantasy figure", cat:"figurines",
+    autoForm:"a stately king figure in long royal robes wearing a tall crown, reimagined in the chosen style",
+    fn:"It is a single collectible fantasy figure carved as the named character, standing on a small round base. Just the one figure alone, nothing else around it.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, sculptural, one-of-a-kind chess-piece form with a surprising silhouette"},
-      {label:"King",prompt:"TALL NARROW COLUMN — a king piece stretched extremely tall and pencil-thin, the slender stem topped with a thick cross finial, towering high above the round base"},
-      {label:"Queen",prompt:"SPIRE — a queen piece pulled into an impossibly thin tapering needle, coronet points merged into a single sharp peak rising to an extreme height"},
-      {label:"Knight",prompt:"DRAMATIC DIAGONAL — a knight piece with the horse head and thick arched neck leaning at a sharp 45-degree angle from the base, mane sweeping diagonally in one fused mass"},
-      {label:"Rook",prompt:"WIDE SQUAT BLOCK — a rook piece compressed into an extremely broad, very low fortress barely taller than it is wide, thick crenellations spread flat across the top"},
-      {label:"Bishop",prompt:"A-FRAME — a bishop piece with a very wide flared base tapering steeply to the narrow mitre point at the top, the body a smooth steep triangle"},
-      {label:"Pawn",prompt:"HUNCHED BALL — a pawn piece compressed into a tight dense sphere, the rounded head and collared body merged into one solid globe squatting low on the base"},
-      {label:"Gothic king",prompt:"TOTEM STACK — a king piece built as distinct stacked vertical segments — wide base ring, armored waist drum, crowned skull tier, and Gothic spire finial, each section clearly separated"},
-      {label:"Crystal queen",prompt:"INVERTED TRIANGLE — a queen piece with a tiny narrow pedestal base flaring dramatically upward to a massive faceted crystal crown at the top, extremely top-heavy"},
-      {label:"Dragon knight",prompt:"REARING UPWARD — a knight piece with a thick dragon head rearing straight up, neck stretched tall and body arched backward, horns and jaws pointing at the sky"},
-      {label:"Fortress rook",prompt:"TOP-HEAVY — a rook piece with extremely thin fortress walls below supporting a massively oversized crenellated battlement platform on top"},
-      {label:"Wizard bishop",prompt:"CLOAK/CAPE CONE — a bishop piece shaped as a robed wizard whose heavy thick robes spread into a wide tent-like cone from the pointed hat tip down to the base edge"},
-      {label:"Shield pawn",prompt:"CROUCHING LOW — a pawn piece pressed extremely low behind a round shield, the entire silhouette barely rising above the base, a thick spear held flat along the ground"},
-      {label:"Skeleton king",prompt:"ASYMMETRIC — a king piece with one side dramatically larger, a massive bone crown jutting far to one side while the skeletal body leans the other way, deeply unbalanced"},
-      {label:"Serpent queen",prompt:"COILED SPIRAL — a queen piece shaped as a thick serpent body coiled in a tight rising spiral from base to crown, the crowned head wearing a coronet perched atop the coil"},
-      {label:"Griffin knight",prompt:"T-SHAPE — a knight piece with thick griffin wings locked rigid and spread wide horizontally in a flat T-formation, the compact griffin body a narrow vertical post between them"},
-      {label:"Ruined rook",prompt:"PYRAMID — a rook piece crumbling into a wide rubble-strewn base that tapers steeply to a single narrow broken battlement point at the peak"},
-      {label:"Cloaked bishop",prompt:"KNEELING MEDIUM — a bishop piece shaped as a hooded figure kneeling with one knee down, the pointed hood forming the mitre tip, thick hands clasped before the chest"},
-      {label:"Goblin pawn",prompt:"SEATED COMPACT — a pawn piece shaped as a squat goblin in a hunched crouch on the base with knees splayed wide and arms braced on the ground, spiked helm barely rising above the hunched shoulders, a dense low block"},
-      {label:"Demon king",prompt:"HORIZONTAL STRETCH — a king piece with a demon lunging flat and horizontal, massive horned crown thrust forward, thick spiked tail trailing behind, body parallel to the base"},
-      {label:"Angel queen",prompt:"BRANCHING ARMS — a queen piece shaped as an angel with thick wings branching wide and upward in a multi-armed candelabra formation, the robed body a narrow central stem below"},
-      {label:"Wolf knight",prompt:"BRIDGE ARCH — a knight piece with the thick wolf head and neck forming a smooth arch, jaws at one end and fur ruff at the other, the curved body spanning open space above the base"},
-      {label:"Clockwork rook",prompt:"BARREL ROUND — a rook piece sculpted as a perfectly cylindrical drum of riveted gear-covered plates, as wide as it is tall, with a gear-toothed crown ringing the flat top"},
-      {label:"Necromancer bishop",prompt:"BACKPACK-DOMINATED — a bishop piece where a massive tome-rack and skull-pile tower behind the tiny hooded figure, the equipment three times the size of the necromancer beneath"},
-      {label:"Mushroom pawn",prompt:"HOURGLASS — a pawn piece with a wide thick mushroom cap on top and a wide bulbous root cluster below, connected by an extremely thin pinched stem in the middle"},
-      {label:"Viking king",prompt:"SHIELD WALL — a king piece presenting a massive flat broad Viking shield as its entire face, the helmed and crowned head barely peeking above the thick plate"},
-      {label:"Medusa queen",prompt:"RADIAL BURST — a queen piece with thick snake locks radiating outward in every direction from the central face, creating a dense starburst silhouette, body hidden in fused serpents"}
+      {label:"King",prompt:"a stately king figure in long royal robes wearing a tall crown topped by a small cross"},
+      {label:"Queen",prompt:"a regal queen figure in a long gown wearing a pointed coronet"},
+      {label:"Knight",prompt:"a horse head on a thick arched neck, its mane carved as one solid mass"},
+      {label:"Rook",prompt:"a squat round castle tower with square battlements around its flat top"},
+      {label:"Bishop",prompt:"a slim robed bishop figure wearing a tall pointed mitre hat"},
+      {label:"Pawn",prompt:"a small humble foot-soldier figure whose head is a plain round ball on a short neck above a flared collar"},
+      {label:"Gothic king",prompt:"a gothic armored skeleton king with a spiky iron crown"},
+      {label:"Crystal queen",prompt:"a queen in a long flowing gown carved from clusters of pointed crystals, wearing a crystal crown"},
+      {label:"Dragon knight",prompt:"a horned dragon head and long neck with open jaws"},
+      {label:"Fortress rook",prompt:"a castle tower crowned by a wide crenellated battlement platform"},
+      {label:"Wizard bishop",prompt:"a robed wizard with a long beard, a tall pointed hat and a staff"},
+      {label:"Shield pawn",prompt:"a small foot soldier crouching behind a round shield with a spear"},
+      {label:"Skeleton king",prompt:"a skeleton king with a skull face, a ribcage and bony arms, wearing a crown"},
+      {label:"Serpent queen",prompt:"a thick crowned serpent coiled upward, a small crown on its snake head"},
+      {label:"Griffin knight",prompt:"a griffin with an eagle head, a hooked beak and spread feathered wings"},
+      {label:"Ruined rook",prompt:"a crumbling broken castle tower of cracked stones"},
+      {label:"Cloaked bishop",prompt:"a kneeling hooded monk in a heavy cloak"},
+      {label:"Goblin pawn",prompt:"a squat goblin with big pointed ears and a spiked helmet"},
+      {label:"Demon king",prompt:"a horned demon king with bat wings and a spiked tail, lunging forward"},
+      {label:"Angel queen",prompt:"a winged angel queen in long flowing robes, wearing a crown"},
+      {label:"Wolf knight",prompt:"a snarling wolf head and thick furred neck"},
+      {label:"Clockwork rook",prompt:"a squat round castle tower built from brass gears and riveted plates, square battlements on top"},
+      {label:"Necromancer bishop",prompt:"a hooded necromancer with a skull-topped staff and a tall stack of old books"},
+      {label:"Mushroom pawn",prompt:"a small figure shaped as a mushroom with a wide cap"},
+      {label:"Viking king",prompt:"a Viking king with a horned helmet, a braided beard and a round shield"},
+      {label:"Medusa queen",prompt:"a Medusa in a long robe, with a woman’s face and hair made of writhing snakes"}
     ]},
   gargoylefig:{emoji:"👺", label:"Gargoyle", promptName:"gargoyle figurine", cat:"figurines",
     fn:"It is a single solid gargoyle figurine — one sculpted guardian-grotesque collectible piece, fully fused to an integrated flat stone-slab display base. The exact form depends on the shape chosen — some crouch with wings folded, others are flat wall-plaque medallions, others are elongated or winding. Just the one figurine alone — no building, ledge, cathedral or scenery.",
@@ -2970,31 +2971,32 @@ const OBJECTS = {
       {label:"Firework figure",prompt:"a figure holding up a firework rocket; BURST CROWN — a festive figure dwarfed by an enormous radiating burst of sparkler light and confetti ribbons exploding upward and outward from a held sparkler, the thick sculpted rays fanning in a massive crown above the figure's head and fusing to the base on all sides, the star-spangled outfit barely visible at the center of the great radial burst, the figure itself the narrow stem of this luminous explosion"},
       {label:"Cornucopia keeper",prompt:"a figure holding a horn of plenty overflowing with fruit; TILTED HORN — a harvest figure dramatically tilted beneath the weight of an impossibly massive cornucopia horn curving overhead from one side of the base to the other, the figure leaning hard to one side as the enormous curved horn sweeps in a great arc from the figure's grip to the opposite edge of the base where thick sculpted fruits and gourds pile up, the horn three times the size of the figure carrying it"}
     ]},
-  superfig:{emoji:"🦸", label:"Superhero", promptName:"armored champion figurine", cat:"figurines",
-    fn:"It is a single solid armored champion figurine — one sculpted collectible piece, clearly a sculpted figurine and never a real person. It is an entirely original armored warrior wearing layered sci-fi plate armor with sculpted panel lines and rivets across the chest and shoulders — absolutely no logo, no letter, no symbol, no shield, no insignia anywhere. Bare head with short hair — no mask, no cowl, no helmet. Strong jaw, a heavy cloak or half-cape sculpted as one thick mass fused to one shoulder and sweeping down to the integrated display base. This is a unique original armored champion — not a comic-book character, not spandex, always plate armor. Just the one warrior alone — no city skyline or scenery beyond its own base.",
+  superfig:{emoji:"🦸", label:"Superhero", promptName:"original superhero figurine", cat:"figurines",
+    autoForm:"an original caped superhero in a sleek bodysuit, striking a heroic pose",
+    fn:"It is a single solid superhero figurine: one sculpted collectible piece of an entirely original hero with a plain, unmarked costume, clearly a sculpted figurine and never a real person, posed dramatically on an integrated display base. Just the one figure alone on its base.",
     shapes:[
       {label:"Auto",prompt:"driven entirely by the chosen style — a wild, one-of-a-kind original armored champion with sculpted plate armor and a heavy cloak, bold and upright, with a surprising silhouette"},
-      {label:"Caped sentinel",prompt:"TALL NARROW COLUMN — an extremely tall and pencil-thin armored champion in narrow plate armor, fists on hips, stretched into a pillar towering far above the base, cloak hanging straight behind"},
-      {label:"Kneeling triumph",prompt:"KNEELING MEDIUM — an armored champion kneeling on one knee at medium height in plate armor, one gauntleted fist raised, cloak pooling around the planted knee onto the base"},
-      {label:"Brick brute",prompt:"WIDE SQUAT BLOCK — a massively broad and very low armored strongman in cracked plate armor, shoulders spread three times wider than the figure is tall, knuckles on the base"},
-      {label:"Speedster",prompt:"HORIZONTAL STRETCH — a lean armored scout in plate armor lunging flat and horizontal, body stretched into a long low line parallel to the base, cloak trailing behind fused down"},
-      {label:"Vigilante",prompt:"CROUCHING LOW — a brooding hooded warrior in dark plate armor pressed extremely low on a rooftop ledge, cloak wrapped tight, the entire silhouette barely rising above the base"},
-      {label:"Flying pose",prompt:"DRAMATIC DIAGONAL — an armored champion soaring at a sharp 45-degree angle, body and outstretched arms forming one rigid diagonal line, thick cloak pillar anchoring the figure to the base"},
-      {label:"Shield wall",prompt:"SHIELD WALL — an armored champion presenting a massive flat tower shield as the entire front face, only bare head and one pauldron peeking above the thick plate wall, cloak hidden behind"},
-      {label:"Energy blast",prompt:"T-SHAPE — an armored champion with both gauntleted arms thrust rigid horizontally in opposite directions, body a narrow vertical post between them, cloak fused behind, wide T-formation"},
-      {label:"Aerial dive",prompt:"SPIRE — an armored champion plunging straight down headfirst, arms pinned to sides, body and cloak forming an impossibly thin vertical needle from head to base above"},
-      {label:"Ground pound",prompt:"TOP-HEAVY — an armored champion with tiny crouched legs below and a massively oversized armored torso, wide pauldrons and cloak billowing above, wildly top-heavy over the cratered base"},
-      {label:"Stealth crouch",prompt:"HUNCHED BALL — an armored champion curled into a tight dense sphere, cloak pulled around the entire body, bare head tucked into armored knees, one compact rounded mass on the base"},
-      {label:"Dual wield",prompt:"INVERTED TRIANGLE — an armored champion with a tiny narrow boot stance below flaring dramatically to massive raised gauntlets and wide pauldrons above, cloak spread wide at the top"},
-      {label:"Giant form",prompt:"A-FRAME — a colossal armored champion with enormously wide planted feet and cloak hem tapering steeply to a narrow bare head at the peak, a steep triangle shape"},
-      {label:"Mystic stance",prompt:"TALL NARROW COLUMN — an armored champion standing bolt upright with arms folded across the chest plate, cloak hanging perfectly straight down forming a narrow column, gauntlets glowing with arcane energy, bare head level, an extremely tall and rigid vertical pillar"},
-      {label:"Titan guard",prompt:"TOTEM STACK — an armored champion built as distinct stacked segments — wide boots, narrow waist, massive chest plate, layered pauldrons, and bare head, each tier a different width"},
-      {label:"Charging ram",prompt:"ASYMMETRIC — an armored champion mid-sprint with one shoulder lowered far forward and the other thrown back, cloak streaming to one side, deeply unbalanced and lopsided in profile"},
-      {label:"Stoic watcher",prompt:"CLOAK/CAPE CONE — an armored champion standing with a long cloak spread into a wide tent-like cone from bare head down to the base edges, arms hidden within the draped fabric mass"},
-      {label:"War cry",prompt:"BRANCHING ARMS — an armored champion with both fists raised high and cloak wings billowing outward in a multi-armed branching formation, the legs a narrow central stem below"},
-      {label:"Landing impact",prompt:"BRIDGE ARCH — an armored champion with one knee and one fist touching the base as support points, the arched back and settling cloak forming a thick bridge shape over open space beneath"},
-      {label:"Victory stand",prompt:"PYRAMID — an armored champion leaning against a tall carved victory monument on the base, forming a steep triangle shape with the monument as one side and the armored figure as the other, cloak fused against the monument filling the center mass"},
-      {label:"Armored colossus",prompt:"BACKPACK-DOMINATED — a towering armored champion dwarfed by enormous layered shoulder stacks and a massive thick cloak slab trailing behind, the equipment three times the warrior's width"}
+      {label:"Caped sentinel",prompt:"a tall caped hero in a sleek bodysuit with a high collar; TALL NARROW COLUMN — an extremely tall and pencil-thin hero in narrow costume, fists on hips, stretched into a pillar towering far above the base, cloak hanging straight behind"},
+      {label:"Kneeling triumph",prompt:"a muscular hero in a flowing cape kneeling with one fist raised; KNEELING MEDIUM — an hero kneeling on one knee at medium height , one fist raised, cloak pooling around the planted knee onto the base"},
+      {label:"Brick brute",prompt:"a huge hero whose skin is made of cracked rock slabs; WIDE SQUAT BLOCK — a massively broad and very low strongman in cracked costume, shoulders spread three times wider than the figure is tall, knuckles on the base"},
+      {label:"Speedster",prompt:"a lean speedster in a sleek streamlined bodysuit with a visor and lightning-streak lines; HORIZONTAL STRETCH — a lean scout lunging flat and horizontal, body stretched into a long low line parallel to the base, cloak trailing behind fused down"},
+      {label:"Vigilante",prompt:"a hooded vigilante in dark layered leather with a long cloak; CROUCHING LOW — a brooding hooded warrior in dark costume pressed extremely low on a rooftop ledge, cloak wrapped tight, the entire silhouette barely rising above the base"},
+      {label:"Flying pose",prompt:"a caped flying hero in a smooth bodysuit, arms stretched ahead; DRAMATIC DIAGONAL — an hero soaring at a sharp 45-degree angle, body and outstretched arms forming one rigid diagonal line, thick cloak pillar anchoring the figure to the base"},
+      {label:"Shield wall",prompt:"a hero carrying a huge round shield; SHIELD WALL — an hero presenting a massive flat tower shield as the entire front face, only bare head and one pauldron peeking above the thick plate wall, cloak hidden behind"},
+      {label:"Energy blast",prompt:"a hero in a glowing energy suit firing beams from both palms; T-SHAPE — an hero with both arms thrust rigid horizontally in opposite directions, body a narrow vertical post between them, cloak fused behind, wide T-formation"},
+      {label:"Aerial dive",prompt:"a winged hero with feathered wings diving headfirst; SPIRE — an hero plunging straight down headfirst, arms pinned to sides, body and cloak forming an impossibly thin vertical needle from head to base above"},
+      {label:"Ground pound",prompt:"a giant bulky hero in heavy plate armor; TOP-HEAVY — an hero with tiny crouched legs below and a massively oversized torso, wide pauldrons and cloak billowing above, wildly top-heavy over the cratered base"},
+      {label:"Stealth crouch",prompt:"a masked ninja-like hero in a hooded stealth suit; HUNCHED BALL — an hero curled into a tight dense sphere, cloak pulled around the entire body, bare head tucked into knees, one compact rounded mass on the base"},
+      {label:"Dual wield",prompt:"a hero holding a short sword in each hand; INVERTED TRIANGLE — an hero with a tiny narrow boot stance below flaring dramatically to massive raised fists and wide pauldrons above, cloak spread wide at the top"},
+      {label:"Giant form",prompt:"a towering giant hero with a long cape; A-FRAME — a colossal hero with enormously wide planted feet and cloak hem tapering steeply to a narrow bare head at the peak, a steep triangle shape"},
+      {label:"Mystic stance",prompt:"a sorcerer hero in long flowing robes and a high-collared cloak; TALL NARROW COLUMN — an hero standing bolt upright with arms folded across the chest plate, cloak hanging perfectly straight down forming a narrow column, fists glowing with arcane energy, bare head level, an extremely tall and rigid vertical pillar"},
+      {label:"Titan guard",prompt:"a heavily armored tank-like hero in stacked armor plates; TOTEM STACK — an hero built as distinct stacked segments — wide boots, narrow waist, massive chest plate, layered pauldrons, and bare head, each tier a different width"},
+      {label:"Charging ram",prompt:"a horned hero in a bull-like helmet charging forward; ASYMMETRIC — an hero mid-sprint with one shoulder lowered far forward and the other thrown back, cloak streaming to one side, deeply unbalanced and lopsided in profile"},
+      {label:"Stoic watcher",prompt:"a cloaked hero in a hooded robe; CLOAK/CAPE CONE — an hero standing with a long cloak spread into a wide tent-like cone from bare head down to the base edges, arms hidden within the draped fabric mass"},
+      {label:"War cry",prompt:"a barbarian hero with a fur cloak, roaring with both fists raised; BRANCHING ARMS — an hero with both fists raised high and cloak wings billowing outward in a multi-armed branching formation, the legs a narrow central stem below"},
+      {label:"Landing impact",prompt:"a hero in a sleek suit landing on one knee and one fist; BRIDGE ARCH — an hero with one knee and one fist touching the base as support points, the arched back and settling cloak forming a thick bridge shape over open space beneath"},
+      {label:"Victory stand",prompt:"a hero in a laurel crown leaning on a carved victory monument; PYRAMID — an hero leaning against a tall carved victory monument on the base, forming a steep triangle shape with the monument as one side and the figure as the other, cloak fused against the monument filling the center mass"},
+      {label:"Armored colossus",prompt:"a hero in a giant power-armor suit with huge shoulder plates; BACKPACK-DOMINATED — a towering hero dwarfed by enormous layered shoulder stacks and a massive thick cloak slab trailing behind, the equipment three times the warrior's width"}
     ]},
   steamfig:{emoji:"🎩", label:"Steampunk", promptName:"steampunk adventurer figurine", cat:"figurines",
     fn:"It is a single solid steampunk adventurer figurine — one sculpted collectible piece, clearly a sculpted figurine. Goggles, gears, gauges and brass fittings are all sculpted as fused relief in one material — never separate parts — with any tool or cane held tight against the body, in a grounded stance on an integrated riveted-plate display base. Just the one figure alone.",
@@ -4397,18 +4399,18 @@ function buildPrompt(){
   // surface ornament only. 4: the style starts to reshape it. 5 / Overdrive: reimagined as if made
   // of the style. Placed right after the opening sentence because that is what Flux weighs most.
   const styleNames = [...new Set(usedStyles)].map(k => STYLES[k].label.toLowerCase()).join(" and ");
+  // Figures: the specific shape leads the opening ("A single phoenix mythical creature figurine") and
+  // the weirdness note, because Flux settles identity from the first noun phrase; a bare set noun
+  // pulls every piece to the set's archetype (every kaiju became Godzilla, every chess piece a king).
+  const leadNoun = (isFig && !isAuto) ? `${shapeObj.label.toLowerCase()} ${objNoun}` : objNoun;
   const transformNote = !clauses.length ? ""
-    : wild <= 3 ? `It is a normal, classic, true-to-type ${objNoun}: its shape, anatomy and identity are exactly what you would expect, and the ${styleNames} style appears only as ornament on its surface.`
-    : wild === 4 ? `The ${styleNames} style starts to reshape the piece itself: its silhouette, edges and features take on the character of the style, while it stays clearly recognizable as a ${objNoun}.`
-    : `The entire ${objNoun} is reimagined as if made from the ${styleNames} style itself: body, features and base alike are transformed by it, so the style is what the piece is made of rather than a pattern on its surface, while it remains recognizably a ${objNoun}.`;
+    : wild <= 3 ? `It is a normal, classic, true-to-type ${leadNoun}: its shape, anatomy and identity are exactly what you would expect, and the ${styleNames} style appears only as ornament on its surface.`
+    : wild === 4 ? `The ${styleNames} style starts to reshape the piece itself: its silhouette, edges and features take on the character of the style, while it stays clearly recognizable as a ${leadNoun}.`
+    : `The entire ${leadNoun} is reimagined as if made from the ${styleNames} style itself: body, features and base alike are transformed by it, so the style is what the piece is made of rather than a pattern on its surface, while it remains recognizably a ${leadNoun}.`;
   // At 4+ a chosen style replaces an object's built-in art tradition ("in the style of
   // Kamakura-era temple sculpture"), which otherwise competes with it and wins.
   const formWords = [...new Set(usedStyles)].map(k => STYLE_FORM[k]).filter(Boolean).join(", and ");
   const styleLead = (!clauses.length || !formWords || wild <= 3) ? "" : wild === 4 ? ` partly ${formWords}` : ` ${formWords}`;
-  // Figures: the specific shape leads the opening ("A single phoenix mythical creature figurine"),
-  // because Flux settles identity from the first noun phrase; a set name alone gives the set's
-  // archetype (every kaiju became Godzilla).
-  const leadNoun = (isFig && !isAuto) ? `${shapeObj.label.toLowerCase()} ${objNoun}` : objNoun;
   const fnText = (clauses.length && wild >= 4) ? o.fn.replace(/ in the [^,.;—]*style of [^,.;—]+/, "") : o.fn;
 
   // --- Compact SD prompt for local ComfyUI renders (identity-first, zero negations) ---
