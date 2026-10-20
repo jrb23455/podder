@@ -8,6 +8,10 @@
   "outputDirectory": ".",
   "rewrites": [
     {
+      "source": "/api/admin/alerts",
+      "destination": "/api/admin/grant?op=alerts"
+    },
+    {
       "source": "/brochure",
       "destination": "/brochure.html"
     },

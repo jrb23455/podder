@@ -6,8 +6,10 @@
 // No idempotency ref — this is a manual action and each call is intentional.
 
 import { credit, debit, isInsufficient, missingEnv, checkOwnerPin, selectOne } from '../_lib/server.js';
+import alertsHandler from '../_lib/admin-alerts.js';
 
 export default async function handler(req, res) {
+  if (req.query?.op === 'alerts') return alertsHandler(req, res);   // /api/admin/alerts (rewrite)
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
 
   const pin = await checkOwnerPin(req);

@@ -1,15 +1,17 @@
+// Served at /api/admin/alerts via a vercel.json rewrite to /api/admin/grant?op=alerts: the Hobby
+// plan allows 12 functions, so the two owner endpoints share one.
 // GET  /api/admin/alerts            x-podder-pin  -> { alerts: [...], unseen }
 // POST /api/admin/alerts {seen:true} x-podder-pin -> { ok }   mark everything seen
 //
 // Owner-only view of ops_alerts (failed refunds, payments not credited, dropped webhooks).
 
-import { checkOwnerPin, missingEnv } from '../_lib/server.js';
+import { checkOwnerPin, missingEnv } from './server.js';
 
 const URL_ = () => (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
 const KEY = () => process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const H = () => ({ apikey: KEY(), Authorization: `Bearer ${KEY()}`, 'Content-Type': 'application/json' });
 
-export default async function handler(req, res) {
+export default async function alertsHandler(req, res) {
   const pin = await checkOwnerPin(req);
   if (pin === 'locked') return res.status(429).json({ error: 'too_many_attempts' });
   if (pin !== 'ok') return res.status(403).json({ error: 'forbidden' });
