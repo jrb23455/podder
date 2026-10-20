@@ -15,7 +15,7 @@
 // for tasks the caller did not pay for, and the ledger ref (refund3d:<task>) makes a refund
 // apply at most once no matter how many paths try it.
 
-import { getUser, debit, credit, isInsufficient, missingEnv, checkOwnerPin } from './_lib/server.js';
+import { getUser, debit, credit, isInsufficient, missingEnv, checkOwnerPin, alert } from './_lib/server.js';
 import { MODEL3D_COST } from './_lib/config.js';
 
 export const maxDuration = 60;
@@ -79,7 +79,7 @@ async function refundFailedTask(row) {
     await patchTaskRow(row.task_id, { refunded: true });
     return balance;
   } catch (e) {
-    console.error('3d refund failed', { user: row.user_id, task: row.task_id, error: String(e.message || e) });
+    await alert('model3d_refund_failed', { user: row.user_id, task: row.task_id, error: String(e.message || e) });
     return null;
   }
 }
@@ -255,13 +255,14 @@ export default async function handler(req, res) {
       taskId = d.task_id || d.taskId;
     } catch (e) {
       if (user) {
-        try { balance = await credit(user.id, MODEL3D_COST, 'refund:model3d', `refund3d:create:${fileToken}`); } catch {}
+        try { balance = await credit(user.id, MODEL3D_COST, 'refund:model3d', `refund3d:create:${fileToken}`); }
+        catch (re) { await alert('model3d_refund_failed', { user: user.id, stage: 'create', error: String(re.message || re) }); }
       }
       throw e;
     }
 
     try { await insertTaskRow({ task_id: taskId, user_id: user ? user.id : null }); }
-    catch (e) { console.error('model3d_tasks insert failed', taskId, String(e.message || e)); }
+    catch (e) { await alert('model3d_task_unrecorded', { taskId, user: user ? user.id : null, error: String(e.message || e) }); }
     return res.status(200).json({ taskId, credits: balance });
   } catch (e) {
     return res.status(502).json({ error: 'tripo_failed', detail: String(e.message || e), refunded: !!user && !convert && !refund });

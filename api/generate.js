@@ -12,7 +12,7 @@
 // The debit is a single guarded UPDATE (see debit_credits in 0001_credits.sql), so
 // parallel renders serialize on the row and the balance can never go negative.
 
-import { getUser, debit, credit, isInsufficient, missingEnv, checkOwnerPin } from './_lib/server.js';
+import { getUser, debit, credit, isInsufficient, missingEnv, checkOwnerPin, alert } from './_lib/server.js';
 import { creditsFor } from './_lib/config.js';
 
 export const maxDuration = 60;
@@ -156,7 +156,7 @@ export default async function handler(req, res) {
       try {
         balance = await credit(user.id, cost, `refund:${quality}`, `refund:${renderId}`);
       } catch (re) {
-        console.error('refund failed', { user: user.id, renderId, cost, error: String(re.message || re) });
+        await alert('render_refund_failed', { user: user.id, renderId, cost, error: String(re.message || re) });
       }
     }
     return res.status(502).json({

@@ -13,7 +13,7 @@
 // The upshot is that a runtime that ignores `bodyParser: false` degrades to a slower check
 // rather than to either a security hole or silently broken payments.
 
-import { fulfillSession, verifyStripeSignature, readRawBody, missingEnv } from './_lib/server.js';
+import { fulfillSession, verifyStripeSignature, readRawBody, missingEnv, alert } from './_lib/server.js';
 
 export const config = { api: { bodyParser: false } };
 
@@ -55,12 +55,13 @@ export default async function handler(req, res) {
   // Retryable (Stripe unreachable, or our DB threw): 500 makes Stripe try again, and
   // idempotency means a later success still lands exactly once.
   if (result.retry) {
-    console.error('stripe-webhook: retryable failure', sessionId, result.reason);
+    // credit_failed already alerted inside fulfillSession; this covers Stripe being unreachable.
+    if (result.reason !== 'credit_failed') await alert('payment_not_credited_yet', { sessionId, reason: result.reason, note: 'Stripe will retry' });
     return res.status(500).json({ error: result.reason });
   }
 
   // Terminal (unknown session, unpaid, unusable metadata): 200 so Stripe stops hammering
   // a request that will never succeed. Logged for reconciliation.
-  console.error('stripe-webhook: dropped', sessionId, result.reason);
+  if (result.reason !== 'unpaid') await alert('payment_webhook_dropped', { sessionId, reason: result.reason });
   return res.status(200).json({ ok: false, reason: result.reason });
 }

@@ -902,6 +902,9 @@
       <button class="btn primary" id="adminGrantBtn" type="button" style="width:100%">Grant</button>
       <div id="adminResult" style="font-size:13px;min-height:18px;text-align:center"></div>
     </div>
+    <h3 style="margin-top:20px">Alerts <button type="button" id="adminAlertsSeen" class="btn ghost" style="font-size:12px;padding:2px 8px;margin-left:6px">Mark all seen</button></h3>
+    <p class="sub">Failed refunds, payments that could not be credited, and similar problems that need a look.</p>
+    <div id="adminAlerts" style="max-height:260px;overflow:auto;font-size:12px;line-height:1.5;margin-top:8px"></div>
   </div>
 </div>
 
@@ -6399,12 +6402,35 @@ document.addEventListener("keydown",(e)=>{ if(e.key==="Escape" && $("#buyWrap").
 })();
 
 // Admin panel (owner only)
-function openAdmin(){ $("#adminWrap").classList.add("show"); $("#adminEmail").focus(); }
+function openAdmin(){ $("#adminWrap").classList.add("show"); $("#adminEmail").focus(); loadAlerts(); }
+// Owner alert feed (api/admin/alerts). The Admin button gets a red count when something is unseen.
+async function loadAlerts(){
+  try{
+    const r = await fetch("/api/admin/alerts",{headers:{"x-podder-pin":getPin()}});
+    if(!r.ok) return;
+    const j = await r.json();
+    const b = $("#adminBtn"); if(b) b.textContent = j.unseen ? `Admin 🔴${j.unseen}` : "Admin";
+    const box = $("#adminAlerts"); if(!box) return;
+    box.innerHTML = "";
+    if(!j.alerts.length){ box.textContent = "No alerts. 🎉"; return; }
+    for(const a of j.alerts){
+      const row = document.createElement("div");
+      row.style.cssText = "padding:6px 0;border-bottom:1px solid var(--panel-brd);" + (a.seen ? "opacity:.55" : "");
+      const when = new Date(a.created_at).toLocaleString();
+      row.textContent = `${a.seen ? "" : "● "}${when} — ${a.kind}: ${JSON.stringify(a.detail)}`;
+      box.appendChild(row);
+    }
+  }catch(e){}
+}
 function closeAdmin(){ $("#adminWrap").classList.remove("show"); $("#adminResult").textContent=""; }
 $("#adminClose").onclick = closeAdmin;
 $("#adminWrap").onclick = (e)=>{ if(e.target.id==="adminWrap") closeAdmin(); };
 document.addEventListener("keydown",(e)=>{ if(e.key==="Escape" && $("#adminWrap").classList.contains("show")) closeAdmin(); });
 $("#adminBtn").onclick = openAdmin;
+$("#adminAlertsSeen").onclick = async ()=>{
+  await fetch("/api/admin/alerts",{method:"POST",headers:{"content-type":"application/json","x-podder-pin":getPin()},body:JSON.stringify({seen:true})}).catch(()=>{});
+  loadAlerts();
+};
 $("#adminGrantBtn").onclick = async ()=>{
   const email   = $("#adminEmail").value.trim();
   const credits = parseInt($("#adminCredits").value, 10);
@@ -6474,6 +6500,7 @@ $("#adminGrantBtn").onclick = async ()=>{
     if(!ACCT.loaded) saveSession(null);      // stale or revoked token — drop it, stay browsable
   } else if(getPin() && (await verifyPin(getPin())) === "ok"){
     ACCT.owner = true;
+    setTimeout(loadAlerts, 1500);   // red count on the Admin button if something needs a look
   }
   updateAcctBar();
 

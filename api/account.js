@@ -5,7 +5,7 @@
 // own payment records, which is required for tax and refunds; nothing here touches them.
 // Images were never stored server-side, so there is nothing else to erase.
 
-import { getUser, missingEnv } from './_lib/server.js';
+import { getUser, missingEnv, alert } from './_lib/server.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'DELETE') return res.status(405).json({ error: 'method_not_allowed' });
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
   });
   if (!r.ok) {
     const detail = (await r.text().catch(() => '')).slice(0, 200);
-    console.error('account delete failed', user.id, r.status, detail);
+    await alert('account_delete_failed', { user: user.id, status: r.status, detail });
     return res.status(502).json({ error: 'delete_failed' });
   }
   return res.status(200).json({ ok: true });

@@ -187,6 +187,7 @@ export async function fulfillSession(sessionId, expectUserId = null) {
   } catch (e) {
     // The customer has paid but we could not record it. Retryable by definition — the
     // idempotency key guarantees the eventual retry credits exactly once.
+    await alert('payment_credit_failed', { sessionId: session.id, userId, credits, error: String(e.message || e) });
     return { ok: false, reason: 'credit_failed', retry: true, detail: String(e.message || e) };
   }
 }
@@ -291,4 +292,33 @@ export async function checkOwnerPin(req, pin = req.headers['x-podder-pin']) {
     });
   } catch { /* logging a failure must never turn it into a success */ }
   return 'bad';
+}
+
+// ---------------------------------------------------------------------------
+// Alerts: anything that needs a human (a refund that failed, a payment we could not credit).
+// Always recorded in ops_alerts (0010) for the owner's admin panel; also pushed to
+// ALERT_WEBHOOK_URL when set (a Discord or Slack incoming-webhook URL) so it reaches a phone.
+// Never throws: an alert failing must not turn into a second failure for the user.
+// ---------------------------------------------------------------------------
+export async function alert(kind, detail = {}) {
+  console.error('ALERT', kind, detail);
+  try {
+    await fetch(`${SUPABASE_URL()}/rest/v1/ops_alerts`, {
+      method: 'POST',
+      headers: { apikey: SERVICE_KEY(), Authorization: `Bearer ${SERVICE_KEY()}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ kind, detail }),
+    });
+  } catch { /* logged above */ }
+  const hook = (process.env.ALERT_WEBHOOK_URL || '').trim();
+  if (hook) {
+    const text = `Podder alert: ${kind}\n${JSON.stringify(detail).slice(0, 1500)}`;
+    try {
+      await fetch(hook, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Discord reads `content`, Slack reads `text`; sending both works for either.
+        body: JSON.stringify({ content: text, text }),
+      });
+    } catch { /* best effort */ }
+  }
 }
