@@ -4252,7 +4252,7 @@ function buildChips(){
     });
   }
   const oc=$("#objChips"); oc.innerHTML="";
-  Object.entries(OBJECTS).filter(([key])=>catOf(key)===state.cat).forEach(([key,o])=>{
+  Object.entries(OBJECTS).filter(([key])=>catOf(key)===state.cat).sort((a,b)=>a[1].label.localeCompare(b[1].label)).forEach(([key,o])=>{
     const c=document.createElement("div"); c.className="chip"+(state.obj===key?" on":"");
     c.dataset.obj=key; c.innerHTML=`<span class="em">${o.emoji}</span>${o.label}`;
     c.onclick=()=>{
@@ -4263,7 +4263,7 @@ function buildChips(){
     oc.appendChild(c);
   });
   const sc=$("#styleChips"); sc.innerHTML="";
-  Object.entries(STYLES).forEach(([key,s])=>{
+  Object.entries(STYLES).sort((a,b)=>a[1].label.localeCompare(b[1].label)).forEach(([key,s])=>{
     const c=document.createElement("div"); c.className="chip style"+(state.styles.has(key)?" on":"");
     c.dataset.style=key; c.innerHTML=`<span class="em">${s.emoji}</span>${s.label}`;
     c.onclick=()=>{
@@ -4625,7 +4625,7 @@ function renderImageInto(wrap, item, imgRef){
   sel.innerHTML = `<option value="">✨ Apply design to other objects…</option>`
     + Object.entries(CATEGORIES).map(([ck,cat])=>
         `<optgroup label="${cat.emoji} ${cat.label}">`
-        + Object.keys(OBJECTS).filter(k=>catOf(k)===ck && k!==item.obj).map(k=>`<option value="${k}">${OBJECTS[k].emoji} ${OBJECTS[k].label}</option>`).join("")
+        + Object.keys(OBJECTS).filter(k=>catOf(k)===ck && k!==item.obj).sort((a,b)=>OBJECTS[a].label.localeCompare(OBJECTS[b].label)).map(k=>`<option value="${k}">${OBJECTS[k].emoji} ${OBJECTS[k].label}</option>`).join("")
         + `</optgroup>`).join("");
   sel.onchange = ()=>{
     const k = sel.value; sel.value = "";
