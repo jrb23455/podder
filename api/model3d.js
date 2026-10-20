@@ -8,7 +8,7 @@
 // WHY THIS IS SPLIT ACROSS CALLS: Tripo generation takes minutes and Vercel functions cap at
 // 60s (see maxDuration in generate.js), so a single request cannot create-and-wait. The client
 // creates a task, polls GET until it succeeds, then asks for the STL conversion. Tripo returns
-// GLB from every generation endpoint; STL only exists as a separate convert_model task.
+// GLB from every generation endpoint; STL only exists as a separate convert task.
 //
 // BILLING: same debit-first rule as generate.js — charge on create, refund if the task fails.
 // model3d_tasks (0009) records which account paid for each task. Convert and refund are refused
@@ -21,16 +21,18 @@ import { createHash } from 'node:crypto';
 
 export const maxDuration = 60;
 
-// VERIFY THESE AGAINST YOUR TRIPO DASHBOARD BEFORE GOING LIVE. Tripo has shipped both a
-// /v2/openapi surface and a newer versioned one; the paths below are the v2 shape. They are
-// isolated here so correcting them is a one-line change rather than a rewrite.
-const TRIPO_BASE = process.env.TRIPO_API_BASE || 'https://api.tripo3d.ai/v2/openapi';
+// Tripo V3. V2 (api.tripo3d.ai/v2/openapi, one /task endpoint with a `type` field) is retired
+// on 2026-10-31. V3 has one endpoint per job, takes every file/task reference as `input`, and
+// returns results under output.model_url. Keys and task ids are shared between the two.
+const TRIPO_BASE = 'https://openapi.tripo3d.ai/v3';
 
-// Known-valid values on the v2 task endpoint: v2.5-20250123, v2.0-20240919, v1.4-20240625.
-// A v3.x string here fails with "The version value is invalid" — v3 is a different surface
-// (/v3/generation/image-to-model, no `type` field), not just a newer version tag on v2.
-// Set TRIPO_MODEL to "none" to omit the field entirely and take Tripo's own default.
-const GEN_MODEL = (process.env.TRIPO_MODEL ?? 'v2.5-20250123').trim();
+// Required on V3. v2.5-20250123 is the model every mesh so far was made and costed with
+// (20 credits untextured); v3.1-20260211 is newer. Override with TRIPO_MODEL.
+const GEN_MODEL = (process.env.TRIPO_MODEL || 'v2.5-20250123').trim();
+
+// Tripo meshes come out normalised to a ~1-unit cube, which slicers read as 1 mm. Scaling at the
+// convert step makes the STL land on the plate at a printable size (longest side, in mm).
+const STL_SIZE_MM = Number(process.env.STL_SIZE_MM) || 80;
 
 // Each STL conversion is its own paid Tripo task (~$0.05), so a mesh gets a fixed number.
 const MAX_CONVERTS = 3;
@@ -85,7 +87,7 @@ async function refundFailedTask(row) {
   }
 }
 
-const isDead = s => s === 'failed' || s === 'banned' || s === 'expired';
+const isDead = s => s === 'failed' || s === 'cancelled' || s === 'banned' || s === 'expired';
 
 // Used by /api/me: settle a user's paid tasks that failed while nobody was watching (tab
 // closed, session expired mid-job). Only a handful of older, unsettled tasks per call.
@@ -98,7 +100,7 @@ export async function settleStaleTasks(userId) {
   if (!r.ok) return;
   for (const row of await r.json()) {
     try {
-      const t = readTask(await tripo(`/task/${encodeURIComponent(row.task_id)}`, token));
+      const t = readTask(await tripo(`/tasks/${encodeURIComponent(row.task_id)}`, token));
       if (isDead(t.status)) await refundFailedTask(row);
     } catch { /* try again next time */ }
   }
@@ -106,22 +108,23 @@ export async function settleStaleTasks(userId) {
 
 // Tripo wants an uploaded file token rather than an inline data URL.
 async function uploadImage(dataUrl, token) {
-  const m = /^data:(image\/(png|jpe?g|webp));base64,(.+)$/i.exec(dataUrl || '');
-  if (!m) throw new Error('image must be a png/jpeg/webp data URL');
+  // V3 /files takes PNG and JPEG only (V2 also took WebP).
+  const m = /^data:(image\/(png|jpe?g));base64,(.+)$/i.exec(dataUrl || '');
+  if (!m) throw new Error('image must be a png/jpeg data URL');
   const bytes = Buffer.from(m[3], 'base64');
   if (bytes.length > 20 * 1024 * 1024) throw new Error('image too large (20MB max)');
 
   const ext = m[2].toLowerCase().startsWith('jp') ? 'jpeg' : m[2].toLowerCase();
   const form = new FormData();
   form.append('file', new Blob([bytes], { type: m[1] }), `podder.${ext}`);
-  const data = await tripo('/upload', token, { method: 'POST', body: form });
+  const data = await tripo('/files', token, { method: 'POST', body: form });
   const fileToken = data.image_token || data.file_token || data.token;
   if (!fileToken) throw new Error('Tripo upload returned no file token');
-  return { fileToken, ext };
+  return { fileToken };
 }
 
-const createTask = (body, token) =>
-  tripo('/task', token, {
+const createTask = (path, body, token) =>
+  tripo(path, token, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -140,11 +143,11 @@ function readTask(d) {
     return null;
   };
   return {
-    status: d.status,                                  // queued | running | success | failed | banned | expired
+    status: d.status,                                  // queued | running | success | failed | cancelled
     progress: typeof d.progress === 'number' ? d.progress : null,
-    glb: pick('pbr_model', 'model', 'base_model'),
-    stl: pick('stl', 'converted_model', 'model'),
-    error: d.status === 'failed' || d.status === 'banned' ? (d.message || 'Tripo task failed') : null,
+    glb: pick('model_url', 'pbr_model', 'model', 'base_model'),
+    stl: pick('model_url', 'stl', 'converted_model', 'model'),
+    error: d.status === 'failed' || d.status === 'banned' ? (d.error_message || d.message || 'Tripo task failed') : null,
   };
 }
 
@@ -161,7 +164,7 @@ export default async function handler(req, res) {
     if (req.query.balance !== undefined) {
       if ((await checkOwnerPin(req)) !== 'ok') return res.status(401).json({ error: 'owner_only' });
       try {
-        return res.status(200).json(await tripo('/user/balance', token));
+        return res.status(200).json(await tripo('/account/balance', token));
       } catch (e) {
         return res.status(502).json({ error: 'tripo_failed', detail: String(e.message || e) });
       }
@@ -170,7 +173,7 @@ export default async function handler(req, res) {
     const id = String(req.query.task || '').trim();
     if (!id) return res.status(400).json({ error: 'missing_task' });
     try {
-      const t = readTask(await tripo(`/task/${encodeURIComponent(id)}`, token));
+      const t = readTask(await tripo(`/tasks/${encodeURIComponent(id)}`, token));
       if (isDead(t.status)) {
         // A failed paid mesh is refunded here, by whoever polls it, so the refund does not
         // depend on the buyer's tab staying open or their session staying fresh.
@@ -206,7 +209,9 @@ export default async function handler(req, res) {
       // An STL already made for this mesh is reused; polling it hands back a fresh link.
       if (row?.stl_task_id && !req.body?.fresh) return res.status(200).json({ taskId: row.stl_task_id, reused: true });
       if (!owner && row.converts >= MAX_CONVERTS) return res.status(429).json({ error: 'convert_limit' });
-      const d = await createTask({ type: 'convert_model', format: 'STL', original_model_task_id: id }, token);
+      const d = await createTask('/models/convert', {
+        input: id, format: 'STL', scale_factor: STL_SIZE_MM, pivot_to_center_bottom: true,
+      }, token);
       const stlId = d.task_id || d.taskId;
       if (row) await patchTaskRow(id, { converts: row.converts + 1, stl_task_id: stlId });
       return res.status(200).json({ taskId: stlId });
@@ -217,7 +222,7 @@ export default async function handler(req, res) {
       if (!user) return res.status(200).json({ credits: null });
       const row = await getTaskRow(String(refund));
       if (!row || row.user_id !== user.id) return res.status(403).json({ error: 'not_your_model' });
-      const t = readTask(await tripo(`/task/${encodeURIComponent(String(refund))}`, token));
+      const t = readTask(await tripo(`/tasks/${encodeURIComponent(String(refund))}`, token));
       if (!isDead(t.status)) return res.status(409).json({ error: 'task_not_failed', status: t.status });
       return res.status(200).json({ credits: await refundFailedTask(row) });
     }
@@ -237,7 +242,7 @@ export default async function handler(req, res) {
       }
     }
 
-    const { fileToken, ext } = await uploadImage(image, token);
+    const { fileToken } = await uploadImage(image, token);
 
     let balance = null;
     if (user) {
@@ -255,13 +260,12 @@ export default async function handler(req, res) {
     try {
       // texture/pbr OFF by default: the deliverable is an STL, and STL stores geometry only —
       // it cannot carry colour or materials, so every credit spent texturing is thrown away at
-      // the convert step. Tripo returns the untextured result as base_model instead of
-      // pbr_model, which readTask() already handles. Set TRIPO_TEXTURE=1 to turn it back on.
+      // the convert step. V3 defaults both to true, so they are always sent.
+      // Set TRIPO_TEXTURE=1 to turn them back on.
       const wantTexture = process.env.TRIPO_TEXTURE === '1';
-      const d = await createTask({
-        type: 'image_to_model',
-        ...(GEN_MODEL && GEN_MODEL !== 'none' ? { model_version: GEN_MODEL } : {}),
-        file: { type: ext, file_token: fileToken },
+      const d = await createTask('/generation/image-to-model', {
+        input: fileToken,
+        model: GEN_MODEL,
         texture: wantTexture,
         pbr: wantTexture,
       }, token);

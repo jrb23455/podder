@@ -17,6 +17,10 @@ export const CREDIT_COST = {
 // MEASURED 2026-10-16 against a live Tripo account, balance read before and after:
 //   20 credits to generate (texture:false) + 5 to convert to STL = 25 credits = $0.25
 //   plus ~$0.014 for the Flux image it is built from  ->  ~$0.264 per mesh
+// RE-MEASURED 2026-10-19 after moving to Tripo V3 (V2 retired 2026-10-31): generation is still
+// 20 credits but V3's convert is 10, so 30 credits = $0.30 + Flux = ~$0.314 per mesh. At 30
+// Podder credits that is ~66% Starter / ~59% Studio after Stripe (the old "25 credits" row
+// below). Kept at 30; revisit if Tripo prices move again.
 // Still ~19x what a fast render costs, so meshes cannot be priced off render intuition.
 //
 // It was 35 credits / $0.364 until texturing was switched off in api/model3d.js. STL stores

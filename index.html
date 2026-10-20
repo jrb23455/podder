@@ -5433,7 +5433,7 @@ function stlDownloadButton(taskId){
   a.className = "btn primary";
   a.style.cssText = "font-size:12px;padding:3px 8px;margin-left:6px";
   a.textContent = "⬇ Download STL";
-  a.title = "Scale it up in your slicer — it arrives about 1 unit across";
+  a.title = "Arrives about 80 mm on its longest side — resize in your slicer if you want it bigger or smaller";
   a.onclick = async ()=>{
     a.disabled = true;
     try{ openDownload(await freshStlUrl(taskId)); }
@@ -5585,8 +5585,8 @@ async function makeModel3D(item, imgRef, btn, meta){
     if(!url) throw new Error("Tripo returned no file");
     rememberStl(item, cj.taskId);
 
-    // Tripo normalises meshes to a unit cube, so the raw file slices at ~1mm. Say so plainly
-    // rather than letting someone discover it on the print bed.
+    // The server scales the STL to ~80 mm on its longest side (Tripo's raw mesh is ~1 mm).
+    // Say the size plainly so nobody discovers it on the print bed.
     status.remove();
     btn.remove();
     meta.appendChild(stlDownloadButton(cj.taskId));
@@ -5594,7 +5594,7 @@ async function makeModel3D(item, imgRef, btn, meta){
     const note = document.createElement("span");
     note.className = "render-time";
     note.style.cssText = "margin-left:8px;color:#6f5f8f";
-    note.textContent = "scale to taste in your slicer — it arrives unit-sized";
+    note.textContent = "about 80 mm tall/wide — resize in your slicer to taste";
     meta.appendChild(note);
     toast("🧊 3D model ready — download the STL");
 
