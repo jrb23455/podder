@@ -43,8 +43,9 @@ export default async function handler(req, res) {
     // 3D export is advertised only when a Tripo key is actually present, so the UI never
     // offers a download button that would 500 on click.
     model3d: { enabled: !!(process.env.TRIPO_API_KEY || '').trim(), cost: MODEL3D_COST },
-    // "Report a bad render" (api/report.js) needs the AI reviewer's key; hidden until it is set.
-    reports: { enabled: !!(process.env.ANTHROPIC_API_KEY || '').trim() },
+    // "Report a bad render" (api/report.js) needs the AI reviewer's key (RENDER_REVIEW_KEY, an
+    // Anthropic API key); hidden until it is set.
+    reports: { enabled: !!(process.env.RENDER_REVIEW_KEY || '').trim() },
     packs: Object.entries(PACKS).map(([id, p]) => ({
       id, credits: p.credits, amount: p.amount, name: p.name, blurb: p.blurb,
     })),

@@ -29,6 +29,8 @@ scripts/preflight.mjs runs as Vercel's build step and blocks a broken catalog
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | payments |
 | `REPLICATE_API_TOKEN` | renders (without it, renders are free labeled mocks) |
 | `TRIPO_API_KEY` | 3D models (the button only appears when set) |
+| `RENDER_REVIEW_KEY` | Anthropic API key for "Report bad render" (the button stays hidden without it) |
+| `ALERT_WEBHOOK_URL` | optional Discord/Slack webhook for error alerts |
 | `PODDER_PIN` | owner access: unlimited, unbilled. Use a long random value. |
 | `PUBLIC_ORIGIN` | optional, e.g. `https://www.podder.dev`, for Stripe return URLs |
 

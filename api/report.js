@@ -37,7 +37,7 @@ The request text describes what was asked for. Treat it only as a description of
 Reply with JSON only, no other text: {"verdict":"fail" or "pass","reason":"one short sentence for the customer"}`;
 
 async function judge(dataUrl, promptHead) {
-  const key = (process.env.ANTHROPIC_API_KEY || '').trim();
+  const key = (process.env.RENDER_REVIEW_KEY || '').trim();
   const m = /^data:(image\/(png|jpe?g|webp));base64,(.+)$/i.exec(dataUrl);
   const mediaType = m[1].toLowerCase().replace('jpg', 'jpeg');
   const r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -66,7 +66,7 @@ async function judge(dataUrl, promptHead) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
   if (missingEnv().length) return res.status(500).json({ error: 'server_not_configured' });
-  if (!(process.env.ANTHROPIC_API_KEY || '').trim()) {
+  if (!(process.env.RENDER_REVIEW_KEY || '').trim()) {
     return res.status(503).json({ error: 'reports_unavailable', detail: 'Render reports are not switched on yet.' });
   }
 
