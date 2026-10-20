@@ -160,7 +160,6 @@
     background:rgba(255,255,255,.06);border:1px solid var(--panel-brd);color:var(--ink);transition:.15s;display:flex;gap:6px;align-items:center}
   .tbtn:hover{border-color:var(--accent2);color:#fff}
   .tbtn.fav.on{color:var(--gold);border-color:var(--gold);background:rgba(255,206,84,.12)}
-  .tbtn#overdriveBtn.on{color:#fff;border-color:var(--accent3);background:rgba(255,93,158,.22);box-shadow:0 0 12px rgba(255,93,158,.35)}
   .render-meta{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:8px}
   .render-meta a{font-size:13px}
   .render-meta .render-time{font-size:12px;color:var(--muted)}
@@ -421,10 +420,9 @@
 
       <div class="controls-grid">
         <div class="row" style="margin-bottom:0">
-          <div class="label">Weirdness <span class="rangeval" id="wildVal">bold</span> <span class="lock" data-lock="wild" title="Keep this weirdness when you hit Surprise me">🔓 lock</span></div>
+          <div class="label">Weirdness <span class="rangeval" id="wildVal">moderate</span> <span class="lock" data-lock="wild" title="Keep this weirdness when you hit Surprise me">🔓 lock</span></div>
           <div style="display:flex;gap:10px;align-items:center">
-            <input type="range" id="wild" min="1" max="5" step="1" value="3" style="flex:1" />
-            <button type="button" class="tbtn" id="overdriveBtn" title="Pushes color, pattern density and visual intensity to a heady psychedelic extreme — without adding literal imagery. Same object, different plane of existence.">⚡ Overdrive</button>
+            <input type="range" id="wild" min="1" max="3" step="1" value="2" style="flex:1" />
           </div>
         </div>
         <div class="row" style="margin-bottom:0">
@@ -4151,7 +4149,6 @@ let state = {
   shape: "Auto",
   styles: new Set(),
   styleDetail: new Set(),   // entries like "sacred::Mandala"
-  overdrive: false,         // ⚡ pins weirdness to max and appends the psychedelic-intensity tail
   locks: {obj:false, style:false, pal:false, shape:false, wild:false}
 };
 
@@ -4397,25 +4394,25 @@ function buildPrompt(){
     ? " The decorative pattern is confined to the dish and the lower part of the upright form. Its upper reaches and every slim prong, finger, branch or tine stay smooth and plain, each one standing apart from its neighbors as its own slender solid shape ending in a rounded tip."
     : "";
 
-  // Weirdness = how far the chosen style may change the object ITSELF (user direction 2026-10-19:
-  // "at normal weirdness it should just be a normal version; slide it up, and especially on
-  // overdrive, the style should be added"). 1-3: a normal, true-to-type object with the style as
-  // surface ornament only. 4: the style starts to reshape it. 5 / Overdrive: reimagined as if made
-  // of the style. Placed right after the opening sentence because that is what Flux weighs most.
+  // Weirdness = how heavily the style is applied (3 levels since 2026-10-20). 1-2: a normal,
+  // true-to-type object with the style as surface ornament only. 3: the style also starts to
+  // reshape the silhouette while the object stays clearly recognizable. The old top level and
+  // Overdrive ("reimagined as if made of the style", "spiraling", "fractal") were removed: Flux
+  // turned them into the same swirls on everything. Placed right after the opening sentence
+  // because that is what Flux weighs most.
   const styleNames = [...new Set(usedStyles)].map(k => STYLES[k].label.toLowerCase()).join(" and ");
   // Figures: the specific shape leads the opening ("A single phoenix mythical creature figurine") and
   // the weirdness note, because Flux settles identity from the first noun phrase; a bare set noun
   // pulls every piece to the set's archetype (every kaiju became Godzilla, every chess piece a king).
   const leadNoun = (isFig && !isAuto) ? `${shapeObj.label.toLowerCase()} ${objNoun}` : objNoun;
   const transformNote = !clauses.length ? ""
-    : wild <= 3 ? `It is a normal, classic, true-to-type ${leadNoun}: its shape, anatomy and identity are exactly what you would expect, and the ${styleNames} style appears only as ornament on its surface.`
-    : wild === 4 ? `The ${styleNames} style starts to reshape the piece itself: its silhouette, edges and features take on the character of the style, while it stays clearly recognizable as a ${leadNoun}.`
-    : `The entire ${leadNoun} is reimagined as if made from the ${styleNames} style itself: body, features and base alike are transformed by it, so the style is what the piece is made of rather than a pattern on its surface, while it remains recognizably a ${leadNoun}.`;
-  // At 4+ a chosen style replaces an object's built-in art tradition ("in the style of
+    : wild <= 2 ? `It is a normal, classic, true-to-type ${leadNoun}: its shape, anatomy and identity are exactly what you would expect, and the ${styleNames} style appears only as ornament on its surface.`
+    : `The ${styleNames} style starts to reshape the piece itself: its silhouette, edges and features take on the character of the style, while it stays clearly recognizable as a ${leadNoun}.`;
+  // At level 3 a chosen style replaces an object's built-in art tradition ("in the style of
   // Kamakura-era temple sculpture"), which otherwise competes with it and wins.
   const formWords = [...new Set(usedStyles)].map(k => STYLE_FORM[k]).filter(Boolean).join(", and ");
-  const styleLead = (!clauses.length || !formWords || wild <= 3) ? "" : wild === 4 ? ` partly ${formWords}` : ` ${formWords}`;
-  const fnText = (clauses.length && wild >= 4) ? o.fn.replace(/ in the [^,.;—]*style of [^,.;—]+/, "") : o.fn;
+  const styleLead = (!clauses.length || !formWords || wild <= 2) ? "" : ` partly ${formWords}`;
+  const fnText = (clauses.length && wild >= 3) ? o.fn.replace(/ in the [^,.;—]*style of [^,.;—]+/, "") : o.fn;
 
   // --- Compact SD prompt for local ComfyUI renders (identity-first, zero negations) ---
   const so = SD_OBJ[state.obj] || {noun:objNoun, bits:""};
@@ -4484,10 +4481,6 @@ function buildPrompt(){
       + `${SD_PAL[pal.v]||"matte finish"}, ${SD_VIEW[view.v]||""}, `+tail)
       .replace(/\s{2,}/g," ").replace(/,\s*,/g,", ");
   }
-  // ⚡ Overdrive — pushes the rendering to psychedelic intensity without adding literal imagery.
-  // The object stays what it is; the colors, surface energy and visual density get pushed
-  // to a heady extreme — everything vibrating, electric, and alive.
-  if(state.overdrive) sd = sd + " Push the rendering to maximum psychedelic intensity. Colors shift to electric neon that appears to glow from within — acid brights, iridescent shifts, colors that seem to change as you look at them. Every pattern and motif on the surface repeats and folds fractally into itself, layer on layer, until the detail feels infinite and overwhelming — like staring into it too long would pull you in. The whole surface has a sense of motion and inner light, as if the geometry itself is breathing. The visual effect should feel like heady glass art held up to light — not by adding any new subject matter, but by pushing the existing forms, colors and ornament to a hallucinogenic visual extreme.";
 
   return {
     id: genId(),
@@ -5052,48 +5045,35 @@ function toast(msg, ms){const t=$("#toast");t.textContent=msg;t.classList.add("s
 // `clauses` is how many distinct style motifs get pulled onto the object; it never changes
 // WHICH styles are used, only how many clauses describe them. `lead`/`tail` wrap that clause
 // list in the prompt, `relief` is the carving adjective, `note` is the standalone density
-// sentence appended near the end. Level 5 is what ⚡ Overdrive slams the slider to.
+// sentence appended near the end. Three levels since 2026-10-20 (old 2/3/4; old 1 "minimal" and
+// old 5 "psychedelic" + Overdrive removed — 5 was the source of the everything-is-swirls renders).
 const WILD = {
-  1: {label:"minimal", clauses:1,
-      relief:"minimal, whisper-light, barely carved",
-      lead:"It is barely decorated with",
-      tail:"— a single whisper of ornament on an otherwise bare surface, the vast majority of the form left completely smooth.",
-      note:"The decoration is almost absent — one restrained motif, shallowly carved, on a surface that is otherwise entirely smooth and bare. The form alone carries the piece; the ornament is a faint accent you only notice on a second look."},
-  2: {label:"subtle", clauses:2,
+  1: {label:"subtle", clauses:2,
       relief:"subtle, lightly carved, sparse",
       lead:"It is lightly decorated with",
       tail:"— shallow, elegant accents with plenty of smooth bare surface between them.",
       note:"The decoration is clean and restrained — each motif appears once, lightly carved with shallow relief. Large areas of smooth, undecorated surface are visible between the sparse ornamental accents. The object's form dominates; the styling is a subtle accent, not the main event."},
-  3: {label:"bold", clauses:3,
+  2: {label:"moderate", clauses:3,
       relief:"rich, elaborate, deeply carved",
       lead:"It is richly decorated with",
       tail:"— raised, carved and self-shadowed so the surface itself changes shape, never a flat painted or printed pattern.",
       note:"The decoration is rich and elaborate — motifs repeat and layer across the surface with confident density, carved noticeably deep, doubling up where space allows. The effect should feel lush and maximalist, clearly more ornate than a simple clean pass."},
-  4: {label:"intense", clauses:4,
+  3: {label:"heavy", clauses:4,
       relief:"dense, heavily layered, boldly carved",
       lead:"It is densely decorated with",
       tail:"— ornament stacked two and three layers deep across nearly the whole surface, carved hard enough to throw real shadow into itself, only small pockets of bare material left.",
       note:"The decoration is dense and insistent — motifs repeat, overlap and stack across almost the entire surface, carved deep enough to cast real shadows into themselves. Only small pockets of bare material survive between them. The effect is heavy and maximalist, well past merely ornate, though the object's underlying shape stays readable."},
-  5: {label:"psychedelic", clauses:5,
-      relief:"hallucinatory, fractal-dense, overwhelmingly layered, carved to extreme depth",
-      lead:"It is overwhelmingly decorated with",
-      tail:"— layers upon layers of ornament piled on top of each other, carved so deep the surface is more relief than flat, dripping with psychedelic density.",
-      note:"The decoration is pushed to a hallucinatory, psychedelic extreme — every square millimeter is saturated with layered, overlapping, fractal-dense ornament piled three or four layers deep, motifs nesting inside motifs, spiraling into themselves, carved so deep the surface is more texture than form. The effect should feel overwhelming, almost alive, like staring into a fever dream. The object is barely containable under all the ornamentation."},
 };
-const wildLevel = v => WILD[v] || WILD[3];
+const wildLevel = v => WILD[v] || WILD[2];
 // Reads the range off the input rather than hardcoding it, so widening the slider can never
 // again leave Randomize picking from a stale narrower range.
 function randWild(){
-  const w=$("#wild"), lo=+w.min||1, hi=+w.max||5;
+  const w=$("#wild"), lo=+w.min||1, hi=+w.max||3;
   return lo + Math.floor(Math.random()*(hi-lo+1));
 }
 function onWild(){
   const w=$("#wild");
   $("#wildVal").textContent=wildLevel(w.value).label;
-  if(state.overdrive && +w.value < +w.max){
-    state.overdrive=false;
-    $("#overdriveBtn").classList.remove("on");
-  }
 }
 // "How many designs per click" drives Generate AND the card buttons (Similar, Reroll, Apply
 // design), which used to be fixed at 6 renders — a surprise 6 or 18 credits per click.
@@ -6293,13 +6273,6 @@ if(state.styles.size || (state.shape && state.shape !== "Auto")) setRefineOpen(t
 $("#count").oninput=onCount;
 $("#wild").oninput=onWild;
 onWild();   // sync the label to the slider's initial value — otherwise it shows stale markup text
-$("#overdriveBtn").onclick=()=>{
-  state.overdrive=!state.overdrive;
-  $("#overdriveBtn").classList.toggle("on",state.overdrive);
-  // Overdrive means "as weird as it goes" — slam the weirdness slider to max along with it.
-  if(state.overdrive){ const w=$("#wild"); w.value=w.max; onWild(); }
-  toast(state.overdrive ? "⚡ Overdrive ON — electric colors, infinite fractal depth, everything alive" : "Overdrive off");
-};
 $("#clearHist").onclick=()=>{if(confirm("Clear all history?")){hist=[];LS_set("podder_hist",hist);refreshCounts();showTab("hist");}};
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>showTab(t.dataset.tab));
 $("#cardModalClose").onclick=closeCardModal;
