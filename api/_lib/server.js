@@ -249,8 +249,12 @@ export function readRawBody(req, timeoutMs = 2000) {
 // guessable PIN is a direct line to the Replicate and Tripo bills. Every wrong guess is logged
 // per IP in pin_failures (0009); after PIN_MAX_FAILS in an hour that IP is refused even with the
 // right PIN until the hour rolls over. A missing/blank header is not a guess and is not logged.
+// Site-wide, PIN_MAX_FAILS_ALL wrong PINs in an hour from ANY addresses shuts the PIN off for
+// everyone (owner included) until the hour rolls over, and alerts the owner. That stops someone
+// spreading guesses across many IPs, which is what makes a short PIN safe enough.
 // ---------------------------------------------------------------------------
 const PIN_MAX_FAILS = 10;
+const PIN_MAX_FAILS_ALL = 30;
 
 export function pinMatches(candidate) {
   const real = process.env.PODDER_PIN || '';
@@ -265,10 +269,11 @@ export function clientIp(req) {
   return xf || String(req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown');
 }
 
-async function recentPinFailures(ip) {
+async function recentPinFailures(ip) {   // ip = null counts every address
   const since = new Date(Date.now() - 3600_000).toISOString();
+  const who = ip === null ? '' : `ip=eq.${encodeURIComponent(ip)}&`;
   const r = await fetch(
-    `${SUPABASE_URL()}/rest/v1/pin_failures?ip=eq.${encodeURIComponent(ip)}&created_at=gte.${since}&select=id`,
+    `${SUPABASE_URL()}/rest/v1/pin_failures?${who}created_at=gte.${since}&select=id`,
     { headers: { apikey: SERVICE_KEY(), Authorization: `Bearer ${SERVICE_KEY()}`, Prefer: 'count=exact', Range: '0-0' } }
   );
   const total = Number((r.headers.get('content-range') || '').split('/')[1]);
@@ -280,9 +285,10 @@ export async function checkOwnerPin(req, pin = req.headers['x-podder-pin']) {
   if (typeof pin !== 'string' || !pin) return 'none';
   if (!process.env.PODDER_PIN) return 'bad';
   const ip = clientIp(req);
-  let fails = 0;
-  try { fails = await recentPinFailures(ip); } catch { /* fail open on the counter, never on the PIN */ }
-  if (fails >= PIN_MAX_FAILS) return 'locked';
+  let fails = 0, allFails = 0;
+  try { [fails, allFails] = await Promise.all([recentPinFailures(ip), recentPinFailures(null)]); }
+  catch { /* fail open on the counter, never on the PIN */ }
+  if (fails >= PIN_MAX_FAILS || allFails >= PIN_MAX_FAILS_ALL) return 'locked';
   if (pinMatches(pin)) return 'ok';
   try {
     await fetch(`${SUPABASE_URL()}/rest/v1/pin_failures`, {
@@ -291,6 +297,11 @@ export async function checkOwnerPin(req, pin = req.headers['x-podder-pin']) {
       body: JSON.stringify({ ip }),
     });
   } catch { /* logging a failure must never turn it into a success */ }
+  // This guess is the one that trips the site-wide lock: tell the owner (once per lockout).
+  if (allFails + 1 === PIN_MAX_FAILS_ALL) {
+    await alert('pin_locked_sitewide', { wrongPinsLastHour: PIN_MAX_FAILS_ALL, lastIp: ip,
+      note: 'Owner PIN disabled for up to an hour. If this was not you, change PODDER_PIN in Vercel.' });
+  }
   return 'bad';
 }
 
