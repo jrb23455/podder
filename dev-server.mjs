@@ -2,9 +2,11 @@
 // /api functions, with the same req/res shape Vercel's Node runtime provides.
 // NOT deployed — Vercel ignores this file and serves api/*.js as real serverless functions.
 //
-//   node dev-server.mjs          -> http://localhost:8299   (PIN defaults to 2323 in dev)
+//   node dev-server.mjs          -> http://localhost:8299   (PIN from .env.local, else 2323)
 //
-// Without REPLICATE_API_TOKEN set, /api/generate returns mock placeholder images.
+// Renders: with REPLICATE_API_TOKEN set they are REAL, PAID Replicate renders. Without it they
+// go to the local ComfyUI (dev-comfy.mjs: same page, same prompts, free, owner PIN only), or to
+// mock placeholder images if ComfyUI is not running. 3D models are not routed here at all.
 
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -32,6 +34,7 @@ import checkoutHandler from './api/checkout.js';
 import webhookHandler from './api/stripe-webhook.js';
 import claimHandler from './api/claim.js';
 import adminGrantHandler from './api/admin/grant.js';
+import comfyGenerate, { comfyAvailable } from './dev-comfy.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = 8299;
@@ -48,6 +51,13 @@ const ROUTES = {
   '/api/admin/grant': adminGrantHandler,
 };
 const RAW_ROUTES = new Set(['/api/stripe-webhook']);
+
+// Decided per request so starting ComfyUI after the dev server still works.
+const HAS_REPLICATE = !!(process.env.REPLICATE_API_TOKEN || '').trim();
+async function pickGenerate() {
+  if (HAS_REPLICATE) return generateHandler;
+  return (await comfyAvailable()) ? comfyGenerate : generateHandler;   // generateHandler = mock images
+}
 const TYPES = { '.html': 'text/html; charset=utf-8', '.png': 'image/png', '.ico': 'image/x-icon',
   '.json': 'application/json', '.svg': 'image/svg+xml', '.js': 'text/javascript', '.css': 'text/css' };
 
@@ -74,7 +84,8 @@ const server = http.createServer(async (req, res) => {
     let body = {};
     try { body = raw ? JSON.parse(raw) : {}; } catch {}
     vercelify(req, res, body);
-    try { await ROUTES[p](req, res); }
+    const handler = p === '/api/generate' ? await pickGenerate() : ROUTES[p];
+    try { await handler(req, res); }
     catch (e) { if (!res.writableEnded) res.status(500).json({ error: String(e.message || e) }); }
     return;
   }
@@ -91,7 +102,9 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
+// 127.0.0.1 only: local renders run on this PC's GPU, so nothing else on the network may queue them.
+server.listen(PORT, '127.0.0.1', async () => {
   console.log(`\n  Podder Web (dev) -> http://localhost:${PORT}`);
-  console.log(`  PIN: ${process.env.PODDER_PIN}   Replicate: ${process.env.REPLICATE_API_TOKEN ? 'LIVE' : 'mock mode'}\n`);
+  const renders = HAS_REPLICATE ? 'REPLICATE (real, paid)' : (await comfyAvailable()) ? 'local ComfyUI (free)' : 'mock images (ComfyUI not running)';
+  console.log(`  Renders: ${renders}   Unlock with the owner PIN from .env.local (default 2323)\n`);
 });
