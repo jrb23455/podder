@@ -4623,6 +4623,7 @@ function renderImageInto(wrap, item, imgRef){
   // Image -> printable STL, in-app. Only offered when the server actually holds a Tripo key,
   // so the button can never appear and then 500 on click.
   if(ACCT.cfg?.model3d?.enabled) add3dButtons(item, imgRef, meta);
+  addReportButton(imgRef, meta, wrap);
   imgSrc(imgRef).then(u=>{ if(!u){ image.onerror(); return; } image.src=u; dl.href=u; });
   // "Apply design to other objects" — img2img this picture into a different object's form.
   const sel = document.createElement("select"); sel.className = "variantSel";
@@ -4700,6 +4701,7 @@ function renderEditResultInto(wrap, item, imgRef){
   // Image -> printable STL, in-app. Only offered when the server actually holds a Tripo key,
   // so the button can never appear and then 500 on click.
   if(ACCT.cfg?.model3d?.enabled) add3dButtons(item, imgRef, meta);
+  addReportButton(imgRef, meta, wrap);
   imgSrc(imgRef).then(u=>{ if(u){ image.src=u; dl.href=u; } });
   meta.appendChild(buildFavBtn(item));
   if(item.renderMs){ const t=document.createElement("span"); t.className="render-time"; t.textContent=fmtDuration(item.renderMs); meta.appendChild(t); }
@@ -5450,6 +5452,56 @@ function add3dButtons(item, imgRef, meta){
   meta.appendChild(mk);
 }
 
+// "Report a bad render": an AI reviewer (api/report.js) refunds a render only if it clearly came
+// out wrong. Offered for 24 h on renders this account paid for. A refunded picture is removed from
+// favorites/history and this browser, and the server refuses to turn it into a 3D model.
+const REPORT_WINDOW_MS = 24*3600_000;
+function addReportButton(imgRef, meta, wrap){
+  if(!imgRef || !imgRef.rid || ACCT.owner || !ACCT.cfg?.reports?.enabled) return;
+  if(!imgRef.at || Date.now() - imgRef.at > REPORT_WINDOW_MS) return;
+  const b = document.createElement("button"); b.className = "btn ghost";
+  b.style.cssText = "font-size:12px;padding:3px 8px;margin-left:6px";
+  b.textContent = "⚠ Report bad render";
+  b.title = "If this came out wrong (not the object you picked, several objects, an item drawn in, or a broken image), an AI reviewer checks it and refunds the credits. Up to 3 reports a day.";
+  b.onclick = ()=>reportRender(imgRef, b, wrap);
+  meta.appendChild(b);
+}
+async function reportRender(imgRef, btn, wrap){
+  if(!confirm("Report this render as broken?\n\nAn AI reviewer compares it with what you asked for. If it clearly came out wrong, your credits come back and the picture is removed. Not liking the design isn't a fault. Up to 3 reports a day.")) return;
+  btn.disabled = true; btn.textContent = "⏳ Reviewing…";
+  try{
+    const src = await imgSrc(imgRef);
+    const blob = await (await fetch(src)).blob();
+    const image = await new Promise((res, rej)=>{ const fr = new FileReader(); fr.onload = ()=>res(fr.result); fr.onerror = ()=>rej(fr.error); fr.readAsDataURL(blob); });
+    const token = await getToken();
+    const r = await fetch("/api/report", {method:"POST", headers:{"content-type":"application/json", Authorization:`Bearer ${token}`},
+      body: JSON.stringify({renderId: imgRef.rid, image})});
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok){
+      btn.textContent = "⚠ Report bad render"; btn.disabled = j.error === "already_reported" || j.error === "too_old";
+      toast(j.detail || (j.error === "already_reported" ? "This render was already reviewed" : "Report failed: " + (j.error || r.status)), 6000);
+      return;
+    }
+    if(j.verdict === "refunded"){
+      if(typeof j.credits === "number"){ ACCT.credits = j.credits; updateAcctBar(); }
+      // Remove the picture everywhere this browser keeps it.
+      const same = it => it && it.renderImg && it.renderImg.rid === imgRef.rid;
+      hist = hist.filter(it=>!same(it)); LS_set("podder_hist", hist);
+      favs = favs.filter(it=>!same(it)); LS_set("podder_favs", favs);
+      try{ await idbDel(imgRef.idb); }catch(e){}
+      refreshCounts();
+      wrap.innerHTML = `<div class="render-status" style="color:var(--accent2)">✓ Refunded. ${j.reason ? j.reason.replace(/[<>&]/g,"") : ""}</div>`;
+      toast("Credits refunded", 4000);
+    } else {
+      btn.textContent = "Reviewed: kept";
+      toast("Not refunded: " + (j.reason || "the reviewer found the render matches what was asked for."), 7000);
+    }
+  }catch(e){
+    btn.disabled = false; btn.textContent = "⚠ Report bad render";
+    toast("Report failed: " + (e.message || e), 6000);
+  }
+}
+
 async function makeModel3D(item, imgRef, btn, meta){
   const cost = ACCT.cfg?.model3d?.cost ?? 40;
   const src = await imgSrc(imgRef);
@@ -5511,6 +5563,7 @@ async function makeModel3D(item, imgRef, btn, meta){
       throw new Error(refreshed ? "Session refreshed — try again" : "Please sign in again");
     }
     if(r.status === 402){ openBuy(`A 3D model costs ${cost} credits.`); throw new Error("Not enough credits"); }
+    if(r.status === 403 && j.error === "render_refunded") throw new Error(j.detail);
     if(!r.ok || !j.taskId) throw new Error(j.detail || j.error || `HTTP ${r.status}`);
 
     created = j.taskId;
@@ -5876,6 +5929,7 @@ async function renderCard(item, card, revealAfter, startAfter){
     // card above has shown its result — batches fill strictly top-down, never bottom-up.
     if(revealAfter) await revealAfter.catch(()=>{});
     const imgRef = {idb:key};
+    if(j.renderId){ imgRef.rid = j.renderId; imgRef.at = Date.now(); }   // enables "Report a bad render"
     item.renderImg = imgRef;               // so a later ☆ click captures THIS picture, not just the prompt
     item.renderMs = Date.now()-t0;
     renderImageInto(wrap, item, imgRef);
@@ -5989,7 +6043,7 @@ async function spawnVariants(item, wrap, targetObjKey, count){
         const vItem = {...(cross?promptItem:item), id:genId(), parentId:item.id, variant:true,
           sd: promptItem.sd,
           editInstruction: cross ? ("design applied to "+OBJECTS[targetObjKey].label) : "similar variation",
-          renderImg:{idb:key}, renderMs:null};
+          renderImg: j.renderId ? {idb:key, rid:j.renderId, at:Date.now()} : {idb:key}, renderMs:null};
         hist.unshift({...vItem}); hist = hist.slice(0,300); LS_set("podder_hist",hist); refreshCounts();
         tile.innerHTML = `<img class="thumbImg" loading="lazy" />`;
         const u = await imgSrc(vItem.renderImg);

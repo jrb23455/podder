@@ -17,6 +17,7 @@
 
 import { getUser, debit, credit, isInsufficient, missingEnv, checkOwnerPin, alert } from './_lib/server.js';
 import { MODEL3D_COST } from './_lib/config.js';
+import { createHash } from 'node:crypto';
 
 export const maxDuration = 60;
 
@@ -223,6 +224,18 @@ export default async function handler(req, res) {
 
     // ---- create the mesh ----
     if (!image) return res.status(400).json({ error: 'missing_image' });
+
+    // A render refunded through "Report a bad render" cannot be turned into a model.
+    {
+      const b64 = /^data:image\/[a-z]+;base64,(.+)$/i.exec(String(image));
+      if (b64) {
+        const sha = createHash('sha256').update(Buffer.from(b64[1], 'base64')).digest('hex');
+        const rr = await fetch(`${SB()}/rest/v1/renders?image_sha=eq.${sha}&refunded=eq.true&select=id&limit=1`, { headers: sbH() });
+        if (rr.ok && (await rr.json()).length) {
+          return res.status(403).json({ error: 'render_refunded', detail: 'This render was refunded, so it cannot be made into a 3D model.' });
+        }
+      }
+    }
 
     const { fileToken, ext } = await uploadImage(image, token);
 

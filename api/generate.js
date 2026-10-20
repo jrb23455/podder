@@ -14,6 +14,7 @@
 
 import { getUser, debit, credit, isInsufficient, missingEnv, checkOwnerPin, alert } from './_lib/server.js';
 import { creditsFor } from './_lib/config.js';
+import { createHash } from 'node:crypto';
 
 export const maxDuration = 60;
 
@@ -145,8 +146,21 @@ export default async function handler(req, res) {
     if (!imgResp.ok) throw new Error(`Image fetch failed (${imgResp.status})`);
     const buf = Buffer.from(await imgResp.arrayBuffer());
     const type = imgResp.headers.get('content-type') || 'image/png';
+    // Record the billed render so a later "Report a bad render" can be checked against exactly this
+    // image (by hash) and this prompt, and so a refunded image can be locked out of 3D export.
+    if (user) {
+      try {
+        await fetch(`${(process.env.SUPABASE_URL || '').replace(/\/+$/, '')}/rest/v1/renders`, {
+          method: 'POST',
+          headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify({ id: renderId, user_id: user.id, cost, quality: cfg === MODELS.quality ? 'quality' : 'fast',
+            prompt_head: prompt.slice(0, 600), image_sha: createHash('sha256').update(buf).digest('hex') }),
+        });
+      } catch { /* reporting is optional; the render itself succeeded */ }
+    }
     return res.status(200).json({
       image: `data:${type};base64,${buf.toString('base64')}`,
+      renderId: user ? renderId : null,
       credits: balance,
     });
   } catch (e) {
