@@ -39,7 +39,7 @@ async function uploadImage(dataUrl) {
   return j.subfolder ? `${j.subfolder}/${j.name}` : j.name;
 }
 
-function graph(prompt, { aspect, quality, imageName, denoise }) {
+function graph(prompt, { aspect, quality, imageName, denoise, seed, name }) {
   const [w, h] = SIZES[aspect] || SIZES['1:1'];
   const g = {
     '1': { class_type: 'UNETLoader', inputs: { unet_name: UNET, weight_dtype: 'fp8_e4m3fn' } },
@@ -48,11 +48,11 @@ function graph(prompt, { aspect, quality, imageName, denoise }) {
     '4': { class_type: 'CLIPTextEncode', inputs: { text: prompt, clip: ['2', 0] } },
     '5': { class_type: 'ConditioningZeroOut', inputs: { conditioning: ['4', 0] } },
     '6': { class_type: 'FluxGuidance', inputs: { guidance: GUIDANCE, conditioning: ['4', 0] } },
-    '8': { class_type: 'KSampler', inputs: { seed: Math.floor(Math.random() * 1e15), steps: STEPS[quality] || STEPS.fast, cfg: 1,
+    '8': { class_type: 'KSampler', inputs: { seed: Number.isInteger(seed) ? seed : Math.floor(Math.random() * 1e15), steps: STEPS[quality] || STEPS.fast, cfg: 1,
       sampler_name: 'euler', scheduler: 'simple', denoise: imageName ? denoise : 1,
       model: ['1', 0], positive: ['6', 0], negative: ['5', 0], latent_image: ['7', 0] } },
     '9': { class_type: 'VAEDecode', inputs: { samples: ['8', 0], vae: ['3', 0] } },
-    '10': { class_type: 'SaveImage', inputs: { filename_prefix: 'PodderWeb-local/render', images: ['9', 0] } },
+    '10': { class_type: 'SaveImage', inputs: { filename_prefix: 'PodderWeb-local/' + (String(name || 'render').replace(/[^a-z0-9_-]+/gi, '-').slice(0, 80) || 'render'), images: ['9', 0] } },
   };
   if (imageName) {
     g['11'] = { class_type: 'LoadImage', inputs: { image: imageName } };
@@ -94,13 +94,13 @@ export default async function comfyGenerate(req, res) {
   if (!pinMatches(req.headers['x-podder-pin'])) {
     return res.status(401).json({ error: 'not_signed_in', detail: 'Local renders need the owner PIN from .env.local (default 2323).' });
   }
-  const { prompt, aspect = '1:1', image, strength, quality = 'fast' } = req.body || {};
+  const { prompt, aspect = '1:1', image, strength, quality = 'fast', seed, name } = req.body || {};   // seed/name: dev-only, for labelled same-seed A/B tests
   if (!prompt || typeof prompt !== 'string') return res.status(400).json({ error: 'missing_prompt' });
   try {
     // Same meaning as Replicate's prompt_strength: 0 keeps the image, 1 ignores it.
     const denoise = typeof strength === 'number' && strength > 0 && strength <= 1 ? strength : 0.62;
     const imageName = image ? await uploadImage(image) : null;
-    const dataUrl = await render(prompt, { aspect, quality, imageName, denoise });
+    const dataUrl = await render(prompt, { aspect, quality, imageName, denoise, seed, name });
     return res.status(200).json({ image: dataUrl, credits: null, renderId: null, local: true });
   } catch (e) {
     return res.status(502).json({ error: 'render_failed', detail: String(e.message || e), credits: null, refunded: false });
