@@ -4144,7 +4144,13 @@ function buildPrompt(){
   // Figures: the specific shape leads the opening ("A single phoenix mythical creature figurine") and
   // the weirdness note, because Flux settles identity from the first noun phrase; a bare set noun
   // pulls every piece to the set's archetype (every kaiju became Godzilla, every chess piece a king).
-  const leadNoun = (isFig && !isAuto) ? `${shapeObj.label.toLowerCase()} ${objNoun}` : objNoun;
+  // Both FLUX 3 services rewrite prompts and invent a subject when it is left open (an "Auto" character
+  // became Gandalf, an "Auto" animal a cat), so an Auto figurine names a concrete shape from its own list.
+  // The Auto shape text still lets the chosen style drive the pose and silhouette.
+  const autoPicks = (isFig && isAuto) ? o.shapes.filter(s => s.label !== "Auto") : [];
+  const autoPick = autoPicks.length ? autoPicks[Math.floor(Math.random() * autoPicks.length)] : null;
+  const leadNoun = (isFig && !isAuto) ? `${shapeObj.label.toLowerCase()} ${objNoun}`
+    : autoPick ? `${autoPick.label.toLowerCase()} ${objNoun}` : objNoun;
   const transformNote = !clauses.length ? ""
     : wild <= 2 ? `It is a normal, classic, true-to-type ${leadNoun}: its shape, anatomy and identity are exactly what you would expect, and the ${styleNames} style appears only as ornament on its surface.`
     : `The ${styleNames} style starts to reshape the piece itself: its silhouette, edges and features take on the character of the style, while it stays clearly recognizable as a ${leadNoun}.`;

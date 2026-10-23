@@ -1,15 +1,17 @@
 // Single source of truth for what things cost. The client reads this via /api/me so the
 // UI and the billing logic can never drift apart — change a number here and both follow.
 //
-// Underlying Replicate cost per 1024×1024 render (checked 2026-08-07):
-//   flux-2-klein-4b  ~$0.014            -> "fast"
-//   flux-2-pro        $0.015 + $0.015/MP -> ~$0.030 txt2img, ~$0.045 img2img (input MP billed too)
-// Credits are priced at roughly 5× cost, which absorbs Stripe fees, Vercel, and Supabase
-// while staying cheap enough that a hobbyist doesn't count renders.
+// Underlying cost per ~1 MP render (models switched 2026-10-22, see api/generate.js):
+//   fast    FLUX 3 Image Klein, BFL API      ~$0.005 measured (20 renders = 9.9 BFL credits)
+//   quality FLUX 3 Image, Replicate          ~$0.04 (owner's figure; confirm on Replicate billing)
+// Before: flux-2-klein-4b ~$0.014 (fast), flux-2-pro ~$0.030 (quality).
+// A credit nets ~$0.026-0.030 after Stripe (Studio vs Starter). Fast at 1 credit: ~80%+ margin.
+// Quality at 4 credits keeps the ~61-67% margin Quality had on Flux 2 pro at 3 credits.
+// (The old "5x cost" rule would put Quality at 6-7 credits, which felt too expensive.)
 
 export const CREDIT_COST = {
   fast: 1,
-  quality: 3,
+  quality: 4,
 };
 
 // What a downloadable 3D mesh costs (api/model3d.js -> Tripo image-to-3D + STL convert).

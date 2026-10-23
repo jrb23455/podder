@@ -3,8 +3,16 @@
 //   body: { prompt, aspect?: "1:1"|"2:3"|"3:2", image?: dataURL, strength?: 0..1, quality?: "fast"|"quality" }
 //   ->   { image: dataURL, credits: <new balance>, mock?: true }
 //
-// Runs Flux on Replicate server-side so the API token never reaches the browser.
+// Runs the image model server-side so API keys never reach the browser.
 // With `image` set it does an img2img edit (Podder's ✎ Edit box); without, plain txt2img.
+//
+// MODELS (switched 2026-10-22 after a same-prompt shoot-out, see PodderQC-shift-log.md):
+//   fast    -> FLUX 3 Image Klein on Black Forest Labs' own API (BFL_API_KEY). ~$0.005/image, ~6 s.
+//   quality -> FLUX 3 Image (full) on Replicate (REPLICATE_API_TOKEN), grounding (web search) off. ~25 s.
+// Rollback without a code change: FAST_PROVIDER=replicate puts fast back on flux-2-klein-4b, and
+// QUALITY_MODEL=black-forest-labs/flux-2-pro puts quality back on Flux 2 pro.
+// Both FLUX 3 services rewrite prompts before rendering, so the client sends a concrete subject
+// (buildPrompt picks one for figurine "Auto" shapes) or the rewriter invents one.
 //
 // Billing order is deliberate: debit FIRST, render second, refund on failure. Rendering
 // first would let a client abandon the connection mid-render and never be charged, and
@@ -18,10 +26,34 @@ import { createHash } from 'node:crypto';
 
 export const maxDuration = 60;
 
-const MODELS = {
-  fast:    { model: 'black-forest-labs/flux-2-klein-4b', useVersionApi: true,  goFast: true,  imgField: 'images' },
-  quality: { model: 'black-forest-labs/flux-2-pro',      useVersionApi: false, goFast: false, imgField: 'image'  },
+const REPLICATE_MODELS = {
+  'black-forest-labs/flux-2-klein-4b': { useVersionApi: true,  goFast: true,  imgField: 'images' },
+  'black-forest-labs/flux-2-pro':      { useVersionApi: false, goFast: false, imgField: 'image'  },
+  'black-forest-labs/flux-3-image':    { useVersionApi: false, flux3: true,   imgField: 'images' },
 };
+const env = k => (process.env[k] || '').trim().replace(/^["']|["']$/g, '');
+const fastProvider = () => (env('FAST_PROVIDER') || (env('BFL_API_KEY') ? 'bfl' : 'replicate')).toLowerCase();
+const qualityModel = () => env('QUALITY_MODEL') || 'black-forest-labs/flux-3-image';
+
+// FLUX 3 Image Klein on api.bfl.ai: submit, then poll the returned polling_url until Ready.
+async function bfl(input, key) {
+  const deadline = Date.now() + 50_000;
+  const sub = await fetch('https://api.bfl.ai/v1/flux-3-image-klein', {
+    method: 'POST', headers: { 'x-key': key, 'Content-Type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify(input),
+  });
+  const sj = await sub.json().catch(() => ({}));
+  if (!sub.ok || !sj.polling_url) throw new Error(sj.detail?.[0]?.msg || sj.detail || sj.message || `BFL ${sub.status}`);
+  for (;;) {
+    if (Date.now() > deadline) throw new Error('Render timed out — try again');
+    await new Promise(r => setTimeout(r, 1200));
+    const pr = await fetch(sj.polling_url, { headers: { 'x-key': key, accept: 'application/json' } });
+    const pj = await pr.json().catch(() => ({}));
+    if (pj.status === 'Ready') return pj.result?.sample;
+    if (/moderat/i.test(pj.status || '')) throw new Error("That design was blocked by the image service's safety filter — try different wording");
+    if (pj.status === 'Error' || pj.status === 'Failed') throw new Error(pj.result?.error || 'Render failed');
+  }
+}
 
 function mockImage(prompt) {
   const label = (prompt || 'mock render').slice(0, 90).replace(/[<>&"]/g, ' ');
@@ -101,13 +133,14 @@ export default async function handler(req, res) {
     if (!user) return res.status(401).json({ error: 'not_signed_in' });
   }
 
-  const token = (process.env.REPLICATE_API_TOKEN || '')
-    .trim().replace(/^["']|["']$/g, '').replace(/^Bearer\s+/i, '').trim();
+  const token = env('REPLICATE_API_TOKEN').replace(/^Bearer\s+/i, '').trim();
+  const bflKey = env('BFL_API_KEY');
+  const useBfl = quality !== 'quality' && fastProvider() === 'bfl' && !!bflKey;
+  const model = quality === 'quality' ? qualityModel() : 'black-forest-labs/flux-2-klein-4b';
+  const cfg = REPLICATE_MODELS[model] || REPLICATE_MODELS['black-forest-labs/flux-3-image'];
 
-  // No Replicate token means nothing real is being generated, so nothing is charged.
-  if (!token) return res.status(200).json({ image: mockImage(prompt), mock: true });
-
-  const cfg = MODELS[quality] || MODELS.fast;
+  // No key for the service this render would use means nothing real is generated, so nothing is charged.
+  if (!useBfl && !token) return res.status(200).json({ image: mockImage(prompt), mock: true });
   const cost = creditsFor(quality);
   const renderId = crypto.randomUUID();
 
@@ -125,22 +158,31 @@ export default async function handler(req, res) {
 
   try {
     const isEdit = !!image;
-    const input = {
-      prompt,
-      aspect_ratio: ['1:1', '2:3', '3:2'].includes(aspect) ? aspect : '1:1',
-      output_format: 'png',
-      // go_fast cuts sampling steps; edits need the full pass to follow the instruction.
-      go_fast: isEdit ? false : cfg.goFast,
-    };
-    if (isEdit) {
-      input[cfg.imgField] = cfg.imgField === 'images' ? [image] : image;
-      // prompt_strength: 0 = copy image exactly, 1 = ignore image entirely. Default ~0.8
-      // if omitted, which is usually too high for subtle edits. Pass whatever the UI chose.
-      if (typeof strength === 'number' && strength > 0 && strength <= 1) {
-        input.prompt_strength = strength;
+    const ratio = ['1:1', '2:3', '3:2'].includes(aspect) ? aspect : '1:1';
+    let imgUrl;
+    if (useBfl) {
+      const input = { prompt, aspect_ratio: ratio, resolution: '1k', output_format: 'png', safety_tolerance: 2 };
+      if (isEdit) input.images = [String(image).replace(/^data:image\/[a-z+]+;base64,/i, '')];   // URL or bare base64
+      imgUrl = await bfl(input, bflKey);
+    } else {
+      const input = { prompt, aspect_ratio: ratio, output_format: 'png' };
+      if (cfg.flux3) {
+        input.resolution = '1k';
+        input.grounding = false;   // on by default: it web-searches the prompt first (slower, and can drift the subject)
+      } else {
+        // go_fast cuts sampling steps; edits need the full pass to follow the instruction.
+        input.go_fast = isEdit ? false : cfg.goFast;
       }
+      if (isEdit) {
+        input[cfg.imgField] = cfg.imgField === 'images' ? [image] : image;
+        // prompt_strength (Flux 2 only): 0 = copy image exactly, 1 = ignore image entirely.
+        if (!cfg.flux3 && typeof strength === 'number' && strength > 0 && strength <= 1) {
+          input.prompt_strength = strength;
+        }
+      }
+      imgUrl = await replicate(input, token, { ...cfg, model });
     }
-    const imgUrl = await replicate(input, token, cfg);
+    if (!imgUrl) throw new Error('The image service returned no picture');
 
     const imgResp = await fetch(imgUrl);
     if (!imgResp.ok) throw new Error(`Image fetch failed (${imgResp.status})`);
@@ -153,7 +195,7 @@ export default async function handler(req, res) {
         await fetch(`${(process.env.SUPABASE_URL || '').replace(/\/+$/, '')}/rest/v1/renders`, {
           method: 'POST',
           headers: { apikey: process.env.SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-          body: JSON.stringify({ id: renderId, user_id: user.id, cost, quality: cfg === MODELS.quality ? 'quality' : 'fast',
+          body: JSON.stringify({ id: renderId, user_id: user.id, cost, quality: quality === 'quality' ? 'quality' : 'fast',
             prompt_head: prompt.slice(0, 600), image_sha: createHash('sha256').update(buf).digest('hex') }),
         });
       } catch { /* reporting is optional; the render itself succeeded */ }
