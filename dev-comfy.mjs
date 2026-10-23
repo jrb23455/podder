@@ -6,9 +6,10 @@
 // -> { image: dataURL, credits: null, local: true }. Only the owner PIN is accepted, so nothing
 // here ever touches Supabase or bills anyone.
 //
-// The model is the local one (flux1-dev fp8), not podder.dev's Flux 2, so pictures differ from
-// the live site even though the prompt text is identical. Settings match the local Podder app
-// (15 steps, guidance 7, 768 px) so results line up with past local audit renders.
+// Model: FLUX 3 Image Klein by default (the local test model since 2026-10-22; run
+// C:/AI_Lab/ComfyUI-flux3/run_comfyui_flux3.bat). LOCAL_MODEL=flux1 switches back to flux1-dev on the
+// original ComfyUI (15 steps, guidance 7, 768 px). podder.dev itself renders with Flux 2, so pictures
+// differ from the live site even though the prompt text is identical.
 
 import { pinMatches } from './api/_lib/server.js';
 
@@ -20,6 +21,11 @@ const VAE = process.env.COMFY_VAE || 'ae.safetensors';
 const STEPS = { fast: 15, quality: 25 };
 const GUIDANCE = 7;
 const SIZES = { '1:1': [768, 768], '2:3': [640, 960], '3:2': [960, 640] };
+const MODEL = (process.env.LOCAL_MODEL || 'flux3').toLowerCase();
+// FLUX 3 settings from the official flux3_klein_int8_t2i workflow (no prompt upsampler: Podder's prompts are
+// already full captions, and the upsampler changed the subject in tests).
+const F3 = { unet: 'flux3-image-klein-int8-convrot.safetensors', clip: 'qwen3vl_4b_int8_convrot.safetensors', vae: 'flux2-vae.safetensors', steps: 16 };
+const SIZES3 = { '1:1': [1024, 1024], '2:3': [832, 1248], '3:2': [1248, 832] };
 
 export async function comfyAvailable() {
   try { return (await fetch(`${COMFY}/system_stats`, { signal: AbortSignal.timeout(3000) })).ok; }
@@ -39,7 +45,36 @@ async function uploadImage(dataUrl) {
   return j.subfolder ? `${j.subfolder}/${j.name}` : j.name;
 }
 
-function graph(prompt, { aspect, quality, imageName, denoise, seed, name }) {
+function graph(prompt, opts) {
+  return MODEL === 'flux1' ? graphFlux1(prompt, opts) : graphFlux3(prompt, opts);
+}
+
+function graphFlux3(prompt, { aspect, imageName, denoise, seed, name }) {
+  const [w, h] = SIZES3[aspect] || SIZES3['1:1'];
+  const shift = Math.log(F3.steps);
+  const g = {
+    '1': { class_type: 'UNETLoader', inputs: { unet_name: F3.unet, weight_dtype: 'default' } },
+    '2': { class_type: 'CLIPLoader', inputs: { clip_name: F3.clip, type: 'flux3', device: 'default' } },
+    '3': { class_type: 'VAELoader', inputs: { vae_name: F3.vae } },
+    '4': { class_type: 'CLIPTextEncode', inputs: { text: prompt, clip: ['2', 0] } },
+    '5': { class_type: 'CLIPTextEncode', inputs: { text: '', clip: ['2', 0] } },
+    '6': { class_type: 'ModelSamplingFlux', inputs: { model: ['1', 0], max_shift: shift, base_shift: shift, width: w, height: h } },
+    '8': { class_type: 'KSampler', inputs: { seed: Number.isInteger(seed) ? seed : Math.floor(Math.random() * 1e15), steps: F3.steps, cfg: 1,
+      sampler_name: 'euler', scheduler: 'simple', denoise: imageName ? denoise : 1,
+      model: ['6', 0], positive: ['4', 0], negative: ['5', 0], latent_image: ['7', 0] } },
+    '9': { class_type: 'VAEDecode', inputs: { samples: ['8', 0], vae: ['3', 0] } },
+    '10': { class_type: 'SaveImage', inputs: { filename_prefix: 'PodderWeb-local/' + (String(name || 'render').replace(/[^a-z0-9_-]+/gi, '-').slice(0, 80) || 'render'), images: ['9', 0] } },
+  };
+  if (imageName) {
+    g['11'] = { class_type: 'LoadImage', inputs: { image: imageName } };
+    g['7'] = { class_type: 'VAEEncode', inputs: { pixels: ['11', 0], vae: ['3', 0] } };
+  } else {
+    g['7'] = { class_type: 'EmptyFlux2LatentImage', inputs: { width: w, height: h, batch_size: 1 } };
+  }
+  return g;
+}
+
+function graphFlux1(prompt, { aspect, quality, imageName, denoise, seed, name }) {
   const [w, h] = SIZES[aspect] || SIZES['1:1'];
   const g = {
     '1': { class_type: 'UNETLoader', inputs: { unet_name: UNET, weight_dtype: 'fp8_e4m3fn' } },

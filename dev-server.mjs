@@ -105,6 +105,6 @@ const server = http.createServer(async (req, res) => {
 // 127.0.0.1 only: local renders run on this PC's GPU, so nothing else on the network may queue them.
 server.listen(PORT, '127.0.0.1', async () => {
   console.log(`\n  Podder Web (dev) -> http://localhost:${PORT}`);
-  const renders = HAS_REPLICATE ? 'REPLICATE (real, paid)' : (await comfyAvailable()) ? 'local ComfyUI (free)' : 'mock images (ComfyUI not running)';
+  const renders = HAS_REPLICATE ? 'REPLICATE (real, paid)' : (await comfyAvailable()) ? `local ComfyUI, ${(process.env.LOCAL_MODEL || 'flux3').toUpperCase()} (free)` : 'mock images (ComfyUI not running)';
   console.log(`  Renders: ${renders}   Unlock with the owner PIN from .env.local (default 2323)\n`);
 });
