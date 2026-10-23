@@ -3270,12 +3270,6 @@ const STYLES = {
     {label:"Icicle drip",clause:"hung with icicle-drip ridges tapering down the surface"},
     {label:"Snowdrift ripple",clause:"rippled with soft snowdrift-like undulating ridges"}
   ]},
-  mossy:{emoji:"🌲", label:"Mossy", variants:[
-    {label:"Bark ridge texture",clause:"textured with deep furrowed tree-bark ridges sculpted in the same material as the figure"},
-    {label:"Moss patch growth",clause:"covered with raised sculptural cushion-moss, clump-moss and sheet-moss growths of varying sizes carved in the same material finish as the figure — no contrasting color, same material throughout"},
-    {label:"Lichen speckle",clause:"speckled with circular crustose-lichen, branching foliose-lichen and powdery leprose-lichen raised textures sculpted in the same material as the figure"},
-    {label:"Root tangle",clause:"wound with tangled root-like ridges and creeping stem-moss trails sculpted in the same material as the form"}
-  ]},
   origami:{emoji:"📄", label:"Origami", variants:[
     {label:"Angular paper-fold",clause:"folded into crisp angular origami-paper facets across the whole form"},
     {label:"Crane-wing crease",clause:"creased with sharp crane-wing-like origami fold lines"},
@@ -3414,7 +3408,7 @@ const PALETTES = [
 ];
 
 // Weirdness 4+: what each style makes the object OUT OF, injected into the opening noun phrase.
-const STYLE_FORM = {"sacred": "built from interlocking sacred-geometry forms", "drippy": "melting like a candle-wax sculpture, sagging and dripping all over", "swirly": "formed entirely of swirling, spiraling ridges", "trippy": "warped into impossible kaleidoscopic geometry", "organic": "grown from living coral-like organic tissue and tendrils", "crystal": "carved from jagged quartz crystal and bristling with crystal clusters", "alien": "reimagined as a strange alien biomechanical being", "botanical": "made of twisting vines, leaves and blooming flowers", "wave": "formed from curling ocean waves", "baroque": "sculpted as an ornate baroque masterpiece of scrolls and acanthus leaves", "egyptian": "carved as an ancient Egyptian temple relic covered in hieroglyphs", "zen": "shaped from smooth river stones and raked sand ripples", "cyberpunk": "rebuilt as a cyberpunk cyborg of armored panels and circuitry", "vaporwave": "built from retro grid lines and stepped glitch blocks", "cosmic": "formed from swirling nebulae, stars and planets", "volcanic": "formed from cracked volcanic rock with obsidian shards erupting from it", "glacial": "carved from jagged glacier ice hung with icicles", "mossy": "overgrown all over with thick moss, lichen and creeping roots", "origami": "folded entirely from crisp origami paper", "honeycomb": "built from hexagonal honeycomb cells", "chainmail": "clad entirely in chainmail and riveted armor plates", "feathered": "covered entirely in layered feathers", "scaled": "covered entirely in overlapping reptile scales", "wicker": "woven entirely from wicker strands like a basket", "marbled": "carved from veined marble stone", "circuitboard": "built from circuit-board traces, chips and solder nodes", "mosaic": "pieced together from mosaic tiles", "filigree": "formed from bold arabesque filigree scrollwork", "barnacle": "encrusted all over with barnacles and shells", "thornedvine": "formed from thorny bramble vines", "pixelvoxel": "built entirely from chunky voxel cubes like a pixel-art model", "opart": "covered in warping op-art stripes", "lunar": "carved from cratered moon rock", "storm": "formed from swirling storm clouds and lightning bolts", "coralreef": "grown from branching coral, sea-urchin spines and polyps", "fungal": "overgrown with mushroom caps and mycelium", "voronoi": "built from an irregular Voronoi cell lattice", "crochet": "crocheted entirely from chunky yarn like an amigurumi toy"};
+const STYLE_FORM = {"sacred": "built from interlocking sacred-geometry forms", "drippy": "melting like a candle-wax sculpture, sagging and dripping all over", "swirly": "formed entirely of swirling, spiraling ridges", "trippy": "warped into impossible kaleidoscopic geometry", "organic": "grown from living coral-like organic tissue and tendrils", "crystal": "carved from jagged quartz crystal and bristling with crystal clusters", "alien": "reimagined as a strange alien biomechanical being", "botanical": "made of twisting vines, leaves and blooming flowers", "wave": "formed from curling ocean waves", "baroque": "sculpted as an ornate baroque masterpiece of scrolls and acanthus leaves", "egyptian": "carved as an ancient Egyptian temple relic covered in hieroglyphs", "zen": "shaped from smooth river stones and raked sand ripples", "cyberpunk": "rebuilt as a cyberpunk cyborg of armored panels and circuitry", "vaporwave": "built from retro grid lines and stepped glitch blocks", "cosmic": "formed from swirling nebulae, stars and planets", "volcanic": "formed from cracked volcanic rock with obsidian shards erupting from it", "glacial": "carved from jagged glacier ice hung with icicles", "origami": "folded entirely from crisp origami paper", "honeycomb": "built from hexagonal honeycomb cells", "chainmail": "clad entirely in chainmail and riveted armor plates", "feathered": "covered entirely in layered feathers", "scaled": "covered entirely in overlapping reptile scales", "wicker": "woven entirely from wicker strands like a basket", "marbled": "carved from veined marble stone", "circuitboard": "built from circuit-board traces, chips and solder nodes", "mosaic": "pieced together from mosaic tiles", "filigree": "formed from bold arabesque filigree scrollwork", "barnacle": "encrusted all over with barnacles and shells", "thornedvine": "formed from thorny bramble vines", "pixelvoxel": "built entirely from chunky voxel cubes like a pixel-art model", "opart": "covered in warping op-art stripes", "lunar": "carved from cratered moon rock", "storm": "formed from swirling storm clouds and lightning bolts", "coralreef": "grown from branching coral, sea-urchin spines and polyps", "fungal": "overgrown with mushroom caps and mycelium", "voronoi": "built from an irregular Voronoi cell lattice", "crochet": "crocheted entirely from chunky yarn like an amigurumi toy"};
 // `t` is for open vessels (VESSELS); `solid` for everything else, which has no cavity to show.
 const VESSELS = new Set(["vase","budvase","planter","cactusplanter","herbpot","wallplanter","wallpocket","bowl",
   "trinketdish","coindish","pencup","makeupbrush","toothbrush","votive","chalice"]);
@@ -3708,7 +3702,6 @@ const SD_STYLE = {
   cosmic:  "cosmic nebula swirl relief",
   volcanic:"volcanic obsidian crack relief",
   glacial: "glacial frost crystal relief",
-  mossy:   "mossy bark ridge relief",
   origami: "origami paper-fold facet relief",
   honeycomb:"honeycomb hexagonal cell relief",
   chainmail:"chainmail woven ring relief",
@@ -3807,10 +3800,6 @@ const VARIANT_SD = {
   "glacial::Glacier crevasse":"glacier crevasse ridge relief",
   "glacial::Icicle drip":"blue icicle drip formations tapering down from rim",
   "glacial::Snowdrift ripple":"pale blue snowdrift undulating surface ripple relief",
-  "mossy::Bark ridge texture":"furrowed tree bark ridge relief",
-  "mossy::Moss patch growth":"raised moss patch relief",
-  "mossy::Lichen speckle":"lichen speckle texture relief",
-  "mossy::Root tangle":"tangled root ridge relief",
   "origami::Angular paper-fold":"angular origami paper-fold facets",
   "origami::Crane-wing crease":"crane-wing origami fold lines",
   "origami::Modular fold lattice":"modular origami fold lattice",
@@ -4057,7 +4046,7 @@ function buildShapeChips(){
 // Style-detail chips: one group of variant chips per selected style.
 function buildStyleDetail(){
   const row=$("#styleDetailRow"), wrap=$("#styleDetail"); if(!wrap) return; wrap.innerHTML="";
-  const sel=[...state.styles];
+  const sel=[...state.styles].filter(k=>STYLES[k]);
   if(!sel.length){ row.style.display="none"; return; }
   row.style.display="";
   sel.forEach(k=>{
@@ -4096,7 +4085,7 @@ function buildPrompt(){
   // handing it all 36 keys with a high wildness clause target (up to 12) would guarantee 12
   // completely unrelated styles crammed onto one object — exactly the "kitchen sink" bug this
   // avoids. Multiple clauses still get pulled from within these few styles to fill clauseTarget.
-  let styleKeys = [...state.styles];
+  let styleKeys = [...state.styles].filter(k => STYLES[k]);   // skips styles since removed (e.g. Mossy, 2026-10-22) in old favorites
   // No styles selected = a real surprise: each render draws its own random style (sometimes two).
   // Leaving it empty did not let Flux "decide" — the wildness note still asks for rich layered
   // ornament without naming any, and Flux filled that gap with the same pastel swirls every time.
