@@ -63,6 +63,7 @@
     -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
     background-size:200% auto; animation:sheen 6s linear infinite;}
   @keyframes sheen{to{background-position:200% center}}
+  .wild-hint{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.45}
   .tag{color:var(--muted);font-size:13.5px;margin:2px 0 22px;max-width:640px;line-height:1.5}
 
   .tabs{display:flex;gap:6px;margin-bottom:18px}
@@ -444,6 +445,7 @@
           <div style="display:flex;gap:10px;align-items:center">
             <input type="range" id="wild" min="1" max="3" step="1" value="2" style="flex:1" />
           </div>
+          <div class="wild-hint" id="wildHint" hidden>Heavy lets the style reshape the piece. Results are more sculptural and can be less practical to wear or print.</div>
         </div>
         <div class="row" style="margin-bottom:0">
           <div class="label">Palette <span class="lock" data-lock="pal" title="Keep the same palette when you regenerate">🔓 lock</span></div>
@@ -4167,14 +4169,17 @@ function buildPrompt(){
   const autoPick = autoPicks.length ? autoPicks[Math.floor(Math.random() * autoPicks.length)] : null;
   const leadNoun = (isFig && !isAuto) ? `${shapeObj.label.toLowerCase()} ${objNoun}`
     : autoPick ? `${autoPick.label.toLowerCase()} ${objNoun}` : objNoun;
+  // Wearables must still fit a head, finger or wrist, so for jewelry Heavy means denser decoration only:
+  // the style never reshapes the band (2026-10-22: a Heavy origami tiara came out unwearable and unprintable).
+  const reshape = wild >= 3 && catOf(state.obj) !== "jewelry";
   const transformNote = !clauses.length ? ""
-    : wild <= 2 ? `It is a normal, classic, true-to-type ${leadNoun}: its shape, anatomy and identity are exactly what you would expect, and the ${styleNames} style appears only as ornament on its surface.`
+    : !reshape ? `It is a normal, classic, true-to-type ${leadNoun}: its shape, anatomy and identity are exactly what you would expect, and the ${styleNames} style appears only as ornament on its surface.`
     : `The ${styleNames} style starts to reshape the piece itself: its silhouette, edges and features take on the character of the style, while it stays clearly recognizable as a ${leadNoun}.`;
   // At level 3 a chosen style replaces an object's built-in art tradition ("in the style of
   // Kamakura-era temple sculpture"), which otherwise competes with it and wins.
   const formWords = [...new Set(usedStyles)].map(k => STYLE_FORM[k]).filter(Boolean).join(", and ");
-  const styleLead = (!clauses.length || !formWords || wild <= 2) ? "" : ` partly ${formWords}`;
-  const fnText = (clauses.length && wild >= 3) ? o.fn.replace(/ in the [^,.;—]*style of [^,.;—]+/, "") : o.fn;
+  const styleLead = (!clauses.length || !formWords || !reshape) ? "" : ` partly ${formWords}`;
+  const fnText = (clauses.length && reshape) ? o.fn.replace(/ in the [^,.;—]*style of [^,.;—]+/, "") : o.fn;
 
   // --- Compact SD prompt for local ComfyUI renders (identity-first, zero negations) ---
   const so = SD_OBJ[state.obj] || {noun:objNoun, bits:""};
@@ -4844,6 +4849,7 @@ function randWild(){
 function onWild(){
   const w=$("#wild");
   $("#wildVal").textContent=wildLevel(w.value).label;
+  const h=$("#wildHint"); if(h) h.hidden = +w.value < +w.max;
 }
 // "How many designs per click" drives Generate AND the card buttons (Similar, Reroll, Apply
 // design), which used to be fixed at 6 renders — a surprise 6 or 18 credits per click.
