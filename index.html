@@ -323,6 +323,25 @@
   .pq-field input:focus{outline:none;border-color:var(--accent2)}
   .pq-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .pq-divider{height:1px;background:var(--panel-brd);margin:16px 0}
+  .pl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:18px}
+  .pl-pack{background:var(--panel);border:1px solid var(--panel-brd);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:6px}
+  .pl-pack.best{border-color:var(--accent2)}
+  .pl-pack .nm{font-weight:700;font-size:15px}
+  .pl-pack .pr{font-size:34px;font-weight:800;line-height:1.1}
+  .pl-pack .pc{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+  .pl-pack .buys{margin:6px 0 0;padding:0;list-style:none;font-size:13.5px;line-height:1.7;font-variant-numeric:tabular-nums}
+  .pl-pack .buys b{color:var(--ink)}
+  .pl-pack .flag{align-self:flex-start;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--bg);background:var(--accent2);border-radius:999px;padding:2px 9px;font-weight:700}
+  .pl-table{width:100%;border-collapse:collapse;font-size:14px}
+  .pl-table td{padding:11px 8px;border-top:1px solid var(--panel-brd);vertical-align:top}
+  .pl-table tr:first-child td{border-top:0}
+  .pl-table .what{font-weight:600}
+  .pl-table .why{color:var(--muted);font-size:13px;margin-top:2px;line-height:1.45}
+  .pl-table .cost{text-align:right;white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums}
+  .pl-table .free{color:var(--accent2)}
+  .pl-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+  .pl-list{margin:0;padding-left:18px;line-height:1.75;font-size:14px}
+  .pl-scroll{overflow-x:auto}
   .pq-price-card{background:linear-gradient(135deg,rgba(192,75,255,.16),rgba(57,230,200,.08));border:1px solid var(--panel-brd);border-radius:var(--radius);padding:20px;margin-bottom:16px;text-align:center}
   .pq-price-card .big{font-size:40px;font-weight:800;color:var(--accent2)}
   .pq-price-card .small{color:var(--muted);font-size:13px;margin-top:4px}
@@ -364,7 +383,8 @@
     <div class="tab" data-tab="hist">↺ History <span class="count-badge" id="histCount">0</span></div>
     <div class="tab" data-tab="rerolls">🎲 Rerolls <span class="count-badge" id="rerollCount">0</span></div>
     <div class="tab" data-tab="book">📖 Design book</div>
-    <div class="tab" data-tab="price">💲 Pricing</div>
+    <div class="tab" data-tab="prices">🏷 Prices</div>
+    <div class="tab" data-tab="price">🧮 Price a print</div>
   </div>
 
   <!-- GENERATE TAB -->
@@ -505,7 +525,14 @@
     <iframe id="bookFrame" title="Podder design book" style="width:100%;height:calc(100vh - 140px);min-height:520px;border:0;border-radius:12px;background:transparent"></iframe>
   </div>
 
-  <!-- PRICING TAB -->
+  <!-- PRICES TAB: what Podder's credits cost and buy. Every number comes from /api/config, so this can
+       never drift from what the server actually charges. -->
+  <div id="tab-prices" class="hidden">
+    <p class="tag">Designing is free. You only pay, in credits, when you turn a design into a picture or a 3D model. Credits never expire.</p>
+    <div id="pricesBody"><div class="panel">Loading prices…</div></div>
+  </div>
+
+  <!-- PRICE-A-PRINT TAB (calculator for what to charge for a finished print) -->
   <div id="tab-price" class="hidden">
     <p class="tag">Base what to charge for a print on machine time, material, and margin — same math as the standalone <a href="https://printquote-one.vercel.app" target="_blank" rel="noopener">PrintQuote</a> app, built into Podder.</p>
     <div class="pq-layout">
@@ -4690,7 +4717,8 @@ function fmtDuration(ms){
 /* ---------- TABS ---------- */
 function showTab(name){
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===name));
-  ["gen","fav","hist","rerolls","book","price"].forEach(n=>$("#tab-"+n).classList.toggle("hidden",n!==name));
+  ["gen","fav","hist","rerolls","book","prices","price"].forEach(n=>$("#tab-"+n).classList.toggle("hidden",n!==name));
+  if(name==="prices") renderPrices();
   if(name==="book" && !$("#bookFrame").src){
     const f=$("#bookFrame");
     // The book's "Make your own" links point at "/": inside the app that just means "go to Generate",
@@ -4863,6 +4891,55 @@ async function verifyPin(pin){
     if(r.status===429) return "locked";
     return r.status===401 ? "bad" : "error";
   }catch(e){ return "error"; }
+}
+
+// The Prices tab. Built from the live config so the numbers always match what is charged.
+async function renderPrices(){
+  const cfg = await loadConfig(), box = $("#pricesBody");
+  const c = cfg.costs || {}, packs = cfg.packs || [], m3 = cfg.model3d || {}, bonus = cfg.signupBonus || 0;
+  if(!c.fast || !packs.length){ box.innerHTML = '<div class="panel">Prices could not be loaded. Check your connection and open this tab again.</div>'; return; }
+  const usd = cents => "$" + (cents/100).toFixed(cents % 100 ? 2 : 0);
+  const per = p => (p.amount / p.credits).toFixed(2);   // cents per credit
+  const n = (credits, cost) => Math.floor(credits / cost).toLocaleString();
+  const cheapest = packs.reduce((a, p) => (p.amount/p.credits < a.amount/a.credits ? p : a), packs[0]);
+  const pl = v => v === 1 ? "credit" : "credits";
+  const packHTML = packs.map(p => `
+    <div class="pl-pack${p === cheapest ? " best" : ""}">
+      ${p === cheapest ? '<span class="flag">Best value</span>' : ""}
+      <div class="nm">${p.name}</div>
+      <div class="pr">${usd(p.amount)}</div>
+      <div class="pc">${p.credits.toLocaleString()} credits · ${per(p)}¢ each</div>
+      <ul class="buys">
+        <li><b>${n(p.credits, c.fast)}</b> Fast renders</li>
+        <li><b>${n(p.credits, c.quality)}</b> Quality renders</li>
+        ${m3.enabled ? `<li><b>${n(p.credits, m3.cost)}</b> 3D models (STL)</li>` : ""}
+      </ul>
+    </div>`).join("");
+  const row = (what, why, cost, free) => `<tr><td><div class="what">${what}</div><div class="why">${why}</div></td><td class="cost${free ? " free" : ""}">${cost}</td></tr>`;
+  box.innerHTML = `
+    <div class="label">Credit packs</div>
+    <div class="pl-grid">${packHTML}</div>
+    <div class="pl-two">
+      <div class="panel"><div class="label">What you pay for</div><div class="pl-scroll"><table class="pl-table">
+        ${row("⚡ Fast render", "One picture of your design, ready in about 10 seconds. Good for exploring ideas.", `${c.fast} ${pl(c.fast)}`)}
+        ${row("✦ Quality render", "One picture from our larger, more detailed image model. Takes about 30 seconds. Use it for designs you plan to keep or print.", `${c.quality} ${pl(c.quality)}`)}
+        ${row("🔄 Similar, Reroll and Apply design", "One render for each picture made. The “designs per click” slider sets how many, so check it before you click.", "per picture")}
+        ${m3.enabled ? row("🧊 3D model", "Turns one of your renders into a printable STL file, sized to about 80 mm. Takes a minute or two.", `${m3.cost} credits`) : ""}
+      </table></div></div>
+      <div class="panel"><div class="label">Always free</div><ul class="pl-list">
+        <li>Browsing objects, shapes and styles</li>
+        <li>Generating design ideas (the cards you see before you render)</li>
+        <li>Favorites and history, kept in this browser</li>
+        <li>The Design book and the Price a print calculator</li>
+        ${bonus ? `<li><b>${bonus} credits</b> when you create an account: ${n(bonus, c.fast)} Fast renders${m3.enabled && bonus >= m3.cost ? " or one 3D model" : ""}</li>` : ""}
+      </ul>
+      <div class="label" style="margin-top:16px">If something goes wrong</div><ul class="pl-list">
+        <li>A render or 3D model that fails on our side is refunded to your balance automatically.</li>
+        ${cfg.reports?.enabled ? "<li>A render that comes out clearly wrong (wrong object, several objects, a broken image) can be reported within 24 hours with Report bad render. Up to 3 reports a day.</li>" : ""}
+        <li>Results you simply don't like aren't refunded, because every AI result is different.</li>
+        <li>Credits never expire. Full details are in the <a href="/terms" target="_blank" rel="noopener">Terms</a>.</li>
+      </ul></div>
+    </div>`;
 }
 
 async function loadConfig(){
