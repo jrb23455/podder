@@ -534,7 +534,7 @@
 
   <!-- PRICE-A-PRINT TAB (calculator for what to charge for a finished print) -->
   <div id="tab-price" class="hidden">
-    <p class="tag">Base what to charge for a print on machine time, material, and margin — same math as the standalone <a href="https://printquote-one.vercel.app" target="_blank" rel="noopener">PrintQuote</a> app, built into Podder.</p>
+    <p class="tag">Work out what to charge for a finished print from its material, machine time, labor and your margin.</p>
     <div class="pq-layout">
       <div class="panel">
         <div class="label">Shop Rates</div>
@@ -6402,7 +6402,7 @@ $("#adminGrantBtn").onclick = async ()=>{
 })();
 </script>
 <script>
-/* ---------- PRICING TAB (ported from the standalone PrintQuote app) ---------- */
+/* ---------- PRICE-A-PRINT TAB (what to charge for a finished print) ---------- */
 (function(){
   const DEFAULT_SETTINGS = { filamentPrice:20, machineRate:2, laborRate:20, failureRate:12, marginPct:45 };
   const settingsFields = ['filamentPrice','machineRate','laborRate','failureRate','marginPct'];
