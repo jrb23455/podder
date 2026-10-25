@@ -16,6 +16,7 @@
 // apply at most once no matter how many paths try it.
 
 import { getUser, debit, credit, isInsufficient, missingEnv, checkOwnerPin, alert } from './_lib/server.js';
+import { spendCheck, spendUndo } from './_lib/spend-guard.js';
 import { MODEL3D_COST } from './_lib/config.js';
 import { createHash } from 'node:crypto';
 
@@ -257,6 +258,10 @@ export default async function handler(req, res) {
       }
     }
 
+    // Daily budget for free-credit and owner models; paying customers are never limited.
+    const guard = await spendCheck({ owner, userId: user?.id, kind: 'model3d' });
+    if (!guard.ok) return res.status(429).json({ error: 'free_budget_paused', detail: 'Free renders are paused for today. Buy credits to keep going, or come back tomorrow.' });
+
     const { fileToken } = await uploadImage(image, token);
 
     let balance = null;
@@ -287,6 +292,7 @@ export default async function handler(req, res) {
       }, token);
       taskId = d.task_id || d.taskId;
     } catch (e) {
+      await spendUndo(guard);
       if (user) {
         try { balance = await credit(user.id, MODEL3D_COST, 'refund:model3d', `refund3d:create:${fileToken}`); }
         catch (re) { await alert('model3d_refund_failed', { user: user.id, stage: 'create', error: String(re.message || re) }); }

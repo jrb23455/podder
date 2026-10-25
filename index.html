@@ -5616,6 +5616,7 @@ async function makeModel3D(item, imgRef, btn, meta){
       throw new Error(refreshed ? "Session refreshed — try again" : "Please sign in again");
     }
     if(r.status === 402){ openBuy(`A 3D model costs ${cost} credits.`); throw new Error("Not enough credits"); }
+    if(r.status === 429 && j.error === "free_budget_paused"){ openBuy(j.detail); throw new Error(j.detail); }
     if(r.status === 403 && j.error === "render_refunded") throw new Error(j.detail);
     if(!r.ok || !j.taskId) throw new Error(j.detail || j.error || `HTTP ${r.status}`);
 
@@ -5730,6 +5731,12 @@ async function apiFetch(path, body, signal, retries=0){
       openBuy(`You need ${j.needed||1} credit${(j.needed||1)>1?"s":""} for that render.`);
     }
     throw new Error("Out of credits");
+  }
+  if(r.status===429 && j.error==="free_budget_paused"){
+    // The daily budget for free credits is used up. Paying customers never see this.
+    if(ACCT.anon){ setAuthMode("signup"); $("#gateLead").textContent = j.detail; showPinGate(); }
+    else openBuy(j.detail);
+    throw new Error(j.detail);
   }
   if(!r.ok){
     // Reflect any refund that came back with the error (e.g. after a render timeout).

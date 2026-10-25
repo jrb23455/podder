@@ -21,6 +21,7 @@
 // parallel renders serialize on the row and the balance can never go negative.
 
 import { getUser, debit, credit, isInsufficient, missingEnv, checkOwnerPin, alert } from './_lib/server.js';
+import { spendCheck, spendUndo } from './_lib/spend-guard.js';
 import { creditsFor } from './_lib/config.js';
 import { createHash } from 'node:crypto';
 
@@ -144,6 +145,10 @@ export default async function handler(req, res) {
   const cost = creditsFor(quality);
   const renderId = crypto.randomUUID();
 
+  // Daily budget for free-credit and owner renders; paying customers are never limited.
+  const guard = await spendCheck({ owner, userId: user?.id, kind: quality === 'quality' ? 'quality' : 'fast' });
+  if (!guard.ok) return res.status(429).json({ error: 'free_budget_paused', detail: 'Free renders are paused for today. Buy credits to keep going, or come back tomorrow.' });
+
   let balance = null;
   if (user) {
     try {
@@ -206,6 +211,7 @@ export default async function handler(req, res) {
       credits: balance,
     });
   } catch (e) {
+    await spendUndo(guard);
     // The render failed after the user was charged — put the credits back. If the refund
     // itself fails the debit is still in the ledger, so it can be reconciled by hand.
     if (user) {
