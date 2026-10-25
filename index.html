@@ -336,7 +336,10 @@
   .lai-warn{margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(255,93,158,.1);border:1px solid rgba(255,93,158,.3);
     font-size:12.5px;line-height:1.5;color:#ffc4dc}
   .card .render-wrap{margin-top:12px}
-  .card img.render{max-width:100%;border-radius:10px;border:1px solid var(--panel-brd);display:block}
+  /* A render always fits the screen it's on: never taller than the window (minus room for the
+     buttons), never wider than the card, centred, aspect ratio kept. */
+  .card img.render{max-width:100%;max-height:calc(100vh - 140px);width:auto;height:auto;margin:0 auto;object-fit:contain;border-radius:10px;border:1px solid var(--panel-brd);display:block}
+  @supports (height:100dvh){.card img.render{max-height:calc(100dvh - 140px)}}
   .card .render-status{font-size:12.5px;color:var(--accent2);margin-top:10px}
   .card .render-status.err{color:var(--accent3)}
   .tbtn.render{border-color:rgba(57,230,200,.5)}
