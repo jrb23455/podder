@@ -4592,7 +4592,7 @@ function renderImageInto(wrap, item, imgRef){
   const sel = document.createElement("select"); sel.className = "variantSel";
   // Grouped by category — cross-category applies are allowed on purpose (a vase's glaze DNA
   // on a dragon is half the fun), the optgroups just keep the long list scannable.
-  sel.innerHTML = `<option value="">✨ Apply design to other objects…</option>`
+  sel.innerHTML = `<option value="">✨ Apply design to other objects… (renders ${batchN()}${billed()?" · "+priceLabel(batchN()):""})</option>`
     + Object.entries(CATEGORIES).map(([ck,cat])=>
         `<optgroup label="${cat.emoji} ${cat.label}">`
         + Object.keys(OBJECTS).filter(k=>catOf(k)===ck && k!==item.obj).sort((a,b)=>OBJECTS[a].label.localeCompare(OBJECTS[b].label)).map(k=>`<option value="${k}">${OBJECTS[k].emoji} ${OBJECTS[k].label}</option>`).join("")
@@ -6550,7 +6550,7 @@ function updateCostNote(){
       + (billed() ? ` (<b>${priceLabel(n)}</b> per click). ` : ". ") + `Turn it off in your profile menu.`;
   } else if(costs){
     const f = costs.fast, q = costs.quality;
-    cn.innerHTML = `Browsing, picking and generating prompts is <b>free</b> — you only spend credits when you hit Render. `
+    cn.innerHTML = `Browsing, picking and generating prompts is <b>free</b>. Credits are spent only when a picture is made: 🖼 Render, 🔄 More like this and ✨ Apply design each render straight away. `
       + `⚡ Fast = ${f} credit${f>1?"s":""} · ✦ Quality = ${q} credits.`;
   }
 }
