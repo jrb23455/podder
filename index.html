@@ -4589,7 +4589,7 @@ function renderImageInto(wrap, item, imgRef){
   dl.download = downloadName(item, "x.png"); dl.textContent = "⬇ Save image";
   meta.appendChild(dl);
   const sv3d=document.createElement("button"); sv3d.className="btn ghost"; sv3d.style.cssText="font-size:12px;padding:3px 8px;margin-left:6px";
-  sv3d.textContent="📁 Save to 3D Printing"; sv3d.onclick=()=>saveToDesktop(item,imgRef,sv3d);
+  sv3d.textContent="📁 Save to folder"; sv3d.title="Saves into a folder you pick once, sorted into subfolders by object type"; sv3d.onclick=()=>saveToDesktop(item,imgRef,sv3d);
   meta.appendChild(sv3d);
   // Image -> printable STL, in-app. Only offered when the server actually holds a Tripo key,
   // so the button can never appear and then 500 on click.
@@ -4667,7 +4667,7 @@ function renderEditResultInto(wrap, item, imgRef){
   dl.download = downloadName(item, "x.png"); dl.textContent = "⬇ Save image";
   meta.appendChild(dl);
   const sv3d=document.createElement("button"); sv3d.className="btn ghost"; sv3d.style.cssText="font-size:12px;padding:3px 8px;margin-left:6px";
-  sv3d.textContent="📁 Save to 3D Printing"; sv3d.onclick=()=>saveToDesktop(item,imgRef,sv3d);
+  sv3d.textContent="📁 Save to folder"; sv3d.title="Saves into a folder you pick once, sorted into subfolders by object type"; sv3d.onclick=()=>saveToDesktop(item,imgRef,sv3d);
   meta.appendChild(sv3d);
   // Image -> printable STL, in-app. Only offered when the server actually holds a Tripo key,
   // so the button can never appear and then 500 on click.
@@ -5879,14 +5879,14 @@ async function saveToDesktop(item, imgRef, btn){
     // Fallback: plain browser download
     const u=await imgSrc(imgRef); if(!u){ toast("Image not ready"); return; }
     const a=document.createElement("a"); a.href=u; a.download=downloadName(item,"x.png"); a.click();
-    toast("📁 Downloaded — move to your 3D Printing folder");
+    toast("📁 Downloaded — move it into your designs folder");
     return;
   }
   btn.textContent="⏳ Saving…";
   try{
     let root=await getPrintRoot();
     if(!root){
-      toast("Pick your 3D Printing folder…");
+      toast("Pick the folder to save your designs in…");
       root=await window.showDirectoryPicker({mode:"readwrite",startIn:"desktop"});
       _printRoot=root; await _idb("readwrite",root);
     }
@@ -5900,7 +5900,7 @@ async function saveToDesktop(item, imgRef, btn){
     const u=await imgSrc(imgRef); if(!u) throw new Error("Image not available");
     const blob=await(await fetch(u)).blob();
     await ws.write(blob); await ws.close();
-    toast("📁 Saved to 3D Printing"+(folder?"/"+folder:""));
+    toast("📁 Saved to "+(root.name||"your folder")+(folder?"/"+folder:""));
     btn.textContent="✅ Saved";
     setTimeout(()=>{ btn.textContent=oldTxt; },2500);
   }catch(e){
