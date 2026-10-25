@@ -581,7 +581,7 @@
       <div class="actions" id="genActions">
         <button class="btn primary" id="genBtn">✦ Generate</button>
         <button class="btn ghost" id="surpriseBtn">🎲 Surprise me</button>
-        <button class="btn ghost" id="randomizeBtn" title="Each render slot gets its own random object, shape &amp; style from this category">🎲 Randomize all</button>
+        <button class="btn ghost" id="randomizeBtn" hidden title="Each render slot gets its own random object, shape &amp; style from this category">🎲 Randomize all</button>
         <button class="btn ghost" id="stopAllBtn" title="Stop waiting for renders in progress. Renders already sent still finish and are still charged.">⏹ Stop all</button>
         <label class="quality-toggle" id="qualityLabel" title="Fast: quicker, costs less. Quality: slower, sharper detail.">
           <span id="qtLabel" class="qt-label">⚡ Fast</span>
@@ -771,7 +771,7 @@
   <div class="buyBox" role="dialog" aria-labelledby="autoTitle">
     <button class="buyClose" type="button" data-close aria-label="Close">✕</button>
     <h3 id="autoTitle">Turn on auto-render?</h3>
-    <p class="sub">With auto-render on, <b style="color:var(--ink)">Generate, Surprise me and Randomize all start rendering every design right away</b>, using the "How many designs per click" setting. Nothing waits for a Render click.</p>
+    <p class="sub">With auto-render on, <b style="color:var(--ink)">Generate and Surprise me start rendering every design right away</b>, using the "How many designs per click" setting. Nothing waits for a Render click.</p>
     <div class="autoWarn" id="autoCost"></div>
     <p class="sub">Credits are spent as each image renders and are not refunded for designs you didn't like. You can turn this off any time from this menu.</p>
     <button class="btn primary" type="button" id="autoOnBtn" style="width:100%">Turn on auto-render</button>
@@ -6601,7 +6601,7 @@ function updateCostNote(){
   cn.classList.toggle("auto", on);
   $("#genBtn").textContent = on ? `✦ Generate & render ×${n}` : "✦ Generate";
   if(on){
-    cn.innerHTML = `<b>⚡ Auto-render is on</b> — Generate, Surprise me and Randomize all each render ${n} design${n===1?"":"s"} straight away`
+    cn.innerHTML = `<b>⚡ Auto-render is on</b> — Generate and Surprise me each render ${n} design${n===1?"":"s"} straight away`
       + (billed() ? ` (<b>${priceLabel(n)}</b> per click). ` : ". ") + `Turn it off in your profile menu.`;
   } else if(costs){
     const f = costs.fast, q = costs.quality;
