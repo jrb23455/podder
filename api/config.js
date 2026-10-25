@@ -40,6 +40,9 @@ export default async function handler(req, res) {
     promo,
     signupBonus: SIGNUP_BONUS,
     costs: CREDIT_COST,
+    // Credit sales switch (SALES_OPEN=1 in the environment). Off while Podder is on Vercel's
+    // non-commercial Hobby plan; turn it on after the Cloudflare move.
+    salesOpen: (process.env.SALES_OPEN || '').trim() === '1',
     // 3D export is advertised only when a Tripo key is actually present, so the UI never
     // offers a download button that would 500 on click.
     model3d: { enabled: !!(process.env.TRIPO_API_KEY || '').trim(), cost: MODEL3D_COST },

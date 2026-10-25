@@ -248,7 +248,8 @@
   .profItem{display:block;width:100%;text-align:left;background:none;border:0;color:var(--ink);font:inherit;font-size:13.5px;
     padding:9px 10px;border-radius:9px;cursor:pointer}
   .profItem:hover{background:var(--panel)}
-  .profItem[hidden],.profSep[hidden]{display:none}   /* display:block above would otherwise beat the hidden attribute */
+  .profItem[hidden],.profSep[hidden]{display:none}
+  body.salesClosed #buyBtn, body.salesClosed #pmBuy{display:none !important}   /* SALES_OPEN off */   /* display:block above would otherwise beat the hidden attribute */
   .profItem.danger{color:#f09a9a;font-size:12.5px}
   .profSep{height:1px;background:var(--panel-brd);margin:6px 4px}
   .profLinks{font-size:12px;color:var(--muted);padding:6px 10px 8px}
@@ -5160,6 +5161,7 @@ async function loadConfig(){
     const r = await fetch("/api/config");
     ACCT.cfg = r.ok ? await r.json() : {ready:false};
   }catch(e){ ACCT.cfg = {ready:false}; }
+  document.body.classList.toggle("salesClosed", !ACCT.cfg.salesOpen);
   return ACCT.cfg;
 }
 
@@ -5756,6 +5758,12 @@ async function apiFetch(path, body, signal, retries=0){
 async function openBuy(msg){
   const cfg = await loadConfig();
   const wrap=$("#buyWrap");
+  if(!cfg.salesOpen){
+    // Sales switched off (SALES_OPEN): explain instead of showing packs.
+    $("#buySub").textContent = (msg ? msg + " " : "") + "Credit purchases open soon. New accounts get " + (cfg.signupBonus||50) + " free credits once the email address is confirmed.";
+    $("#buyCosts").textContent = ""; $("#packList").innerHTML = "";
+    wrap.classList.add("show"); return;
+  }
   $("#buySub").textContent = msg || "Credits never expire.";
   const costs = cfg.costs||{fast:1,quality:3};
   $("#buyCosts").textContent = `Fast render = ${costs.fast} credit${costs.fast>1?"s":""} · Quality render = ${costs.quality} credits`;

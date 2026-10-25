@@ -11,6 +11,7 @@ import { PACKS, TAX_CODE } from './_lib/config.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
+  if ((process.env.SALES_OPEN || '').trim() !== '1') return res.status(503).json({ error: 'sales_closed', detail: 'Credit purchases open soon.' });
 
   const missing = missingEnv();
   if (missing.length) return res.status(500).json({ error: 'server_not_configured', detail: `Missing: ${missing.join(', ')}` });
