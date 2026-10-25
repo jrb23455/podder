@@ -6360,7 +6360,7 @@ $("#emailForm").onsubmit = async (e)=>{
         ? await upgradeAnonAccount(email, pass)
         : await signUpWithPassword(email, pass);
       if(r.needsConfirm){
-        $("#emailOk").textContent = `Account created. Check ${email} to confirm before signing in.`;
+        $("#emailOk").textContent = `Account created. Check ${email} and confirm it — your ${ACCT.cfg?.signupBonus||50} free credits are added as soon as you do.`;
         $("#emailOk").classList.remove("hidden");
         btn.disabled = false; return;
       }
@@ -6737,7 +6737,7 @@ $("#adminGrantBtn").onclick = async ()=>{
     $("#gateBonus").innerHTML = `<b>🚀 Launch offer — ${cfg.promo.credits.toLocaleString()} free credits</b><br>`
       + `only ${n} ${n===1?"spot":"spots"} left, then new accounts get ${cfg.signupBonus}.`;
   } else if(cfg.signupBonus){
-    $("#gateBonus").textContent = `New accounts start with ${cfg.signupBonus} free credits.`;
+    $("#gateBonus").textContent = `New accounts get ${cfg.signupBonus} free credits once the email address is confirmed.`;
   }
   if(!cfg.ready){
     // Sign-in cannot work, so don't offer it — fall back to the owner PIN and say what is
