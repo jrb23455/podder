@@ -123,8 +123,16 @@
   #refineSummary{flex:1;color:#6f5f8f;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   #refineCaret{color:#6f5f8f;transition:transform .18s}
   #refineToggle[aria-expanded="true"] #refineCaret{transform:rotate(180deg)}
-  #refineWrap{display:none}
-  #refineWrap.open{display:block}
+  #refineToggle{display:none !important}
+  #refineWrap{display:block}
+  /* "More objects / More styles": the lists are trimmed to a few chips, so the button that opens
+     the rest has to be impossible to miss. */
+  .chip.more{border:1px solid var(--gold);color:#fff;font-weight:700;background:linear-gradient(90deg,rgba(192,75,255,.35),rgba(255,206,84,.25));
+    animation:moreGlow 1.8s ease-in-out infinite}
+  @keyframes moreGlow{0%,100%{box-shadow:0 0 6px rgba(255,206,84,.35)}50%{box-shadow:0 0 20px rgba(255,206,84,.85),0 0 32px rgba(192,75,255,.5)}}
+  @media (prefers-reduced-motion:reduce){.chip.more{animation:none;box-shadow:0 0 14px rgba(255,206,84,.6)}}
+  .tabLink{margin-left:auto;align-self:center;padding:9px 14px;border-radius:11px;color:var(--muted);text-decoration:none;font-size:14px}
+  .tabLink:hover{color:var(--ink)}
 
   .controls-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
   @media(max-width:620px){.controls-grid{grid-template-columns:1fr}}
@@ -426,6 +434,7 @@
           <button type="button" role="menuitemcheckbox" aria-checked="false" class="profItem" id="pmAuto">⚡ Auto-render: <b id="pmAutoState">Off</b></button>
           <button type="button" role="menuitem" class="profItem" id="pmHistory">🧾 Credit history</button>
           <button type="button" role="menuitem" class="profItem" id="pmPrices">🏷 Prices</button>
+          <button type="button" role="menuitem" class="profItem" id="pmPriceCalc">🧮 Price a print</button>
           <div class="profSep"></div>
           <div class="profLinks"><a href="/terms" target="_blank" rel="noopener">Terms</a> · <a href="/privacy" target="_blank" rel="noopener">Privacy</a> · <span>support@podder.dev</span></div>
           <button type="button" role="menuitem" class="profItem" id="signOutBtn">↩ Sign out</button>
@@ -441,10 +450,11 @@
     <div class="tab active" data-tab="gen">✦ Generate</div>
     <div class="tab" data-tab="fav">★ Favorites <span class="count-badge" id="favCount">0</span></div>
     <div class="tab" data-tab="hist">↺ History <span class="count-badge" id="histCount">0</span></div>
-    <div class="tab" data-tab="rerolls">🎲 Rerolls <span class="count-badge" id="rerollCount">0</span></div>
-    <div class="tab" data-tab="book">📖 Design book</div>
-    <div class="tab" data-tab="prices">🏷 Prices</div>
-    <div class="tab" data-tab="price">🧮 Price a print</div>
+    <div class="tab" data-tab="rerolls" hidden>🎲 Rerolls <span class="count-badge" id="rerollCount">0</span></div>
+    <div class="tab" data-tab="book" hidden>📖 Design book</div>
+    <div class="tab" data-tab="prices" hidden>🏷 Prices</div>
+    <div class="tab" data-tab="price" hidden>🧮 Price a print</div>
+    <a class="tabLink" href="/brochure" target="_blank" rel="noopener">📖 Design book ↗</a>
   </div>
 
   <!-- GENERATE TAB -->
@@ -475,7 +485,7 @@
            buttons between them) and pushed Generate far below the fold; the common path is
            category -> object -> Generate. The summary keeps the current choices visible so
            collapsing never hides state, and the panel auto-opens if anything is non-default. -->
-      <button type="button" id="refineToggle" aria-expanded="false" aria-controls="refineWrap">
+      <button type="button" id="refineToggle" aria-expanded="true" aria-controls="refineWrap" hidden>
         <span>⚙ Shape &amp; style</span>
         <span id="refineSummary"></span>
         <span id="refineCaret">▾</span>
@@ -540,7 +550,7 @@
           </select>
         </div>
         <div class="row" style="margin-bottom:0">
-          <div class="label" title="Used by Generate, Similar, Reroll and Apply design — each image costs credits">How many designs per click <span class="rangeval" id="countVal">3</span></div>
+          <div class="label" title="Used by Generate, Similar and Apply design — each image costs credits">How many designs per click <span class="rangeval" id="countVal">3</span></div>
           <input type="range" id="count" min="1" max="6" step="1" value="3" />
         </div>
         <div class="row" style="margin-bottom:0">
@@ -754,7 +764,7 @@
   <div class="buyBox" role="dialog" aria-labelledby="autoTitle">
     <button class="buyClose" type="button" data-close aria-label="Close">✕</button>
     <h3 id="autoTitle">Turn on auto-render?</h3>
-    <p class="sub">With auto-render on, <b style="color:var(--ink)">Generate, Surprise me, Randomize all and Reroll start rendering every design right away</b>, using the "How many designs per click" setting. Nothing waits for a Render click.</p>
+    <p class="sub">With auto-render on, <b style="color:var(--ink)">Generate, Surprise me and Randomize all start rendering every design right away</b>, using the "How many designs per click" setting. Nothing waits for a Render click.</p>
     <div class="autoWarn" id="autoCost"></div>
     <p class="sub">Credits are spent as each image renders and are not refunded for designs you didn't like. You can turn this off any time from this menu.</p>
     <button class="btn primary" type="button" id="autoOnBtn" style="width:100%">Turn on auto-render</button>
@@ -4177,7 +4187,11 @@ function buildChips(){
     });
   }
   const oc=$("#objChips"); oc.innerHTML="";
-  Object.entries(OBJECTS).filter(([key])=>catOf(key)===state.cat).sort((a,b)=>a[1].label.localeCompare(b[1].label)).forEach(([key,o])=>{
+  // Show a short list first; the chosen object always stays visible. "More objects" opens the rest.
+  const objList=Object.entries(OBJECTS).filter(([key])=>catOf(key)===state.cat).sort((a,b)=>a[1].label.localeCompare(b[1].label));
+  const OBJ_FEW=10, objShown=state.allObjs||objList.length<=OBJ_FEW+2 ? objList
+    : objList.filter(([k],i)=>i<OBJ_FEW||k===state.obj);
+  objShown.forEach(([key,o])=>{
     const c=document.createElement("div"); c.className="chip"+(state.obj===key?" on":"");
     c.dataset.obj=key; c.innerHTML=`<span class="em">${o.emoji}</span>${o.label}`;
     c.onclick=()=>{
@@ -4187,8 +4201,17 @@ function buildChips(){
     };
     oc.appendChild(c);
   });
+  if(objShown.length<objList.length || state.allObjs && objList.length>OBJ_FEW+2){
+    const m=document.createElement("div"); m.className="chip more";
+    m.textContent=state.allObjs?"▴ Fewer objects":`✨ More objects (${objList.length-objShown.length})`;
+    m.onclick=()=>{ state.allObjs=!state.allObjs; buildChips(); };
+    oc.appendChild(m);
+  }
   const sc=$("#styleChips"); sc.innerHTML="";
-  Object.entries(STYLES).sort((a,b)=>a[1].label.localeCompare(b[1].label)).forEach(([key,s])=>{
+  const FEATURED=["botanical","crystal","sacred","cosmic","baroque","organic","drippy","trippy"];
+  const styleList=Object.entries(STYLES).sort((a,b)=>a[1].label.localeCompare(b[1].label));
+  const styleShown=state.allStyles?styleList:styleList.filter(([k])=>FEATURED.includes(k)||state.styles.has(k));
+  styleShown.forEach(([key,s])=>{
     const c=document.createElement("div"); c.className="chip style"+(state.styles.has(key)?" on":"");
     c.dataset.style=key; c.innerHTML=`<span class="em">${s.emoji}</span>${s.label}`;
     c.onclick=()=>{
@@ -4200,6 +4223,12 @@ function buildChips(){
     };
     sc.appendChild(c);
   });
+  if(styleShown.length<styleList.length || state.allStyles){
+    const m=document.createElement("div"); m.className="chip more";
+    m.textContent=state.allStyles?"▴ Fewer styles":`✨ More styles (${styleList.length-styleShown.length})`;
+    m.onclick=()=>{ state.allStyles=!state.allStyles; buildChips(); };
+    sc.appendChild(m);
+  }
 }
 // Shape chips depend on the selected object, so they are generated on the fly.
 function buildShapeChips(){
@@ -4454,7 +4483,7 @@ function buildCard(item, opts={}){
     </div>
     <div class="tools">
       <div class="tbtn fav ${isFav?'on':''}">${isFav?'★ Saved':'☆ Favorite'}</div>
-      <div class="tbtn render${item.renderImg?' similar':''}" title="${item.renderImg?`Render ${batchN()} similar designs under this picture — ${priceLabel(batchN())}`:`Generate the image — ${priceLabel(1)}`}">${item.renderImg?`🔄 Similar ×${batchN()}${costSuffix(batchN())}`:`🖼 Render${costSuffix(1)}`}</div>
+      <div class="tbtn render${item.renderImg?' similar':''}" title="${item.renderImg?`Render ${batchN()} similar designs under this picture — ${priceLabel(batchN())}`:`Generate the image — ${priceLabel(1)}`}">${item.renderImg?`🔄 More like this ×${batchN()}${costSuffix(batchN())}`:`🖼 Render${costSuffix(1)}`}</div>
       ${opts.showReroll?`<div class="tbtn reroll" title="Make ${batchN()} random designs in this same style — free; you choose which ones to render">🎲 Reroll ×${batchN()}</div>`:''}
       ${opts.showRemove?'<div class="tbtn remove">✕ Remove</div>':''}
     </div>
@@ -4881,7 +4910,7 @@ function showTab(name){
     f.onload=()=>{ try{ f.contentDocument.querySelectorAll('a[href="/"]').forEach(a=>a.onclick=e=>{ e.preventDefault(); showTab("gen"); window.scrollTo(0,0); }); }catch(e){} };
     f.src="brochure.html";   // ~1,700 images: only load when asked
   }
-  if(name==="fav") renderThumbGrid(favs,$("#favList"),{emptyMsg:"No favorites yet. Render a picture, then ☆ it to keep it here.",showRemove:true,showReroll:true,onRemove:(it)=>{toggleFav(it);closeCardModal();}});
+  if(name==="fav") renderThumbGrid(favs,$("#favList"),{emptyMsg:"No favorites yet. Render a picture, then ☆ it to keep it here.",showRemove:true,showReroll:false,onRemove:(it)=>{toggleFav(it);closeCardModal();}});
   if(name==="hist") renderThumbGrid(hist,$("#histList"),{emptyMsg:"No history yet.",showRemove:true,onRemove:(it)=>{hist=hist.filter(h=>!sameItem(h,it));LS_set("podder_hist",hist);refreshCounts();showTab("hist");closeCardModal();}});
   if(name==="rerolls") renderRerollsTab();
 }
@@ -5028,7 +5057,7 @@ function batchN(){ return Math.max(1, Math.min(6, +$("#count").value || 3)); }
 function relabelBatchButtons(){
   const n = batchN();
   document.querySelectorAll(".tbtn.render.similar").forEach(b=>{
-    b.textContent = `🔄 Similar ×${n}${costSuffix(n)}`;
+    b.textContent = `🔄 More like this ×${n}${costSuffix(n)}`;
     b.title = `Render ${n} similar design${n===1?"":"s"} under this picture — ${priceLabel(n)}`;
   });
   document.querySelectorAll(".tbtn.reroll").forEach(b=>{
@@ -5089,7 +5118,7 @@ async function renderPrices(){
       <div class="panel"><div class="label">What you pay for</div><div class="pl-scroll"><table class="pl-table">
         ${row("⚡ Fast render", "One picture of your design, ready in about 10 seconds. Good for exploring ideas.", `${c.fast} ${pl(c.fast)}`)}
         ${row("✦ Quality render", "One picture from our larger, more detailed image model. Takes about 30 seconds. Use it for designs you plan to keep or print.", `${c.quality} ${pl(c.quality)}`)}
-        ${row("🔄 Similar, Reroll and Apply design", "One render for each picture made. The “designs per click” slider sets how many, so check it before you click.", "per picture")}
+        ${row("🔄 More like this and Apply design", "One render for each picture made. The “designs per click” slider sets how many, so check it before you click.", "per picture")}
         ${m3.enabled ? row("🧊 3D model", "Turns one of your renders into a printable STL file, sized to about 80 mm. Takes a minute or two.", `${m3.cost} credits`) : ""}
       </table></div></div>
       <div class="panel"><div class="label">Always free</div><ul class="pl-list">
@@ -6263,7 +6292,7 @@ document.addEventListener("click", e=>{
   if(e.target.closest("#refineWrap, #objChips, #catChips, #searchResults")) setTimeout(updateRefineSummary, 0);
 });
 updateRefineSummary();
-if(state.styles.size || (state.shape && state.shape !== "Auto")) setRefineOpen(true);
+setRefineOpen(true);   // always open now: object/shape/style lists are trimmed instead (More objects / More styles)
 
 { const saved = LS_get("podder_count", null); if(saved){ $("#count").value = saved; $("#countVal").textContent = saved; } }
 $("#count").oninput=onCount;
@@ -6505,7 +6534,7 @@ function updateCostNote(){
   cn.classList.toggle("auto", on);
   $("#genBtn").textContent = on ? `✦ Generate & render ×${n}` : "✦ Generate";
   if(on){
-    cn.innerHTML = `<b>⚡ Auto-render is on</b> — Generate, Surprise me, Randomize all and Reroll each render ${n} design${n===1?"":"s"} straight away`
+    cn.innerHTML = `<b>⚡ Auto-render is on</b> — Generate, Surprise me and Randomize all each render ${n} design${n===1?"":"s"} straight away`
       + (billed() ? ` (<b>${priceLabel(n)}</b> per click). ` : ". ") + `Turn it off in your profile menu.`;
   } else if(costs){
     const f = costs.fast, q = costs.quality;
@@ -6517,6 +6546,7 @@ $("#count").addEventListener("input", updateCostNote);
 $("#qualityToggle").addEventListener("change", updateCostNote);
 $("#pmBuy").onclick = ()=>openBuy();
 $("#pmPrices").onclick = ()=>{ showTab("prices"); window.scrollTo(0,0); };
+$("#pmPriceCalc").onclick = ()=>{ showTab("price"); window.scrollTo(0,0); };
 
 // Picture: crop to a centred square, scale to 128px, JPEG. Small enough to live on the profile row.
 $("#pmPhoto").onclick = ()=>$("#avatarFile").click();
