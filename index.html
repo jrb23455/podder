@@ -6138,6 +6138,15 @@ buildChips();buildShapeChips();buildStyleDetail();refreshCounts();
 
 /* ---------- SPLASH SCREEN ---------- */
 (function(){
+  // Shown once per browser tab: skipped when arriving from the design book (?from=book) or on a
+  // reload/return within the same session, so it only greets a fresh visit.
+  try{
+    if(new URLSearchParams(location.search).get("from")==="book" || sessionStorage.getItem("podder_splash_seen")){
+      if(location.search) history.replaceState(null, "", location.pathname + location.hash);
+      return;
+    }
+    sessionStorage.setItem("podder_splash_seen", "1");
+  }catch(e){}
   const style = document.createElement("style");
   style.textContent = `
     #podderSplash{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#050209;}
