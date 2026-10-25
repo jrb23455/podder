@@ -26,13 +26,19 @@ export const maxDuration = 60;
 // returns results under output.model_url. Keys and task ids are shared between the two.
 const TRIPO_BASE = 'https://openapi.tripo3d.ai/v3';
 
-// Required on V3. v2.5-20250123 is the model every mesh so far was made and costed with
-// (20 credits untextured); v3.1-20260211 is newer. Override with TRIPO_MODEL.
-const GEN_MODEL = (process.env.TRIPO_MODEL || 'v2.5-20250123').trim();
+// Required on V3. Since 2026-10-23: v3.1-20260211 with "detailed" geometry. Same-image A/B on a DMT
+// shaman: v2.5-20250123 (standard) smoothed away every surface pattern, v3.1 detailed kept them
+// (Podder/_qc_tools/sheets/shaman_tripo_compare.png). Cost 40 Tripo credits to generate + 10 to
+// convert = 50 ($0.50) vs 30 before; the STL is ~2M triangles (~100 MB) vs ~0.5M (~25 MB).
+// Roll back with TRIPO_MODEL=v2.5-20250123 and TRIPO_QUALITY=standard.
+const GEN_MODEL = (process.env.TRIPO_MODEL || 'v3.1-20260211').trim();
+const GEN_QUALITY = (process.env.TRIPO_QUALITY || 'detailed').trim();   // "detailed" is v3.x only
 
 // Tripo meshes come out normalised to a ~1-unit cube, which slicers read as 1 mm. Scaling at the
 // convert step makes the STL land on the plate at a printable size (longest side, in mm).
 const STL_SIZE_MM = Number(process.env.STL_SIZE_MM) || 80;
+// Triangle cap for the downloadable STL (0 = Tripo's full mesh). See the convert step.
+const STL_FACE_LIMIT = Number(process.env.STL_FACE_LIMIT ?? 500000);
 
 // Each STL conversion is its own paid Tripo task (~$0.05), so a mesh gets a fixed number.
 const MAX_CONVERTS = 3;
@@ -209,9 +215,18 @@ export default async function handler(req, res) {
       // An STL already made for this mesh is reused; polling it hands back a fresh link.
       if (row?.stl_task_id && !req.body?.fresh) return res.status(200).json({ taskId: row.stl_task_id, reused: true });
       if (!owner && row.converts >= MAX_CONVERTS) return res.status(429).json({ error: 'convert_limit' });
-      const d = await createTask('/models/convert', {
-        input: id, format: 'STL', scale_factor: STL_SIZE_MM, pivot_to_center_bottom: true,
-      }, token);
+      // v3.1 "detailed" meshes are ~2M triangles (~100 MB): slicers like Flash Studio freeze loading them.
+      // Capped at the convert step; 500k keeps the visible detail at 80 mm (shaman test 2026-10-23).
+      const base = { input: id, format: 'STL', scale_factor: STL_SIZE_MM, pivot_to_center_bottom: true };
+      let d;
+      try {
+        d = await createTask('/models/convert', { ...base, ...(STL_FACE_LIMIT ? { face_limit: STL_FACE_LIMIT } : {}) }, token);
+      } catch (e) {
+        // face_limit on convert was never confirmed against Tripo's API; if it is refused, still hand over the full mesh.
+        if (!STL_FACE_LIMIT) throw e;
+        console.warn('convert with face_limit refused, retrying without:', String(e.message || e));
+        d = await createTask('/models/convert', base, token);
+      }
       const stlId = d.task_id || d.taskId;
       if (row) await patchTaskRow(id, { converts: row.converts + 1, stl_task_id: stlId });
       return res.status(200).json({ taskId: stlId });
@@ -268,6 +283,7 @@ export default async function handler(req, res) {
         model: GEN_MODEL,
         texture: wantTexture,
         pbr: wantTexture,
+        ...(GEN_QUALITY === 'detailed' && GEN_MODEL.startsWith('v3') ? { geometry_quality: 'detailed' } : {}),
       }, token);
       taskId = d.task_id || d.taskId;
     } catch (e) {

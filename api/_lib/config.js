@@ -44,7 +44,11 @@ export const CREDIT_COST = {
 // mesh is defensible as customer acquisition — the STL download is the moment someone believes
 // the product — but it should be a decision, not an accident. Raise this above SIGNUP_BONUS to
 // require a purchase before any mesh.
-export const MODEL3D_COST = 30;
+// RE-MEASURED 2026-10-23 on v3.1-20260211 "detailed" (model3d.js): 40 to generate + 10 to convert = 50 Tripo
+// credits = $0.50 + Flux ~$0.005 per mesh. At 30 Podder credits that is ~40% Starter / ~35% Studio after
+// Stripe; 50 credits restores ~67% Starter / ~61% Studio. Owner raised the price to 50 on 2026-10-23.
+// Note: SIGNUP_BONUS (50) still covers exactly one free mesh, which now costs ~$0.50.
+export const MODEL3D_COST = 50;
 
 // Stripe Managed Payments is enabled by default on this account and rejects inline
 // price_data without a tax code. txcd_10105001 is "AIaaS - Cloud Based - Personal Use":

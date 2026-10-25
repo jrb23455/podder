@@ -1,5 +1,5 @@
 // GET /api/me   headers: Authorization: Bearer <supabase access token>
-//   -> { email, credits, costs, packs, recent: [...] }
+//   -> { email, credits, avatar, created, costs, packs, recent: [...] }
 //
 // The client calls this on load and after every render to keep the credit chip honest.
 // It also ships the price list so the buy-credits UI is generated from server config
@@ -29,6 +29,11 @@ export default async function handler(req, res) {
   // the buy button still works, which is the more useful failure mode.
   const credits = profile?.credits ?? 0;
 
+  // Profile picture, read on its own so a database without the avatar column (migration 0011)
+  // still reports the right balance.
+  const pic = await selectOne('profiles', `id=eq.${user.id}&select=avatar`).catch(() => null);
+  const avatar = pic?.avatar || null;
+
   let recent = [];
   try {
     const r = await fetch(
@@ -48,6 +53,8 @@ export default async function handler(req, res) {
     email: user.email,
     anonymous: user.anonymous,
     credits,
+    avatar,
+    created: user.created_at || null,
     costs: CREDIT_COST,
     packs: Object.entries(PACKS).map(([id, p]) => ({
       id, credits: p.credits, amount: p.amount, name: p.name, blurb: p.blurb,

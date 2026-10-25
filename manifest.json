@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Podder",
   "short_name": "Podder",
-  "description": "Design generator for 3D printing. Every render is a single solid printable form, ready for image-to-3D.",
+  "description": "Design generator for 3D printing: pick an object and a style, render a concept, turn the ones you like into an STL.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
