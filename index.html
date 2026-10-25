@@ -5221,12 +5221,45 @@ function authErr(j, fallback){
 // Password sign-in. Preferred over magic links because it sends no email at all, and
 // Supabase's built-in SMTP allows only 2 messages/hour — which would otherwise cap
 // sign-ins at two people per hour.
+// Cloudflare Turnstile human check. Supabase Auth has captcha protection on, so sign-in,
+// sign-up, the anonymous trial, magic links and password resets each need a fresh one-time
+// token (gotrue_meta_security.captcha_token). Most visitors pass invisibly; a challenge box only
+// appears at the bottom of the screen when Cloudflare wants one.
+const TURNSTILE_SITEKEY = "0x4AAAAAAFlxQtOYuHJss0_9";
+let _tsLoad = null;
+function loadTurnstile(){
+  return _tsLoad ||= new Promise((res, rej)=>{
+    const s = document.createElement("script");
+    s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"; s.async = true;
+    s.onload = ()=>res(window.turnstile);
+    s.onerror = ()=>{ _tsLoad = null; rej(new Error("Couldn't load the human check — check your connection and try again.")); };
+    document.head.appendChild(s);
+  });
+}
+async function captchaToken(){
+  const ts = await loadTurnstile();
+  let box = document.getElementById("tsBox");
+  if(!box){ box = document.createElement("div"); box.id = "tsBox";
+    box.style.cssText = "position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:10000";
+    document.body.appendChild(box); }
+  box.innerHTML = "";
+  return new Promise((res, rej)=>{
+    let id;
+    const done = ()=>setTimeout(()=>{ try{ ts.remove(id); }catch(e){} }, 0);
+    id = ts.render(box, { sitekey: TURNSTILE_SITEKEY, appearance: "interaction-only",
+      callback: t=>{ done(); res(t); },
+      "error-callback": ()=>{ done(); rej(new Error("The human check failed — please try again.")); },
+      "timeout-callback": ()=>{ done(); rej(new Error("The human check timed out — please try again.")); } });
+  });
+}
+const withCaptcha = async (body)=>({ ...body, gotrue_meta_security: { captcha_token: await captchaToken() } });
+
 async function signInWithPassword(email, password){
   const cfg = await loadConfig();
   if(!cfg.ready) throw new Error("Sign-in is not configured yet.");
   const r = await fetch(`${cfg.supabaseUrl}/auth/v1/token?grant_type=password`,{
     method:"POST", headers:{"content-type":"application/json", apikey:cfg.anonKey},
-    body:JSON.stringify({email, password})});
+    body:JSON.stringify(await withCaptcha({email, password}))});
   const j = await r.json().catch(()=>({}));
   if(!r.ok || !j.access_token) throw new Error(authErr(j,"Could not sign in"));
   saveSession({access_token:j.access_token, refresh_token:j.refresh_token,
@@ -5242,7 +5275,7 @@ async function signUpWithPassword(email, password){
   if(!cfg.ready) throw new Error("Sign-up is not configured yet.");
   const r = await fetch(`${cfg.supabaseUrl}/auth/v1/signup`,{
     method:"POST", headers:{"content-type":"application/json", apikey:cfg.anonKey},
-    body:JSON.stringify({email, password})});
+    body:JSON.stringify(await withCaptcha({email, password}))});
   const j = await r.json().catch(()=>({}));
   if(!r.ok) throw new Error(authErr(j,"Could not create the account"));
 
@@ -5264,7 +5297,7 @@ async function startAnonSession(){
   try{
     const r = await fetch(`${cfg.supabaseUrl}/auth/v1/signup`,{
       method:"POST", headers:{"content-type":"application/json", apikey:cfg.anonKey},
-      body:"{}"});
+      body:JSON.stringify(await withCaptcha({}))});
     const j = await r.json().catch(()=>({}));
     if(!r.ok || !j.access_token) return false;      // e.g. anonymous sign-ins disabled
     saveSession({access_token:j.access_token, refresh_token:j.refresh_token,
@@ -5297,7 +5330,7 @@ async function sendPasswordReset(email){
   if(!cfg.ready) throw new Error("Sign-in is not configured yet.");
   const r = await fetch(`${cfg.supabaseUrl}/auth/v1/recover?redirect_to=${encodeURIComponent(location.origin)}`,{
     method:"POST", headers:{"content-type":"application/json", apikey:cfg.anonKey},
-    body:JSON.stringify({email})});
+    body:JSON.stringify(await withCaptcha({email}))});
   if(!r.ok){
     const j = await r.json().catch(()=>({}));
     throw new Error(authErr(j,"Could not send the reset email"));
@@ -5326,7 +5359,7 @@ async function sendMagicLink(email){
   if(!cfg.ready) throw new Error("Sign-in is not configured yet — set SUPABASE_URL and SUPABASE_ANON_KEY.");
   const r = await fetch(`${cfg.supabaseUrl}/auth/v1/otp?redirect_to=${encodeURIComponent(location.origin)}`,{
     method:"POST", headers:{"content-type":"application/json", apikey:cfg.anonKey},
-    body:JSON.stringify({email, create_user:true})});
+    body:JSON.stringify(await withCaptcha({email, create_user:true}))});
   if(!r.ok){
     const j = await r.json().catch(()=>({}));
     throw new Error(authErr(j,"Could not send the link"));
