@@ -4463,6 +4463,10 @@ function buildPrompt(){
     obj: state.obj,
     shape: shapeObj.label,
     styles: [...new Set(usedStyles)],
+    // the exact substyles that made it into this prompt, finish and weirdness — shown on the card
+    details: [...new Set(usedStyles)].flatMap(k=>(STYLES[k].variants||[]).filter(v=>clauses.includes(v.clause)).map(v=>`${STYLES[k].label}: ${v.label}`)),
+    finish: getFinish(),
+    wild,
     palette: pal.v
   };
 }
@@ -4473,6 +4477,8 @@ function full(it){ return (it.sd || it.text || "") + "\n\n" + (it.sdNeg || it.ne
 
 // Builds one full detail card for an item (image, meta pills, fav/render/remove tools).
 // Shared by the Generate tab's inline list AND the favorites/history modal (see renderThumbGrid).
+// Palette display name from the <select> (e.g. "verdigris" -> "Copper patina"); falls back to the key.
+function palLabel(v){ const o=[...($("#palette")?.options||[])].find(x=>x.value===v); return o ? o.textContent : (v||""); }
 function buildCard(item, opts={}){
   const card=document.createElement("div");card.className="card";
   const styleLabels=item.styles.map(s=>STYLES[s]?.label||s).join(" · ")||"surprise mix";
@@ -4480,9 +4486,11 @@ function buildCard(item, opts={}){
   card.innerHTML=`
     <div class="meta">
       <span class="pill obj">${OBJECTS[item.obj]?.emoji||""} ${OBJECTS[item.obj]?.label||item.obj}</span>
-      ${item.shape && item.shape!=="Auto" ? `<span class="pill">◆ ${item.shape}</span>` : ""}
-      <span class="pill">${styleLabels}</span>
-      <span class="pill">${item.palette}</span>
+      ${item.shape ? `<span class="pill">◆ ${item.shape==="Auto"?"Auto shape":item.shape}</span>` : ""}
+      ${(item.details&&item.details.length ? item.details : [styleLabels]).map(d=>`<span class="pill">${d}</span>`).join("")}
+      <span class="pill">🎨 ${palLabel(item.palette)}</span>
+      ${item.finish ? `<span class="pill">${item.finish==="glossy"?"Glossy":"Vivid"}</span>` : ""}
+      ${item.wild ? `<span class="pill">${wildLevel(item.wild).label} weirdness</span>` : ""}
     </div>
     <div class="tools">
       <div class="tbtn fav ${isFav?'on':''}">${isFav?'★ Saved':'☆ Favorite'}</div>
