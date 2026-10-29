@@ -64,6 +64,22 @@ const SB = () => (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
 const SK = () => process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const sbH = extra => ({ apikey: SK(), Authorization: `Bearer ${SK()}`, 'Content-Type': 'application/json', ...(extra || {}) });
 
+// Tripo is prepaid with no auto-reload, so warn the owner before it runs dry (3D models would then
+// fail and be refunded). Checked after each new model; alerts at most once a day.
+// TRIPO_LOW_BALANCE = Tripo credits (default 500, about 10 models at ~50 each).
+async function checkTripoBalance(token) {
+  try {
+    const low = Number(process.env.TRIPO_LOW_BALANCE ?? 500);
+    const b = await tripo('/account/balance', token);
+    const bal = Number(b?.balance ?? b?.data?.balance);
+    if (!Number.isFinite(bal) || bal >= low) return;
+    const since = new Date(Date.now() - 24 * 3600_000).toISOString();
+    const r = await fetch(`${SB()}/rest/v1/ops_alerts?kind=eq.tripo_low_balance&created_at=gt.${since}&select=id&limit=1`, { headers: sbH() });
+    if (r.ok && (await r.json()).length) return;
+    await alert('tripo_low_balance', { balance: bal, threshold: low, topUp: 'https://platform.tripo3d.ai/billing' });
+  } catch { /* never block a model over a balance check */ }
+}
+
 async function getTaskRow(taskId) {
   const r = await fetch(`${SB()}/rest/v1/model3d_tasks?task_id=eq.${encodeURIComponent(taskId)}&select=*`, { headers: sbH() });
   if (!r.ok) throw new Error('task lookup failed');
@@ -323,6 +339,7 @@ export default async function handler(req, res) {
     const okTitle = typeof title === 'string' ? title.slice(0, 160) : null;
     try { await insertTaskRow({ task_id: taskId, user_id: user ? user.id : null, thumb: okThumb, title: okTitle }); }
     catch (e) { await alert('model3d_task_unrecorded', { taskId, user: user ? user.id : null, error: String(e.message || e) }); }
+    await checkTripoBalance(token);
     return res.status(200).json({ taskId, credits: balance });
   } catch (e) {
     return res.status(502).json({ error: 'tripo_failed', detail: String(e.message || e), refunded: !!user && !convert && !refund });
