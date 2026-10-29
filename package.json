@@ -6,6 +6,15 @@
   "description": "Podder — design generator for 3D printing. Every render is a single solid printable form, ready for image-to-3D. Cloud renders via Replicate Flux.",
   "scripts": {
     "dev": "node dev-server.mjs",
-    "preflight": "node scripts/preflight.mjs"
+    "preflight": "node scripts/preflight.mjs",
+    "cf:build": "node scripts/build-cf.mjs",
+    "cf:dev": "node scripts/build-cf.mjs && wrangler dev --port 8787",
+    "cf:deploy": "node scripts/build-cf.mjs && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.155.0"
+  },
+  "allowScripts": {
+    "workerd@1.20261023.1": true
   }
 }

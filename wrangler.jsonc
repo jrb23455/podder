@@ -1,0 +1,19 @@
+// Cloudflare Workers config for podder.dev. Vercel ignores this file.
+// Build + deploy:  npm run cf:deploy     Local test:  npm run cf:dev
+//
+// Secrets (API keys) are NOT in this file. Set each once with  npx wrangler secret put NAME
+// (or Dashboard -> Workers -> podder -> Settings -> Variables). Locally they come from .dev.vars.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "podder",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "dist",
+    "run_worker_first": ["/api/*"],
+    "html_handling": "auto-trailing-slash"
+  },
+  "limits": { "cpu_ms": 30000 },
+  "observability": { "enabled": true }
+}
