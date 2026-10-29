@@ -131,6 +131,12 @@
     animation:moreGlow 1.8s ease-in-out infinite}
   @keyframes moreGlow{0%,100%{box-shadow:0 0 6px rgba(255,206,84,.35)}50%{box-shadow:0 0 20px rgba(255,206,84,.85),0 0 32px rgba(192,75,255,.5)}}
   @media (prefers-reduced-motion:reduce){.chip.more{animation:none;box-shadow:0 0 14px rgba(255,206,84,.6)}}
+  .modelsGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+  .modelCard{background:var(--panel);border:1px solid var(--panel-brd);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:8px}
+  .modelCard img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:var(--bg2)}
+  .modelCard .mt{font-size:13px;font-weight:600;line-height:1.3}
+  .modelCard .md{font-size:12px;color:var(--muted)}
+  .modelCard .btn{font-size:13px;padding:8px 10px}
   .tabLink{margin-left:auto;align-self:center;padding:9px 14px;border-radius:11px;color:var(--muted);text-decoration:none;font-size:14px}
   .tabLink:hover{color:var(--ink)}
 
@@ -457,6 +463,7 @@
     <div class="tab active" data-tab="gen">✦ Generate</div>
     <div class="tab" data-tab="fav">★ Favorites <span class="count-badge" id="favCount">0</span></div>
     <div class="tab" data-tab="hist">↺ History <span class="count-badge" id="histCount">0</span></div>
+    <div class="tab" data-tab="models">🧊 My 3D models</div>
     <div class="tab" data-tab="rerolls" hidden>🎲 Rerolls <span class="count-badge" id="rerollCount">0</span></div>
     <div class="tab" data-tab="book" hidden>📖 Design book</div>
     <div class="tab" data-tab="prices" hidden>🏷 Prices</div>
@@ -505,7 +512,7 @@
         </div>
 
         <div class="row">
-          <div class="label">Style DNA <span style="text-transform:none;letter-spacing:0;color:#6f5f8f">— pick any mix, or leave empty for surprise</span> <span class="lock" data-lock="style" title="Keep the same styles when you regenerate">🔓 lock</span></div>
+          <div class="label">Style DNA <span style="text-transform:none;letter-spacing:0;color:#6f5f8f">— pick any mix, 🚫 No style for a plain piece, or leave empty for a surprise</span> <span class="lock" data-lock="style" title="Keep the same styles when you regenerate">🔓 lock</span></div>
           <div class="chips" id="styleChips"></div>
         </div>
 
@@ -622,6 +629,13 @@
 
   <!-- PRICES TAB: what Podder's credits cost and buy. Every number comes from /api/config, so this can
        never drift from what the server actually charges. -->
+  <!-- MY 3D MODELS TAB: every paid 3D model on this account, from the server, so STLs can be
+       downloaded again from any browser -->
+  <div id="tab-models" class="hidden">
+    <p class="tag">Every 3D model you've made, newest first. Downloads are free. STLs arrive about 80 mm on their longest side; resize in your slicer. Fragile parts (thin spikes, horns, wings, overhangs) print best with supports. On a multi-material printer, a dissolvable support material such as PVA under those parts gives the cleanest result.</p>
+    <div id="modelsList" class="modelsGrid"></div>
+  </div>
+
   <div id="tab-prices" class="hidden">
     <p class="tag">Designing is free. You only pay, in credits, when you turn a design into a picture or a 3D model. Credits never expire.</p>
     <div id="pricesBody"><div class="panel">Loading prices…</div></div>
@@ -4092,6 +4106,7 @@ let state = {
   shape: "Auto",
   styles: new Set(),
   styleDetail: new Set(),   // entries like "sacred::Mandala"
+  noStyle: false,           // "🚫 No style": render the bare object, no random style
   locks: {obj:false, style:false, pal:false, shape:false, wild:false}
 };
 
@@ -4216,6 +4231,10 @@ function buildChips(){
     oc.appendChild(m);
   }
   const sc=$("#styleChips"); sc.innerHTML="";
+  { const c=document.createElement("div"); c.className="chip style"+(state.noStyle?" on":"");
+    c.innerHTML=`<span class="em">🚫</span>No style`; c.title="Plain object with no style decoration (leave every style off for a random one)";
+    c.onclick=()=>{ state.noStyle=!state.noStyle; if(state.noStyle){ state.styles.clear(); state.styleDetail.clear(); } buildChips(); buildStyleDetail(); };
+    sc.appendChild(c); }
   const FEATURED=["botanical","crystal","sacred","cosmic","baroque","organic","drippy","trippy"];
   const styleList=Object.entries(STYLES).sort((a,b)=>a[1].label.localeCompare(b[1].label));
   const styleShown=state.allStyles?styleList:styleList.filter(([k])=>FEATURED.includes(k)||state.styles.has(k));
@@ -4226,7 +4245,7 @@ function buildChips(){
       if(state.styles.has(key)){
         state.styles.delete(key);
         [...state.styleDetail].forEach(x=>{ if(x.startsWith(key+"::")) state.styleDetail.delete(x); });
-      } else state.styles.add(key);
+      } else { state.styles.add(key); state.noStyle=false; }
       buildChips(); buildStyleDetail();
     };
     sc.appendChild(c);
@@ -4241,7 +4260,8 @@ function buildChips(){
 // Shape chips depend on the selected object, so they are generated on the fly.
 function buildShapeChips(){
   const wrap=$("#shapeChips"); if(!wrap) return; wrap.innerHTML="";
-  OBJECTS[state.obj].shapes.forEach(s=>{
+  const shapes=[...OBJECTS[state.obj].shapes].sort((a,b)=>a.label==="Auto"?-1:b.label==="Auto"?1:a.label.localeCompare(b.label));
+  shapes.forEach(s=>{
     const c=document.createElement("div");
     c.className="chip"+(state.shape===s.label?" on":"");
     c.textContent=s.label;
@@ -4296,7 +4316,8 @@ function buildPrompt(){
   // Leaving it empty did not let Flux "decide" — the wildness note still asks for rich layered
   // ornament without naming any, and Flux filled that gap with the same pastel swirls every time.
   // The picked styles are recorded on the item, so the card shows what was actually used.
-  if(!styleKeys.length) styleKeys = shuffle(Object.keys(STYLES)).slice(0, Math.random() < 0.7 ? 1 : 2);
+  // "🚫 No style" chip: keep it plain — no random style, no ornament note.
+  if(!styleKeys.length && !state.noStyle) styleKeys = shuffle(Object.keys(STYLES)).slice(0, Math.random() < 0.7 ? 1 : 2);
   styleKeys = shuffle(styleKeys);
   // Wildness drives clause count directly. Pull DISTINCT clauses, round-robin across
   // the chosen styles; with a single style this draws several clauses from its own bank.
@@ -4342,7 +4363,7 @@ function buildPrompt(){
     ? (o.autoForm ? o.autoForm
       : state.obj==="birdhouse"
         ? "a rounded gourd-, orb- or pod-like birdhouse with a clear round entrance hole — clean and recognizable"
-        : `a clean, classic, clearly recognizable ${objNoun} shape, ornamented but never distorted beyond recognition`)
+        : `a clean, classic, clearly recognizable ${objNoun} shape${state.noStyle && !state.styles.size ? "" : ", ornamented but never distorted beyond recognition"}`)
     : silhouette(shapeObj.prompt);
   // Every render is 3D-print-safe, unconditionally — no toggle, no exceptions.
   const printable = true;
@@ -4351,7 +4372,7 @@ function buildPrompt(){
   // get combined (see clauseTarget above) — every level reads as bold (old max is the new floor),
   // and each step up makes the SAME motifs repeat, layer and carve deeper rather than introducing
   // more unrelated decoration. Shared across the compact SD and Flux prompts.
-  const wildNote = wl.note;
+  const wildNote = state.noStyle && !clauses.length ? "" : wl.note;
   const reliefWord = wl.relief;
   // Ring holders need OPEN prongs to slide a ring onto — decorating the whole form (the default
   // for every other object) fills the gaps between prongs with relief pattern and fuses them into
@@ -4472,6 +4493,7 @@ function buildPrompt(){
     details: [...new Set(usedStyles)].flatMap(k=>(STYLES[k].variants||[]).filter(v=>clauses.includes(v.clause)).map(v=>`${STYLES[k].label}: ${v.label}`)),
     finish: getFinish(),
     wild,
+    noStyle: !!state.noStyle && !usedStyles.length,
     palette: pal.v
   };
 }
@@ -4486,7 +4508,7 @@ function full(it){ return (it.sd || it.text || "") + "\n\n" + (it.sdNeg || it.ne
 function palLabel(v){ const o=[...($("#palette")?.options||[])].find(x=>x.value===v); return o ? o.textContent : (v||""); }
 function buildCard(item, opts={}){
   const card=document.createElement("div");card.className="card";
-  const styleLabels=item.styles.map(s=>STYLES[s]?.label||s).join(" · ")||"surprise mix";
+  const styleLabels=item.styles.map(s=>STYLES[s]?.label||s).join(" · ")||(item.noStyle?"🚫 No style":"surprise mix");
   const isFav = favs.some(f=>sameItem(f,item));
   card.innerHTML=`
     <div class="meta">
@@ -4844,7 +4866,7 @@ async function randomizeAll(){
   const n=+$("#count").value;
   const keys=Object.keys(OBJECTS).filter(k=>catOf(k)===state.cat);
   const sObj=state.obj,sShape=state.shape,sStyles=state.styles,sDetail=state.styleDetail;
-  const sView=$("#view").value,sPal=$("#palette").value,sWild=$("#wild").value;
+  const sView=$("#view").value,sPal=$("#palette").value,sWild=$("#wild").value,sNo=state.noStyle;
   const out=[];
   for(let i=0;i<n;i++){
     // Locked choices stay put for every design; everything unlocked rolls per design.
@@ -4852,7 +4874,7 @@ async function randomizeAll(){
     if(!state.locks.obj && !state.locks.shape) state.obj=pick(keys); else state.obj=sObj;
     state.shape = state.locks.shape ? sShape : pick(OBJECTS[state.obj].shapes).label;
     if(state.locks.style){ state.styles=sStyles; state.styleDetail=sDetail; }
-    else { state.styles=new Set(shuffle(Object.keys(STYLES)).slice(0,1+Math.floor(Math.random()*3)));
+    else { state.noStyle=false; state.styles=new Set(shuffle(Object.keys(STYLES)).slice(0,1+Math.floor(Math.random()*3)));
     state.styleDetail=new Set();
     state.styles.forEach(k=>{
       const vars=(STYLES[k]?.variants||[]).filter(v=>!v.optIn);
@@ -4865,7 +4887,7 @@ async function randomizeAll(){
     if(!state.locks.wild) $("#wild").value=randWild();
     out.push(buildPrompt());
   }
-  state.obj=sObj;state.shape=sShape;state.styles=sStyles;state.styleDetail=sDetail;
+  state.obj=sObj;state.shape=sShape;state.styles=sStyles;state.styleDetail=sDetail;state.noStyle=sNo;
   $("#view").value=sView;$("#palette").value=sPal;$("#wild").value=sWild;onWild();
   render(out,$("#output"),{emptyMsg:"Hit Generate."});
   const cards=[...document.querySelectorAll("#output .card")];
@@ -4919,7 +4941,8 @@ function fmtDuration(ms){
 /* ---------- TABS ---------- */
 function showTab(name){
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===name));
-  ["gen","fav","hist","rerolls","book","prices","price"].forEach(n=>$("#tab-"+n).classList.toggle("hidden",n!==name));
+  ["gen","fav","hist","models","rerolls","book","prices","price"].forEach(n=>$("#tab-"+n).classList.toggle("hidden",n!==name));
+  if(name==="models") renderModelsTab();
   if(name==="prices") renderPrices();
   if(name==="book" && !$("#bookFrame").src){
     const f=$("#bookFrame");
@@ -5559,6 +5582,65 @@ async function reportRender(imgRef, btn, wrap){
   }
 }
 
+// Small JPEG + a readable title, stored with the model so "My 3D models" can show it later.
+async function thumbOf(dataUrl){
+  try{
+    const im = new Image(); im.src = dataUrl; await im.decode();
+    const c = document.createElement("canvas"); c.width = c.height = 192;
+    const k = Math.min(im.naturalWidth, im.naturalHeight);
+    c.getContext("2d").drawImage(im, (im.naturalWidth-k)/2, (im.naturalHeight-k)/2, k, k, 0, 0, 192, 192);
+    return c.toDataURL("image/jpeg", 0.72);
+  }catch(e){ return null; }
+}
+function modelTitle(item){
+  const o = OBJECTS[item.obj]?.label || item.obj || "Design";
+  const sh = item.shape && item.shape !== "Auto" ? item.shape : "";
+  const st = (item.styles||[]).map(k=>STYLES[k]?.label||k).join(" · ");
+  return [o, sh, st].filter(Boolean).join(" · ");
+}
+async function renderModelsTab(){
+  const box = $("#modelsList");
+  box.innerHTML = `<div class="empty">Loading your 3D models…</div>`;
+  let j;
+  try{
+    const r = await fetch("/api/model3d?list=1", {headers: await authHeaders()});
+    j = await r.json().catch(()=>({}));
+    if(r.status === 401){ box.innerHTML = `<div class="empty">Sign in to see the 3D models you've made.</div>`; return; }
+    if(!r.ok) throw new Error(j.error || "HTTP "+r.status);
+  }catch(e){ box.innerHTML = `<div class="empty">Couldn't load your 3D models: ${e.message||e}</div>`; return; }
+  const models = j.models || [];
+  if(!models.length){ box.innerHTML = `<div class="empty">No 3D models yet. Render a design, then click 🧊 Make 3D.</div>`; return; }
+  box.innerHTML = "";
+  models.forEach(m=>{
+    const card = document.createElement("div"); card.className = "modelCard";
+    const when = new Date(m.created).toLocaleDateString(undefined,{year:"numeric",month:"short",day:"numeric"});
+    card.innerHTML = (m.thumb ? `<img alt="" src="${m.thumb}">` : `<img alt="" src="Podder-192.png">`)
+      + `<div class="mt"></div><div class="md">${when}</div>`;
+    card.querySelector(".mt").textContent = m.title || "3D model";
+    const b = document.createElement("button"); b.className = "btn primary"; b.textContent = "⬇ Download STL";
+    b.onclick = async ()=>{
+      b.disabled = true; const old = b.textContent;
+      try{
+        let stlId = m.stlTaskId;
+        if(!stlId){
+          // Made but never converted: start the (free, included) STL conversion now.
+          b.textContent = "converting…";
+          const c = await fetch("/api/model3d", {method:"POST", headers: await authHeaders({"content-type":"application/json"}), body: JSON.stringify({convert: m.taskId})});
+          const cj = await c.json().catch(()=>({}));
+          if(!c.ok || !cj.taskId) throw new Error(cj.detail || cj.error || "STL conversion failed to start");
+          stlId = m.stlTaskId = cj.taskId;
+        }
+        for(let i=0;;i++){
+          try{ openDownload(await freshStlUrl(stlId)); break; }
+          catch(e){ if(i>=60) throw e; b.textContent = "preparing…"; await sleep(3000); }
+        }
+      }catch(e){ toast(e.message || String(e), 5000); }
+      finally{ b.disabled = false; b.textContent = old; }
+    };
+    card.appendChild(b);
+    box.appendChild(card);
+  });
+}
 async function makeModel3D(item, imgRef, btn, meta){
   const cost = ACCT.cfg?.model3d?.cost ?? 40;
   const src = await imgSrc(imgRef);
@@ -5609,7 +5691,7 @@ async function makeModel3D(item, imgRef, btn, meta){
     say("uploading…");
     const r = await fetch("/api/model3d", {
       method:"POST", headers: await authHeaders({"content-type":"application/json"}),
-      body: JSON.stringify({ image })
+      body: JSON.stringify({ image, thumb: await thumbOf(image), title: modelTitle(item) })
     });
     const j = await r.json().catch(()=>({}));
 
@@ -5652,7 +5734,12 @@ async function makeModel3D(item, imgRef, btn, meta){
     const note = document.createElement("span");
     note.className = "render-time";
     note.style.cssText = "margin-left:8px;color:#6f5f8f";
-    note.textContent = "about 80 mm tall/wide — resize in your slicer to taste";
+    note.textContent = "about 80 mm tall/wide — resize in your slicer to taste. Saved in 🧊 My 3D models.";
+    note.title = "Fragile parts (thin spikes, horns, wings, overhangs) print best with supports. On a multi-material printer, a dissolvable support material such as PVA under those parts gives the cleanest result.";
+    const sup = document.createElement("div");
+    sup.className = "render-time"; sup.style.cssText = "flex-basis:100%;margin-top:4px;color:#6f5f8f";
+    sup.textContent = "🛠 Fragile parts (thin spikes, horns, wings, overhangs) print best with supports. On a multi-material printer, a dissolvable support material such as PVA under those parts gives the cleanest result.";
+    meta.appendChild(sup);
     meta.appendChild(note);
     toast("🧊 3D model ready — download the STL");
 

@@ -2,6 +2,7 @@
 // POST /api/model3d            { convert: taskId }       -> { taskId }            GLB -> STL (reused if already made)
 // POST /api/model3d            { refund: taskId }        -> { credits }           refund a failed job
 // GET  /api/model3d?task=<id>                            -> { status, progress, glb?, stl?, refunded? }
+// GET  /api/model3d?list=1   (signed in)                 -> { models: [{ taskId, stlTaskId, created, title, thumb }] }
 //
 // Turns a Podder render into a downloadable printable mesh via Tripo.
 //
@@ -177,6 +178,23 @@ export default async function handler(req, res) {
       }
     }
 
+    // "My 3D models": every model this account paid for (owner PIN: the unbilled ones), newest
+    // first, so an STL can be found and downloaded again from any browser.
+    if (req.query.list !== undefined) {
+      let filter;
+      if ((await checkOwnerPin(req)) === 'ok') filter = 'user_id=is.null';
+      else {
+        const u = await getUser(req);
+        if (!u) return res.status(401).json({ error: 'not_signed_in' });
+        filter = `user_id=eq.${u.id}`;
+      }
+      const r = await fetch(`${SB()}/rest/v1/model3d_tasks?${filter}&refunded=eq.false&order=created_at.desc&limit=200` +
+        '&select=task_id,stl_task_id,created_at,title,thumb', { headers: sbH() });
+      if (!r.ok) return res.status(502).json({ error: 'list_failed' });
+      const rows = await r.json();
+      return res.status(200).json({ models: rows.map(x => ({ taskId: x.task_id, stlTaskId: x.stl_task_id, created: x.created_at, title: x.title, thumb: x.thumb })) });
+    }
+
     const id = String(req.query.task || '').trim();
     if (!id) return res.status(400).json({ error: 'missing_task' });
     try {
@@ -205,7 +223,7 @@ export default async function handler(req, res) {
     if (!user) return res.status(401).json({ error: 'not_signed_in' });
   }
 
-  const { image, convert, refund } = req.body || {};
+  const { image, convert, refund, thumb, title } = req.body || {};
 
   try {
     // ---- STL conversion: included in the mesh price, limited per mesh ----
@@ -300,7 +318,10 @@ export default async function handler(req, res) {
       throw e;
     }
 
-    try { await insertTaskRow({ task_id: taskId, user_id: user ? user.id : null }); }
+    // Thumbnail + title for the "My 3D models" list; dropped (not fatal) if they don't fit.
+    const okThumb = typeof thumb === 'string' && /^data:image\/(jpeg|png|webp);base64,/.test(thumb) && thumb.length <= 40000 ? thumb : null;
+    const okTitle = typeof title === 'string' ? title.slice(0, 160) : null;
+    try { await insertTaskRow({ task_id: taskId, user_id: user ? user.id : null, thumb: okThumb, title: okTitle }); }
     catch (e) { await alert('model3d_task_unrecorded', { taskId, user: user ? user.id : null, error: String(e.message || e) }); }
     return res.status(200).json({ taskId, credits: balance });
   } catch (e) {
